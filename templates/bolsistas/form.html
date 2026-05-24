@@ -1,0 +1,3024 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Fluid Responsiveness for both PC and Mobile */
+    .topbar {
+        flex-wrap: wrap;
+        gap: 1rem !important;
+        align-items: center !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .topbar h1 {
+        margin-right: auto;
+        min-width: 250px;
+    }
+
+    .grid-responsive {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Small adjustments for inputs */
+    .grid-responsive input, .grid-responsive select {
+        width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .topbar {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+    }
+</style>
+
+<div class="topbar">
+    <h1>{% if bolsista and bolsista.id %}Editar Bolsista{% else %}Novo(a) Bolsista{% endif %}</h1>
+    {% if bolsista and bolsista.id %}
+    <!-- Redundant button removed as per Adjustment 2 -->
+    {% endif %}
+    <div class="actions-group" style="display: flex; gap: 0.5rem;">
+        {% if not bolsista or not bolsista.id %}
+        <button type="button" class="btn btn-primary" onclick="openCadastroRapidoModal()">
+            <i class="lucide-zap mr-1"></i> Cadastro Rápido
+        </button>
+        {% endif %}
+        <a href="{{ url_for('bolsistas.index') }}" class="btn btn-arandu-secondary">Voltar</a>
+    </div>
+</div>
+
+<!-- POPUP DE PENDÊNCIAS -->
+{% if bolsista and bolsista.id %}
+<div id="pendenciasModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000;">
+    <div
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 600px; margin: 5% auto; position: relative;">
+        <!-- Botão fechar no topo direito -->
+        <button onclick="document.getElementById('pendenciasModal').style.display='none'"
+                style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #9ca3af;">&times;</button>
+        <h3 style="color: #d97706; margin-top: 0;">{{ icon('alert-circle', size=20) }} Campos Pendentes no Cadastro</h3>
+        <p style="color: #6b7280; margin-bottom: 1rem;">Os seguintes campos estão vazios ou pendentes de preenchimento:
+        </p>
+
+        <ul id="listaPendencias" style="margin-bottom: 1.5rem; color: #374151; line-height: 2;"></ul>
+
+        <button onclick="document.getElementById('pendenciasModal').style.display='none'" class="btn btn-primary"
+            style="width: 100%;">
+            Continuar Edição
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" class="card" style="max-width: 800px;" id="bolsistaForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="candidatura_id" value="{{ request.args.get('candidatura_id', '') }}" />
+    <input type="hidden" id="modalidade_nivel_hidden"
+        value="{% if bolsista and bolsista.modalidade %}{{ bolsista.modalidade.nivel }}{% endif %}" />
+
+    <!-- [V23] Input Hidden para manter ativo (Cancelamento agora é via botão dedicado) -->
+    {% if bolsista and bolsista.id and bolsista.ativo %}
+    <input type="hidden" name="ativo" id="ativo_hidden" value="on">
+    <!-- [NEW] Hidden Devolucao Input (Default False) -->
+    <input type="hidden" name="devolucao_valores" id="devolucao_valores" value="false">
+    {% endif %}
+
+    {% if bolsista and bolsista.id %}
+    <div
+        style="margin-bottom: 1.5rem; padding: 1rem; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-color);">
+        <div style="display:flex; align-items:center;">
+            <span style="font-size: 1.1em; font-weight: bold; margin-right: 1rem;">
+                {% set display = bolsista.get_status_display() %}
+                <span style="color: {{ display.color }};">Status: {{ display.label|upper }}</span>
+            </span>
+
+            {% if bolsista.status_governanca == 'PENDENTE' %}
+            <button type="button" class="btn btn-primary" onclick="openAtivacaoModal()" 
+                style="padding: 0.5rem 1rem; font-weight: bold; background: #059669; border: none; box-shadow: 0 0 10px rgba(5, 150, 105, 0.3);">
+                <i class="lucide-play mr-1"></i> Ativar Bolsista (Fundação)
+            </button>
+            {% endif %}
+
+            {% if bolsista.data_desligamento %}
+            <small style="color: var(--danger-color);">
+                Desligado em: {{ bolsista.data_desligamento|date_br }}
+            </small>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- [V15.0] TAB MENU -->
+    <style>
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tab-btn:hover { color: var(--primary-color); }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: rgba(0,0,0,0.02);
+        }
+        .tab-content { display: none; animation: tabFadeIn 0.3s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes tabFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Sticky Actions */
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            margin: 0 -1.5rem -1.5rem -1.5rem;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05);
+        }
+    </style>
+
+    <div class="tabs-container" style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); overflow-x: auto; white-space: nowrap;">
+        <button type="button" class="tab-btn active" id="btn-tab-identificacao" onclick="showTab('tab-identificacao')">👤 Identificação</button>
+        <button type="button" class="tab-btn" id="btn-tab-vigencia" onclick="showTab('tab-vigencia')">💰 Vigência & Bolsa</button>
+        <button type="button" class="tab-btn" id="btn-tab-historico" onclick="showTab('tab-historico')">🌍 Histórico & Mobilidade</button>
+        {% if bolsista and bolsista.id %}
+        <button type="button" class="tab-btn" id="btn-tab-auditoria" onclick="showTab('tab-auditoria')">🕒 Auditoria</button>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) activeContent.classList.add('active');
+            
+            localStorage.setItem('activeBolsistaTab', tabId);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+             const lastTab = localStorage.getItem('activeBolsistaTab');
+             if (lastTab && document.getElementById(lastTab)) {
+                 showTab(lastTab);
+             } else {
+                 showTab('tab-identificacao');
+             }
+        });
+    </script>
+
+    <div id="tab-identificacao" class="tab-content active">
+    <!-- SECTION 2: DADOS PESSOAIS -->
+    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dados Pessoais</h3>
+    <div class="grid-responsive">
+        <div style="grid-column: span 2;">
+            <label style="display: block; margin-bottom: 0.5rem;">Nome Completo</label>
+            <input type="text" name="nome" value="{{ bolsista.nome if bolsista else '' }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">CPF</label>
+            <input type="text" name="cpf" value="{{ bolsista.cpf if bolsista else '' }}" required
+                placeholder="000.000.000-00"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Matrícula (Código Institucional)</label>
+            <input type="text" name="matricula" id="matricula" value="{{ bolsista.matricula if bolsista else '' }}"
+                placeholder="Ex: 2751100"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            <small id="matricula-warning" style="display: none; color: #d97706; font-weight: bold; margin-top: 0.25rem;"></small>
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">E-mail</label>
+            <input type="email" name="email" value="{{ bolsista.email if bolsista else '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+    </div>
+
+    <!-- SECTION 3: DADOS BOLSISTAS -->
+    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dados do Bolsista</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="grid-column: span 2;">
+            <div style="background-color: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.85rem;">Instituição Parceira NAPI</label>
+                        <select id="instituicao_napi" name="instituicao"
+                            style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
+                            <option value="">Selecione a instituição...</option>
+                            {% for n in ['UTFPR', 'UFPR', 'IFPR', 'UEL', 'UEM', 'UNIOESTE', 'UENP', 'IPB'] %}
+                            <option value="{{ n }}" {% if bolsista and bolsista.instituicao == n %}selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-arandu-secondary" onclick="openCampusModal()" title="Nova Instituição" style="height: 38px; padding: 0 0.75rem;">+</button>
+                </div>
+
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.85rem;">Programa / Campus Específico</label>
+                        <select id="programa_id" name="programa_id"
+                            style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
+                            <option value="">Selecione o programa...</option>
+                            {% if programas %}
+                            {% for p in programas %}
+                            <option value="{{ p.id }}" 
+                                    data-campus-id="{{ p.campus_id }}"
+                                    data-codigo="{{ p.codigo_programa or p.id }}"
+                                    data-niveis="{{ p.get_niveis_list()|join(',') }}"
+                                    data-multicampi="{{ 'true' if p.is_multicampi else 'false' }}"
+                                    data-related-campuses="{{ p.get_related_campus_ids()|tojson }}"
+                                    {% if bolsista and bolsista.programa_id == p.id %}selected{% endif %}>
+                                {{ p.nome_programa }} ({{ p.sigla_programa }}) - {{ p.campus.nome if p.campus else 'N/A' }}
+                            </option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-arandu-secondary" onclick="openProgramModal()" title="Novo Programa" style="height: 38px; padding: 0 0.75rem;">+</button>
+                </div>
+                
+                <!-- Campos ocultos para manter compatibilidade legada se necessário -->
+                <input type="hidden" id="campus_filter" name="campus_id" value="{% if bolsista and bolsista.programa_link %}{{ bolsista.programa_link.campus_id }}{% endif %}">
+
+            </div>
+
+            {% if bolsista and bolsista.id and not bolsista.programa_id and not bolsista.instituicao %}
+            <small style="color: var(--danger-color); font-weight: bold;">
+                ⚠️ Vinculação Pendente (Legacy: {{ bolsista.programa }} - {{ bolsista.campus }})
+            </small>
+            {% endif %}
+        </div>
+        <div style="grid-column: span 2;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Orientador</label>
+                    <input type="text" name="orientador"
+                        value="{{ bolsista.orientador if bolsista and bolsista.orientador else '' }}"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Email do Orientador</label>
+                    <input type="email" name="email_orientador"
+                        value="{{ bolsista.email_orientador if bolsista and bolsista.email_orientador else '' }}"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+                </div>
+            </div>
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Início do Curso</label>
+            <input type="date" name="data_inicio_curso" 
+                value="{{ bolsista.data_inicio_curso|date_iso if bolsista and bolsista.data_inicio_curso else '' }}"
+                onfocus="this.showPicker()"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Previsão de Defesa/Término</label>
+            <input type="date" name="previsao_defesa"
+                value="{{ bolsista.previsao_defesa|date_iso if bolsista and bolsista.previsao_defesa else '' }}"
+                onfocus="this.showPicker()"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+    </div>
+    </div> <!-- END TAB IDENTIFICACAO -->
+
+    <div id="tab-vigencia" class="tab-content">
+        <!-- SECTION 1: VÍNCULO -->
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Vínculo</h3>
+        <div class="grid-responsive">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Edital</label>
+                <select name="edital_id" id="edital_select" required
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
+                    <option value="">Selecione...</option>
+                    {% for edital in editais %}
+                    <option value="{{ edital.id }}" data-regras="{{ edital.regras_anotacoes or '' }}" {% if bolsista and
+                        bolsista.edital_id==edital.id %}selected{% endif %}>
+                        {{ edital.numero }} - {{ edital.agencia }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Modalidade/Nível</label>
+                <select name="modalidade_id" id="modalidade_select" required {% if not bolsista %}disabled{% endif %}
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
+                    <option value="">Selecione um edital primeiro</option>
+                </select>
+            </div>
+        </div>
+
+
+    <!-- SECTION 4: DADOS BANCÁRIOS -->
+    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dados Bancários</h3>
+    <div class="grid-responsive">
+        <div style="grid-column: span 2;">
+            <label style="display: block; margin-bottom: 0.5rem;">Banco</label>
+            <input type="text" name="banco" value="{{ bolsista.banco if bolsista and bolsista.banco else '' }}"
+                placeholder="Ex: Banco do Brasil"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Agência</label>
+            <input type="text" name="agencia" value="{{ bolsista.agencia if bolsista and bolsista.agencia else '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Conta</label>
+            <input type="text" name="conta" value="{{ bolsista.conta if bolsista and bolsista.conta else '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div style="grid-column: span 2;"> <!-- Adjusted span to match auto-fit better -->
+            <label style="display: block; margin-bottom: 0.5rem;">Tipo de Conta</label>
+            <select name="tipo_conta"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+                <option value="corrente" {% if bolsista and bolsista.tipo_conta=='corrente' %}selected{% endif %}>
+                    Corrente</option>
+                <option value="poupanca" {% if bolsista and bolsista.tipo_conta=='poupanca' %}selected{% endif %}>
+                    Poupança</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- SECTION 5: BOLSA -->
+    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dados da Bolsa</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Início da Bolsa</label>
+            <input type="date" name="data_inicio_bolsa"
+                value="{{ bolsista.data_inicio_bolsa|date_iso if bolsista else '' }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Meses de Duração</label>
+            <input type="number" name="meses_duracao" value="{{ bolsista.meses_duracao if bolsista else '' }}" required
+                min="1"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Fim da Bolsa</label>
+            <input type="date" name="data_fim_bolsa" value="{{ bolsista.data_fim_bolsa|date_iso if bolsista else '' }}"
+                required
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+    </div>
+
+
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Processo SEI</label>
+            <input type="text" name="processo_sei"
+                value="{{ bolsista.processo_sei if bolsista and bolsista.processo_sei else '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Número do Formulário</label>
+            <input type="text" name="numero_formulario"
+                value="{{ bolsista.numero_formulario if bolsista and bolsista.numero_formulario else '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+    </div>
+
+    <!-- POSDOC SPECIFIC FIELDS -->
+    <div id="posdoc_fields"
+        style="display:none; margin-bottom: 1.5rem; border: 1px dashed var(--primary-color); padding: 1rem; border-radius: 8px; background: rgba(0,0,0,0.02);">
+        <h4 style="margin-top:0; color: var(--primary-color);">Dados Específicos (Pós-Doc)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Agência Financiadora (Específica)</label>
+                <input type="text" name="agencia_fomento" placeholder="Ex: Fundação Araucária (NAPI...)"
+                    value="{{ bolsista.agencia_fomento if bolsista and bolsista.agencia_fomento else '' }}"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Recebe Bolsa?</label>
+                <select name="recebe_bolsa"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+                    <option value="1" {% if bolsista and bolsista.recebe_bolsa %}selected{% endif %}>Sim</option>
+                    <option value="0" {% if bolsista and bolsista.recebe_bolsa==False %}selected{% endif %}>Não
+                        (Voluntário)</option>
+                </select>
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="display: block; margin-bottom: 0.5rem;">Título do Projeto de Pesquisa</label>
+                <input type="text" name="projeto_pesquisa"
+                    value="{{ bolsista.projeto_pesquisa if bolsista and bolsista.projeto_pesquisa else '' }}"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+        <label style="display: block; margin-bottom: 1rem; font-weight: bold; color: var(--primary-color);">Checkout do Bolsista</label>
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed #10b981; padding: 1rem; border-radius: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer; gap: 10px;">
+                <input type="checkbox" name="relatorio_entregue" {% if bolsista and bolsista.relatorio_entregue %}checked{% endif %}
+                    style="width: 20px; height: 20px;">
+                <span style="font-weight: 600; color: #059669;">
+                    Relatório Final Entregue e Validado? (Controle FUNTEF)
+                </span>
+            </label>
+            <p style="font-size: 0.8rem; color: #059669; margin-top: 5px; margin-left: 30px;">
+                A marcação deste item encerra as pendências de integridade do bolsista após o término da vigência.
+            </p>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+        <h4 style="margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+            {{ icon('message-square', size=18) }} Histórico de Comentários
+        </h4>
+        
+        <!-- Lista de Comentários Anteriores -->
+        {% if bolsista and bolsista.comentarios_historico %}
+        <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for comentario in bolsista.comentarios_historico %}
+            <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.25rem;">
+                    <span>
+                        <strong>{{ comentario.autor.nome if comentario.autor else 'Sistema' }}</strong> 
+                        &bull; {{ comentario.criado_em.strftime('%d/%m/%Y %H:%M') }}
+                        {% if comentario.criado_em != comentario.atualizado_em %}
+                        <i style="font-size: 0.75rem;">(Editado)</i>
+                        {% endif %}
+                    </span>
+                    {% if current_user.role == 'admin' or (current_user.id == comentario.user_id) %}
+                    <button type="button" onclick="editComentario({{ comentario.id }})" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; font-weight: 500;">{{ icon('edit-2', size=12) }} Editar</button>
+                    {% endif %}
+                </div>
+                <div id="comentario-texto-{{ comentario.id }}" style="white-space: pre-wrap; color: var(--text-color); margin-top: 0.5rem;">{{ comentario.texto }}</div>
+                <div id="comentario-edit-{{ comentario.id }}" style="display: none; margin-top: 0.5rem;">
+                    <textarea id="comentario-input-{{ comentario.id }}" rows="2" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.5rem;">{{ comentario.texto }}</textarea>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button type="button" onclick="cancelEditComentario({{ comentario.id }})" class="btn" style="background: #e5e7eb; padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancelar</button>
+                        <button type="button" onclick="saveComentario({{ comentario.id }})" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Salvar Edição</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Novo Comentário -->
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem;">Adicionar Novo Comentário</label>
+        <textarea name="novo_comentario" rows="2" placeholder="Digite uma anotação e clique em 'Atualizar Cadastro' para registrar o log..."
+            style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: #f9fafb;"></textarea>
+    </div>
+
+    <script>
+    function editComentario(id) {
+        document.getElementById('comentario-texto-' + id).style.display = 'none';
+        document.getElementById('comentario-edit-' + id).style.display = 'block';
+    }
+    function cancelEditComentario(id) {
+        document.getElementById('comentario-texto-' + id).style.display = 'block';
+        document.getElementById('comentario-edit-' + id).style.display = 'none';
+    }
+    function saveComentario(id) {
+        const texto = document.getElementById('comentario-input-' + id).value;
+        const formData = new FormData();
+        formData.append('texto', texto);
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        
+        fetch(`/bolsistas/comentario/${id}/editar`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json()).then(data => {
+            if(data.success) {
+                document.getElementById('comentario-texto-' + id).innerText = data.texto;
+                cancelEditComentario(id);
+            } else {
+                alert(data.message || 'Erro ao editar comentário.');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Erro de comunicação.');
+        });
+    }
+    </script>
+
+    </div> <!-- END TAB VIGENCIA -->
+
+    <div id="tab-historico" class="tab-content">
+
+    <!-- SECTION: AFASTAMENTOS (Only when editing) -->
+    <!-- SECTION: AFASTAMENTOS (Only when editing) -->
+    {% if bolsista and bolsista.id %}
+    <div class="form-section" id="section-afastamentos"
+        style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Ocorrências (Afastamentos e Licenças)</h3>
+
+        <!-- List -->
+        {% if bolsista.afastamentos %}
+        <table class="table" style="width: 100%; margin-bottom: 1rem; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f3f4f6; text-align: left;">
+                    <th style="padding: 0.5rem;">Tipo</th>
+                    <th style="padding: 0.5rem;">Início</th>
+                    <th style="padding: 0.5rem;">Duração</th>
+                    <th style="padding: 0.5rem;">Obs</th>
+                    <th style="padding: 0.5rem;">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in bolsista.afastamentos %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.5rem;">
+                        {% if a.tipo == 'maternidade' %}Maternidade/Adoção
+                        {% elif a.tipo == 'pdse' %}PDSE (Sanduíche)
+                        {% else %}{{ a.tipo|capitalize }}{% endif %}
+                    </td>
+                    <td style="padding: 0.5rem;">{{ a.data_inicio|date_br }}</td>
+                    <td style="padding: 0.5rem;">{{ a.duracao_meses }} meses</td>
+                    <td style="padding: 0.5rem;">{{ a.observacao }}</td>
+                    <td style="padding: 0.5rem;">
+                        <button type="submit" form="form-del-afast-{{ a.id }}"
+                            style="color: red; background: none; border: none; cursor: pointer;">Excluir</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Nenhuma ocorrência registrada.</p>
+        {% endif %}
+
+        <!-- Add Button -->
+        <button type="button" class="btn btn-arandu-secondary"
+            onclick="openAfastamentoModal()">
+            + Nova Ocorrência
+        </button>
+    </div>
+    {% endif %}
+    <!-- SECTION: INTERNACIONALIZAÇÃO (Only when editing) -->
+    {% if bolsista and bolsista.id %}
+    <div class="form-section"
+        style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Internacionalização (Mobilidade)</h3>
+
+        <!-- List -->
+        {% if bolsista.mobilidades %}
+        <table class="table" style="width: 100%; margin-bottom: 1rem; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f3f4f6; text-align: left;">
+                    <th style="padding: 0.5rem;">País / Instituição</th>
+                    <th style="padding: 0.5rem;">Tipo / Fomento</th>
+                    <th style="padding: 0.5rem;">Período</th>
+                    <th style="padding: 0.5rem;">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in bolsista.mobilidades %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.5rem;">
+                        <strong>{{ m.pais_destino }}</strong><br>
+                        <small>{{ m.instituicao_destino }}</small>
+                    </td>
+                    <td style="padding: 0.5rem;">
+                        {{ m.tipo_mobilidade }}<br>
+                        <small class="text-muted">{{ m.agencia_fomento or '-' }}</small>
+                    </td>
+                    <td style="padding: 0.5rem;">{{ m.data_inicio|date_br }} a {{ m.data_fim|date_br }}</td>
+                    <td style="padding: 0.5rem;">
+                        <button type="submit" form="form-del-mob-{{ m.id }}"
+                            style="color: red; background: none; border: none; cursor: pointer;">Excluir</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Nenhum registro de mobilidade internacional.</p>
+        {% endif %}
+
+        <!-- Add Button -->
+        <button type="button" class="btn btn-arandu-secondary"
+            onclick="document.getElementById('mobilidadeModal').style.display='block'">
+            + Registrar Mobilidade
+        </button>
+    </div>
+    {% endif %}
+    </div> <!-- END TAB HISTORICO -->
+
+
+    <div id="tab-auditoria" class="tab-content">
+    <div class="form-section" id="section-memento"
+        style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Histórico de Vigência e Estados (Memento)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Pontos de restauração gerados automaticamente antes de alterações críticas.
+        </p>
+
+        <table class="table" style="width: 100%; margin-bottom: 1rem; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #f3f4f6; text-align: left;">
+                    <th style="padding: 0.5rem;">Data/Hora</th>
+                    <th style="padding: 0.5rem;">Evento/Contexto</th>
+                    <th style="padding: 0.5rem;">Vigência Antiga</th>
+                    <th style="padding: 0.5rem;">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for snap in bolsista.snapshots %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.5rem;">{{ snap.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="padding: 0.5rem;">{{ snap.contexto }}</td>
+                    <td style="padding: 0.5rem;">
+                        {{ snap.data_fim_original|date_br if snap.data_fim_original else '-' }}
+                        <span class="badge {{ 'badge-success' if snap.ativo_original else 'badge-secondary' }}">
+                            {{ 'Ativo' if snap.ativo_original else 'Inativo' }}
+                        </span>
+                    </td>
+                    <td style="padding: 0.5rem;">
+                        <button type="button" class="btn btn-sm btn-arandu-secondary" onclick="confirmRestaurar('{{ url_for('bolsistas.restaurar_versao', id=bolsista.id, snapshot_id=snap.id) }}')">
+                            {{ icon('rotate-ccw', size=14) }} Restaurar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ACÚMULO WARNING E REGRAS -->
+    <div id="regras_edital_container"
+        style="display: none; margin-bottom: 2rem; border: 1px dashed #10b981; padding: 1.5rem; border-radius: 8px; background: rgba(16,185,129,0.05);">
+        <h4 style="margin-top:0; margin-bottom: 0.5rem; color: #059669; font-size: 1.1rem;">📑 Regras Extraídas do
+            Edital / Programa</h4>
+        <div id="regras_edital_texto"
+            style="white-space: pre-wrap; font-size: 0.95em; color: #065f46; font-weight: 500; font-family: 'Courier New', Courier, monospace; line-height: 1.6;">
+            Carregando...</div>
+    </div>
+
+    {% if has_acumulo %}
+    <div
+        style="margin-bottom: 2rem; border: 2px solid #ef4444; padding: 1.5rem; border-radius: 8px; background: rgba(239, 68, 68, 0.05); box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);">
+        <h4 style="margin-top:0; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem;">
+            ⚠️ Atenção: Validação de Acúmulo de Bolsas
+        </h4>
+        <p style="color: #991b1b; font-weight: 500; margin-bottom: 1rem;">
+            O sistema detectou que este CPF já possui bolsa ativa cadastrada ou encontra-se em status de seleção ativa
+            em outro edital.
+        </p>
+        <label
+            style="display: flex; align-items: flex-start; cursor: pointer; background: #fee2e2; padding: 1rem; border-radius: 6px;">
+            <input type="checkbox" name="ciente_acumulo" value="true" required
+                style="width: 24px; height: 24px; margin-right: 12px; margin-top: 2px;">
+            <span style="font-weight: bold; color: #7f1d1d; font-size: 1.05rem; line-height: 1.4;">
+                Estou ciente do acúmulo. A exceção é justificada pelas normativas desta agência de fomento (Declaro
+                Responsabilidade).
+            </span>
+        </label>
+    </div>
+    {% endif %}
+
+    </div> <!-- END TAB AUDITORIA (Fallback close) -->
+
+    <div class="sticky-footer d-flex gap-2">
+        <!-- SAVE BUTTON -->
+        <button type="submit" class="btn btn-primary" style="flex: 2; font-weight: 600; border: none;">
+            {% if bolsista is defined and bolsista and bolsista.id %}
+            {{ icon('save', size=18) }} Atualizar Cadastro
+            {% else %}
+            {{ icon('user-plus', size=18) }} Efetivar Matrícula
+            {% endif %}
+        </button>
+
+        <!-- Botão Cadastro Rápido -->
+        <button type="button" class="btn btn-info" onclick="openCadastroRapidoModal()"
+            style="background-color: #17a2b8; border-color: #17a2b8; color: white; margin-left: 1rem; padding: 0.5rem 1rem; font-weight: 600;">
+            <i class="lucide-zap" style="margin-right: 4px;"></i> Cadastro Rápido
+        </button>
+
+        {% if bolsista and bolsista.id %}
+        <button type="button" class="btn btn-arandu-secondary" onclick="openCertModal()">{{ icon('award', size=18) }}</button>
+        <button type="button" class="btn btn-arandu-secondary" onclick="openSocialModal()">{{ icon('users', size=18) }}</button>
+        {% endif %}
+
+        {% if bolsista and bolsista.ativo %}
+        <button type="button" class="btn btn-arandu-danger" onclick="openCancelModal()">
+            {{ icon('user-x', size=18) }} Cancelar
+        </button>
+        {% endif %}
+    </div>
+</form>
+
+<!-- [V23] MODAL DE CANCELAMENTO -->
+{% if bolsista and bolsista.ativo %}
+<div id="cancelModal" class="modal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content"
+        style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2 style="color: #dc2626; margin-bottom: 1.5rem; border-bottom: 2px solid #fee2e2; padding-bottom: 0.5rem;">
+            Confirmar Cancelamento de Bolsa
+        </h2>
+
+        <p style="margin-bottom: 1rem; color: #4b5563;">
+            Você está prestes a cancelar a bolsa do seguinte discente:
+        </p>
+
+        <!-- [NEW] Devolução de Valores Question -->
+        <div
+            style="margin-bottom: 1.5rem; background-color: #fff1f2; padding: 1rem; border-radius: 6px; border: 1px solid #fda4af;">
+            <p style="margin-bottom: 0.5rem; font-weight: bold; color: #9f1239;">Haverá devolução de valores?</p>
+            <div style="display: flex; gap: 1.5rem;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="modal_devolucao" value="true" style="margin-right: 0.5rem;">
+                    <span style="color: #881337;">Sim, haverá devolução</span>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="modal_devolucao" value="false" checked style="margin-right: 0.5rem;">
+                    <span style="color: #374151;">Não</span>
+                </label>
+            </div>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #be123c;">
+                *Se sim, o bolsista será incluído no relatório de monitoramento de devoluções.
+            </p>
+        </div>
+
+        <div style="background-color: #f3f4f6; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+            <p><strong>Nome:</strong> <span style="color: #111827;">{{ bolsista.nome }}</span></p>
+            <p><strong>CPF:</strong> <span style="color: #111827;">{{ bolsista.cpf }}</span></p>
+            <p><strong>Programa:</strong> <span style="color: #111827;">{{ bolsista.programa }}</span></p>
+            <p><strong>Vigência Atual:</strong> {{ bolsista.data_inicio_bolsa|date_br }} a {{
+                bolsista.data_fim_bolsa|date_br }}</p>
+        </div>
+
+        <p style="margin-bottom: 1.5rem; color: #dc2626; font-size: 0.9rem; font-weight: 600;">
+            ⚠️ Esta ação registrará o desligamento imediato. Para reativar, será necessário acessar o cadastro
+            novamente.
+        </p>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" onclick="closeCancelModal()" class="btn"
+                style="background-color: #e5e7eb; color: #374151;">
+                Voltar
+            </button>
+            <button type="button" onclick="confirmCancel()" class="btn btn-arandu-danger">
+                Sim, Cancelar Bolsa
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openCancelModal() {
+        document.getElementById('cancelModal').style.display = 'block';
+    }
+
+    function closeCancelModal() {
+        document.getElementById('cancelModal').style.display = 'none';
+    }
+
+    function confirmCancel() {
+        // [V23] Logic: Remove the hidden 'ativo' input -> Backend logic sets ativo=False
+        const hiddenInput = document.getElementById('ativo_hidden');
+        if (hiddenInput) {
+            hiddenInput.remove(); // Removes 'on' value
+        }
+
+        // [NEW] Capture Devolucao Value
+        const devolver = document.querySelector('input[name="modal_devolucao"]:checked').value;
+        const devInput = document.getElementById('devolucao_valores');
+        if (devInput) {
+            devInput.value = devolver;
+        }
+
+        document.getElementById('bolsistaForm').submit();
+    }
+
+    // [V18.1] Melhora no fechamento de modais: uso de EventListener em vez de window.onclick
+    window.addEventListener('click', function (event) {
+        const cancelModal = document.getElementById('cancelModal');
+        const pModal = document.getElementById('pendenciasModal');
+        const cModal = document.getElementById('confirmationModal');
+        
+        if (event.target == cancelModal) closeCancelModal();
+        if (event.target == pModal) pModal.style.display = 'none';
+        if (event.target == cModal) cModal.style.display = 'none';
+    });
+</script>
+{% endif %}
+
+<!-- Separate Forms for Deleting Leaves (Hidden) -->
+<!-- Separate Forms for Deleting Leaves (Hidden) -->
+{% if bolsista and bolsista.afastamentos %}
+{% for a in bolsista.afastamentos %}
+<form id="form-del-afast-{{ a.id }}" action="{{ url_for('bolsistas.afastamento_excluir', id=a.id) }}" method="POST"
+    style="display:none;" onsubmit="return confirm('Remover ocorrência?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+</form>
+{% endfor %}
+{% endif %}
+
+<!-- DELETE FORMS MOBILIDADE -->
+{% if bolsista and bolsista.mobilidades %}
+{% for m in bolsista.mobilidades %}
+<form id="form-del-mob-{{ m.id }}" action="{{ url_for('bolsistas.mobilidade_excluir', id=m.id) }}" method="POST"
+    style="display:none;" onsubmit="return confirm('Remover registro de mobilidade?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+</form>
+{% endfor %}
+{% endif %}
+
+<!-- Form Oculto para Restauração de Snapshot -->
+<form id="restaurarForm" action="" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+</form>
+
+<script>
+    function confirmRestaurar(url) {
+        if (confirm('Deseja restaurar este estado anterior? Um novo snapshot será criado antes da restauração.')) {
+            const form = document.getElementById('restaurarForm');
+            form.action = url;
+            form.submit();
+        }
+    }
+</script>
+
+
+<!-- CERTIFICATE MODAL -->
+<div id="certModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 800px; margin: 2% auto; position: relative; max-height: 95vh; overflow-y: auto;">
+        <h3 style="color: var(--primary-color); margin-top: 0;">Certificados Automáticos</h3>
+
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; color: #374151;">(a) Texto para Bolsista
+            </h4>
+            <div style="background: #f9fafb; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 4px; font-family: 'Times New Roman', serif; white-space: pre-wrap; color: black; line-height: 1.5;"
+                id="cert-residente-text"></div>
+            <button onclick="copyToClipboard('cert-residente-text')" class="btn"
+                style="margin-top:0.5rem; background:#e5e7eb; color:black; font-size: 0.9rem;">{{ icon('clipboard',
+                size=20) }} Copiar Texto</button>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; color: #374151;">(b) Texto para Orientador
+            </h4>
+            <div style="background: #f9fafb; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 4px; font-family: 'Times New Roman', serif; white-space: pre-wrap; color: black; line-height: 1.5;"
+                id="cert-supervisor-text"></div>
+            <button onclick="copyToClipboard('cert-supervisor-text')" class="btn"
+                style="margin-top:0.5rem; background:#e5e7eb; color:black; font-size: 0.9rem;">{{ icon('clipboard',
+                size=20) }} Copiar Texto</button>
+        </div>
+
+        <button onclick="document.getElementById('certModal').style.display='none'" class="btn"
+            style="width:100%; background: #374151; color: white;">Fechar</button>
+    </div>
+</div>
+
+<!-- CONFIRMATION MODAL (Registration Details) -->
+<div id="confirmationModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 5000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 800px; margin: 2% auto; position: relative; max-height: 95vh; overflow-y: auto;">
+        
+        <!-- Botão fechar no topo direito (X) [v18.3] -->
+        <button type="button" id="btnFecharSucessoX"
+                style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #9ca3af;">&times;</button>
+
+        <h3 style="color: var(--primary-color); margin-top: 0;">✅ Cadastro Realizado com Sucesso!</h3>
+
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; color: #374151;">Dados do Cadastro</h4>
+            <div style="background: #f9fafb; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 4px; font-family: 'Courier New', monospace; white-space: pre-wrap; color: black; line-height: 1.8;"
+                id="confirmation-text"></div>
+            <button onclick="copyToClipboard('confirmation-text')" class="btn"
+                style="margin-top:0.5rem; background:#e5e7eb; color:black; font-size: 0.9rem;">{{ icon('clipboard',
+                size=20) }} Copiar Texto</button>
+        </div>
+
+        <button type="button" id="btnFecharSucesso" class="btn"
+            style="width:100%; background: #374151; color: white; font-weight: 600; padding: 0.75rem; cursor: pointer;">
+            ✔ Fechar e Continuar Editando
+        </button>
+    </div>
+</div>
+
+<script>
+    // [V18.3] Abordagem blindada: DOMContentLoaded + stopPropagation + location.replace
+    // Remove onclick inline para evitar conflitos com outros scripts.
+    document.addEventListener('DOMContentLoaded', function () {
+        function fecharSucesso(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            console.log('[v18.3] Fechando modal e limpando URL...');
+            const urlLimpa = window.location.origin + window.location.pathname;
+            window.location.replace(urlLimpa);
+        }
+
+        const btnX = document.getElementById('btnFecharSucessoX');
+        const btnF = document.getElementById('btnFecharSucesso');
+        if (btnX) btnX.addEventListener('click', fecharSucesso);
+        if (btnF) btnF.addEventListener('click', fecharSucesso);
+    });
+</script>
+
+<script>
+    function openCertModal() {
+        document.getElementById('certModal').style.display = 'block';
+        generateCertificates();
+    }
+
+    function formatDateFull(dateStr) {
+        if (!dateStr) return 'DATA_NULA';
+        // Fix timezone issue by appending T12:00:00 to ensure same day
+        const date = new Date(dateStr + 'T12:00:00');
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function formatDateShort(dateStr) {
+        if (!dateStr) return '??/??/????';
+        const date = new Date(dateStr + 'T12:00:00');
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    function generateCertificates() {
+        // Collect Data
+        const nome = document.querySelector('input[name="nome"]').value || 'NOME_DO_RESIDENTE';
+        const cpf = document.querySelector('input[name="cpf"]').value || '000.000.000-00';
+
+        // Program & Campus
+        const progSelect = document.getElementById('programa_id');
+        let progText = 'PROGRAMA_DESCONHECIDO';
+        if (progSelect.selectedIndex >= 0) {
+            progText = progSelect.options[progSelect.selectedIndex].text.split('(')[0].trim();
+        }
+
+        // Campus Logic: Try specific filter, else fallback
+        const campusSelect = document.getElementById('campus_filter');
+        let campusNome = 'CAMPUS';
+        if (campusSelect && campusSelect.value) {
+            campusNome = campusSelect.options[campusSelect.selectedIndex].text;
+        } else {
+            // Fallback: Try to read from Program text if printed? No.
+            // Try to read from previous status?
+            // Let's us a safe value or the hidden one if available.
+            // Or assume the user selected a filter.
+            // If empty, we warn?
+        }
+
+        const supervisor = document.querySelector('input[name="orientador"]').value || 'NOME_SUPERVISOR';
+
+        // Project & Agency (PosDoc specific)
+        const projetoInput = document.querySelector('input[name="projeto_pesquisa"]');
+        const projeto = (projetoInput && projetoInput.value) ? projetoInput.value : 'TITULO_DO_PROJETO';
+
+        const agenciaInput = document.querySelector('input[name="agencia_fomento"]');
+        const agencia = (agenciaInput && agenciaInput.value) ? agenciaInput.value : "Fundação Araucária (NAPI Wood Tech)"; // Default from example or empty?
+
+        // Dates
+        const dtInicio = document.querySelector('input[name="data_inicio_bolsa"]').value;
+        const dtFim = document.querySelector('input[name="data_fim_bolsa"]').value;
+        const dataInicio = formatDateShort(dtInicio);
+        const dataFim = formatDateShort(dtFim);
+        const periodo = `${dataInicio} a ${dataFim}`;
+
+        const hoje = new Date();
+        const dataHoje = `Curitiba, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`;
+
+        // ----------------------
+        // TEXT A: RESIDENTE
+        // ----------------------
+        // ----------------------
+        // DETERMINE TYPE
+        // ----------------------
+        const modalidadeSelect = document.getElementById('modalidade_select');
+        let isPosDoc = false;
+        let modText = 'MODALIDADE';
+
+        if (modalidadeSelect && modalidadeSelect.selectedIndex >= 0) {
+            modText = modalidadeSelect.options[modalidadeSelect.selectedIndex].text;
+            // Check for 'Pós-Doutorado' or 'Residência' (case insensitive)
+            const lowerMod = modText.toLowerCase();
+            if (lowerMod.includes('pós-doutora') || lowerMod.includes('residência') || lowerMod.includes('pos-doc')) {
+                isPosDoc = true;
+            }
+        }
+        console.log(`DEBUG: Modality='${modText}', isPosDoc=${isPosDoc}`);
+
+        let textA = '';
+        let textB = '';
+
+        if (isPosDoc) {
+            // ----------------------
+            // POS-DOC TEMPLATES
+            // ----------------------
+            textA = `A Pró-Reitora de Pesquisa e Pós-Graduação, da Universidade Tecnológica Federal do Paraná,
+
+no uso de suas atribuições, certifica que
+
+${nome}
+
+CPF ${cpf}, realizou residência pós-doutoral no ${progText}, campus ${campusNome}, conforme Resolução Nº 058/2021, de 27 de abril de 2021 do Conselho de Pesquisa e Pós-Graduação da UTFPR para que possa gozar de todos os direitos e prerrogativas legais.
+
+${dataHoje}
+
+Projeto de Pesquisa: ${projeto}
+Supervisão: ${supervisor}
+Período: ${periodo}
+Agência financiadora: ${agencia}`;
+
+            textB = `A Pró-Reitora de Pesquisa e Pós-Graduação, da Universidade Tecnológica Federal do Paraná,
+
+no uso de suas atribuições, certifica que
+
+${supervisor}
+
+Atuou como supervisor(a) do projeto de pesquisa desenvolvido por ${nome}, residente do Programa de Residência Pós-Doutoral no ${progText}, campus ${campusNome}.
+
+${dataHoje}
+
+Projeto de Pesquisa: ${projeto}
+Período: ${periodo}
+Agência financiadora: ${agencia}`;
+
+        } else {
+            // ----------------------
+            // STANDARD BOLSISTA TEMPLATES
+            // ----------------------
+            textA = `A Pró-Reitora de Pesquisa e Pós-Graduação, da Universidade Tecnológica Federal do Paraná,
+
+no uso de suas atribuições, certifica que
+
+${nome}
+
+CPF ${cpf}, atuou como bolsista na modalidade ${modText}, vinculado(a) ao Edital, sob orientação de ${supervisor}, no período de ${dataInicio} a ${dataFim}.
+
+${dataHoje}
+
+Programa: ${progText} - Campus ${campusNome}`;
+
+            textB = `A Pró-Reitora de Pesquisa e Pós-Graduação, da Universidade Tecnológica Federal do Paraná,
+
+no uso de suas atribuições, certifica que
+
+${supervisor}
+
+Orientou o(a) bolsista ${nome}, modalidade ${modText}, vinculado(a) ao Programa de Pós-Graduação em ${progText} do Campus ${campusNome}.
+
+${dataHoje}
+
+Período: ${periodo}`;
+        }
+
+        document.getElementById('cert-residente-text').innerText = textA;
+        document.getElementById('cert-supervisor-text').innerText = textB;
+    }
+
+    function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            // Optional: Visual Feedback
+            alert('Texto copiado com sucesso!');
+        });
+    }
+
+    // CONFIRMATION MODAL FUNCTIONS
+    function openConfirmationModal() {
+        document.getElementById('confirmationModal').style.display = 'block';
+        generateConfirmationText();
+    }
+
+    function generateConfirmationText() {
+        // Collect form data
+        const nome = document.querySelector('input[name="nome"]').value || 'NOME_COMPLETO';
+        const cpf = document.querySelector('input[name="cpf"]').value || '000.000.000-00';
+
+        // Instituição NAPI (novo dropdown único)
+        let campusNome = 'INSTITUIÇÃO';
+        const instituicaoSelect = document.getElementById('instituicao_napi');
+        if (instituicaoSelect && instituicaoSelect.selectedIndex > 0) {
+            campusNome = instituicaoSelect.options[instituicaoSelect.selectedIndex].text;
+        }
+
+        // Modalidade - usar o texto completo do select
+        let nivelModalidade = 'MODALIDADE';
+        const modalidadeSelect = document.getElementById('modalidade_select');
+        if (modalidadeSelect && modalidadeSelect.selectedIndex > 0 && modalidadeSelect.value) {
+            const modalidadeText = modalidadeSelect.options[modalidadeSelect.selectedIndex].text;
+            if (modalidadeText && !modalidadeText.includes('Selecione') && !modalidadeText.includes('Carregando')) {
+                nivelModalidade = modalidadeText;
+            }
+        }
+        // Fallback para hidden field (quando editando bolsista existente)
+        if (nivelModalidade === 'MODALIDADE') {
+            const nivelHidden = document.getElementById('modalidade_nivel_hidden');
+            if (nivelHidden && nivelHidden.value) {
+                nivelModalidade = nivelHidden.value;
+            }
+        }
+
+        // Edital (para fomento) - pega a agência (parte após " - ")
+        const editalSelect = document.getElementById('edital_select');
+        let fomentoFonte = 'EQUIPE DO PROJETO';
+        if (editalSelect && editalSelect.selectedIndex > 0) {
+            const fullText = editalSelect.options[editalSelect.selectedIndex].text;
+            const parts = fullText.split(' - ');
+            // Se há agência após o número, usa ela; caso contrário usa o texto completo
+            fomentoFonte = parts.length > 1 ? parts[1].trim() : fullText.trim();
+        }
+
+        const dtInicio = document.querySelector('input[name="data_inicio_bolsa"]').value;
+        const dtFim = document.querySelector('input[name="data_fim_bolsa"]').value;
+        const dataInicio = formatDateShort(dtInicio);
+        const dataFim = formatDateShort(dtFim);
+
+        // Build confirmation text
+        const confirmationText = `CADASTRO DE BOLSISTA - STRICTO SENSU
+
+Discente: ${cpf} - ${nome}
+Instituição: ${campusNome}
+Modalidade: ${nivelModalidade}
+Fomento: ${fomentoFonte}
+Vigência: ${dataInicio} a ${dataFim}`;
+
+        document.getElementById('confirmation-text').innerText = confirmationText;
+    }
+
+    // Auto-open confirmation modal if show_confirmation flag
+    window.addEventListener('load', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('show_confirmation') === '1') {
+            openConfirmationModal();
+        }
+    });
+</script>
+
+<!-- Separate Form for Adding Leave (Hidden/Overlay) -->
+{% if bolsista and bolsista.id %}
+<!-- NEW AFASTAMENTO MODAL -->
+<div id="afastamentoModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 700px; margin: 5% auto; position: relative;">
+
+        <h3 style="color: var(--primary-color); margin-top: 0; margin-bottom: 1.5rem;">Registrar Ocorrência
+            (Afastamento)</h3>
+
+        <form action="{{ url_for('bolsistas.afastamento_novo', id=bolsista.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <div style="margin-bottom: 1rem;">
+                <label class="form-label"
+                    style="color: #111827; font-weight: 600; display: block; margin-bottom: 0.5rem;">Tipo de
+                    Afastamento</label>
+                <select name="tipo" id="afast_tipo" required class="form-control form-select"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 1rem;">
+                    <option value="saude">Saúde / Outros</option>
+                    <option value="maternidade">Maternidade / Adoção (até 6m)</option>
+                    <option value="pdse">PDSE (Doutorado Sanduíche)</option>
+                    <option value="trancamento">Trancamento Geral</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Data
+                        Início</label>
+                    <input type="date" name="data_inicio" required class="form-control"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Duração
+                        (Meses)</label>
+                    <input type="number" name="duracao_meses" min="1" max="24" required class="form-control"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label"
+                    style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Observação</label>
+                <input type="text" name="observacao" class="form-control" placeholder="Detalhes opcionais..."
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+            </div>
+
+            <div class="d-flex gap-2" style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary"
+                    style="flex: 1; padding: 0.75rem; background-color: var(--primary-color); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Salvar
+                    Ocorrência</button>
+                <button type="button" class="btn btn-secondary"
+                    style="flex: 1; padding: 0.75rem; background-color: #9ca3af; color: white; border: none; border-radius: 0.375rem; cursor: pointer;"
+                    onclick="closeAfastamentoModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    function openAfastamentoModal() {
+        document.getElementById('afastamentoModal').style.display = 'block';
+    }
+
+    function closeAfastamentoModal() {
+        document.getElementById('afastamentoModal').style.display = 'none';
+    }
+</script>
+{% endif %}
+
+<!-- Separate Form for Adding MOBILIDADE (Hidden/Overlay) -->
+{% if bolsista and bolsista.id %}
+<!-- MOBILIDADE MODAL (Updated via Script) -->
+<div id="mobilidadeModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 700px; margin: 5% auto; position: relative;">
+
+        <h3 style="color: var(--primary-color); margin-top: 0; margin-bottom: 1.5rem;">Registrar Mobilidade
+            Internacional</h3>
+
+        <form action="{{ url_for('bolsistas.mobilidade_novo', id=bolsista.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label"
+                    style="color: var(--primary-color); font-weight: 600; display: block; margin-bottom: 0.5rem;">
+                    <i class="lucide-award mr-1"></i> Acordo Institucional Vinculado
+                </label>
+                <select name="acordo_id" class="input-premium"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 1rem;">
+                    <option value="">Nenhum / Mobilidade Avulsa (Ex: CAPES-PrInt, Fluxo Direto)</option>
+                    {% if acordos %}
+                    {% for acordo in acordos %}
+                    <option value="{{ acordo.id }}">
+                        [{{ acordo.pais | upper }}] - {{ acordo.instituicao }}
+                    </option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+                <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                    Selecione se a viagem faz parte de um convênio oficial da UTFPR.
+                </small>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label"
+                    style="color: #111827; font-weight: 600; display: block; margin-bottom: 0.5rem;">Fluxo
+                    (Direção)</label>
+                <select name="tipo_fluxo" id="mob_tipo_fluxo" class="form-control form-select"
+                    onchange="updateMobLabels()"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 1rem;">
+                    <option value="saida">Saída (Brasileiro indo ao Exterior)</option>
+                    <option value="entrada">Entrada (Estrangeiro vindo à UTFPR)</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label class="form-label" id="lbl_pais"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">País de
+                        Destino</label>
+                    <select name="pais_destino" required class="form-control form-select"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                        <option value="">Selecione um país...</option>
+                        <option value="Afeganistão">Afeganistão</option>
+                        <option value="África do Sul">África do Sul</option>
+                        <option value="Albânia">Albânia</option>
+                        <option value="Alemanha">Alemanha</option>
+                        <option value="Andorra">Andorra</option>
+                        <option value="Angola">Angola</option>
+                        <option value="Antígua e Barbuda">Antígua e Barbuda</option>
+                        <option value="Arábia Saudita">Arábia Saudita</option>
+                        <option value="Argélia">Argélia</option>
+                        <option value="Argentina">Argentina</option>
+                        <option value="Armênia">Armênia</option>
+                        <option value="Austrália">Austrália</option>
+                        <option value="Áustria">Áustria</option>
+                        <option value="Azerbaijão">Azerbaijão</option>
+                        <option value="Bahamas">Bahamas</option>
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Barbados">Barbados</option>
+                        <option value="Bahrein">Bahrein</option>
+                        <option value="Bélgica">Bélgica</option>
+                        <option value="Belize">Belize</option>
+                        <option value="Benim">Benim</option>
+                        <option value="Bielorrússia">Bielorrússia</option>
+                        <option value="Bolívia">Bolívia</option>
+                        <option value="Bósnia e Herzegovina">Bósnia e Herzegovina</option>
+                        <option value="Botsuana">Botsuana</option>
+                        <option value="Brasil">Brasil</option>
+                        <option value="Brunei">Brunei</option>
+                        <option value="Bulgária">Bulgária</option>
+                        <option value="Burquina Faso">Burquina Faso</option>
+                        <option value="Burundi">Burundi</option>
+                        <option value="Butão">Butão</option>
+                        <option value="Cabo Verde">Cabo Verde</option>
+                        <option value="Camarões">Camarões</option>
+                        <option value="Camboja">Camboja</option>
+                        <option value="Canadá">Canadá</option>
+                        <option value="Catar">Catar</option>
+                        <option value="Cazaquistão">Cazaquistão</option>
+                        <option value="Chade">Chade</option>
+                        <option value="Chile">Chile</option>
+                        <option value="China">China</option>
+                        <option value="Chipre">Chipre</option>
+                        <option value="Colômbia">Colômbia</option>
+                        <option value="Comores">Comores</option>
+                        <option value="Congo-Brazzaville">Congo-Brazzaville</option>
+                        <option value="Congo-Kinshasa">Congo-Kinshasa</option>
+                        <option value="Coreia do Norte">Coreia do Norte</option>
+                        <option value="Coreia do Sul">Coreia do Sul</option>
+                        <option value="Costa do Marfim">Costa do Marfim</option>
+                        <option value="Costa Rica">Costa Rica</option>
+                        <option value="Croácia">Croácia</option>
+                        <option value="Cuba">Cuba</option>
+                        <option value="Dinamarca">Dinamarca</option>
+                        <option value="Djibuti">Djibuti</option>
+                        <option value="Dominica">Dominica</option>
+                        <option value="Egito">Egito</option>
+                        <option value="El Salvador">El Salvador</option>
+                        <option value="Emirados Árabes Unidos">Emirados Árabes Unidos</option>
+                        <option value="Equador">Equador</option>
+                        <option value="Eritreia">Eritreia</option>
+                        <option value="Eslováquia">Eslováquia</option>
+                        <option value="Eslovênia">Eslovênia</option>
+                        <option value="Espanha">Espanha</option>
+                        <option value="Estados Unidos">Estados Unidos</option>
+                        <option value="Estônia">Estônia</option>
+                        <option value="Eswatini">Eswatini</option>
+                        <option value="Etiópia">Etiópia</option>
+                        <option value="Fiji">Fiji</option>
+                        <option value="Filipinas">Filipinas</option>
+                        <option value="Finlândia">Finlândia</option>
+                        <option value="França">França</option>
+                        <option value="Gabão">Gabão</option>
+                        <option value="Gâmbia">Gâmbia</option>
+                        <option value="Gana">Gana</option>
+                        <option value="Geórgia">Geórgia</option>
+                        <option value="Granada">Granada</option>
+                        <option value="Grécia">Grécia</option>
+                        <option value="Guatemala">Guatemala</option>
+                        <option value="Guiana">Guiana</option>
+                        <option value="Guiné">Guiné</option>
+                        <option value="Guiné Equatorial">Guiné Equatorial</option>
+                        <option value="Guiné-Bissau">Guiné-Bissau</option>
+                        <option value="Haiti">Haiti</option>
+                        <option value="Holanda">Holanda (Países Baixos)</option>
+                        <option value="Honduras">Honduras</option>
+                        <option value="Hungria">Hungria</option>
+                        <option value="Iêmen">Iêmen</option>
+                        <option value="Ilhas Marshall">Ilhas Marshall</option>
+                        <option value="Ilhas Salomão">Ilhas Salomão</option>
+                        <option value="Índia">Índia</option>
+                        <option value="Indonésia">Indonésia</option>
+                        <option value="Irã">Irã</option>
+                        <option value="Iraque">Iraque</option>
+                        <option value="Irlanda">Irlanda</option>
+                        <option value="Islândia">Islândia</option>
+                        <option value="Israel">Israel</option>
+                        <option value="Itália">Itália</option>
+                        <option value="Jamaica">Jamaica</option>
+                        <option value="Japão">Japão</option>
+                        <option value="Jordânia">Jordânia</option>
+                        <option value="Kiribati">Kiribati</option>
+                        <option value="Kuwait">Kuwait</option>
+                        <option value="Laos">Laos</option>
+                        <option value="Lesoto">Lesoto</option>
+                        <option value="Letônia">Letônia</option>
+                        <option value="Líbano">Líbano</option>
+                        <option value="Libéria">Libéria</option>
+                        <option value="Líbia">Líbia</option>
+                        <option value="Liechtenstein">Liechtenstein</option>
+                        <option value="Lituânia">Lituânia</option>
+                        <option value="Luxemburgo">Luxemburgo</option>
+                        <option value="Macedônia do Norte">Macedônia do Norte</option>
+                        <option value="Madagascar">Madagascar</option>
+                        <option value="Malásia">Malásia</option>
+                        <option value="Malaui">Malaui</option>
+                        <option value="Maldivas">Maldivas</option>
+                        <option value="Mali">Mali</option>
+                        <option value="Malta">Malta</option>
+                        <option value="Marrocos">Marrocos</option>
+                        <option value="Maurícia">Maurícia</option>
+                        <option value="Mauritânia">Mauritânia</option>
+                        <option value="México">México</option>
+                        <option value="Mianmar">Mianmar</option>
+                        <option value="Micronésia">Micronésia</option>
+                        <option value="Moçambique">Moçambique</option>
+                        <option value="Moldávia">Moldávia</option>
+                        <option value="Mônaco">Mônaco</option>
+                        <option value="Mongólia">Mongólia</option>
+                        <option value="Montenegro">Montenegro</option>
+                        <option value="Namíbia">Namíbia</option>
+                        <option value="Nauru">Nauru</option>
+                        <option value="Nepal">Nepal</option>
+                        <option value="Nicarágua">Nicarágua</option>
+                        <option value="Níger">Níger</option>
+                        <option value="Nigéria">Nigéria</option>
+                        <option value="Noruega">Noruega</option>
+                        <option value="Nova Zelândia">Nova Zelândia</option>
+                        <option value="Omã">Omã</option>
+                        <option value="Palau">Palau</option>
+                        <option value="Panamá">Panamá</option>
+                        <option value="Papua Nova Guiné">Papua Nova Guiné</option>
+                        <option value="Paquistão">Paquistão</option>
+                        <option value="Paraguai">Paraguai</option>
+                        <option value="Peru">Peru</option>
+                        <option value="Polônia">Polônia</option>
+                        <option value="Portugal">Portugal</option>
+                        <option value="Quênia">Quênia</option>
+                        <option value="Quirguistão">Quirguistão</option>
+                        <option value="Reino Unido">Reino Unido</option>
+                        <option value="República Centro-Africana">República Centro-Africana</option>
+                        <option value="República Dominicana">República Dominicana</option>
+                        <option value="Romênia">Romênia</option>
+                        <option value="Ruanda">Ruanda</option>
+                        <option value="Rússia">Rússia</option>
+                        <option value="Samoa">Samoa</option>
+                        <option value="Santa Lúcia">Santa Lúcia</option>
+                        <option value="São Cristóvão e Neves">São Cristóvão e Neves</option>
+                        <option value="São Marinho">São Marinho</option>
+                        <option value="São Tomé e Príncipe">São Tomé e Príncipe</option>
+                        <option value="São Vicente e Granadinas">São Vicente e Granadinas</option>
+                        <option value="Seicheles">Seicheles</option>
+                        <option value="Senegal">Senegal</option>
+                        <option value="Serra Leoa">Serra Leoa</option>
+                        <option value="Sérvia">Sérvia</option>
+                        <option value="Singapura">Singapura</option>
+                        <option value="Síria">Síria</option>
+                        <option value="Somália">Somália</option>
+                        <option value="Sri Lanka">Sri Lanka</option>
+                        <option value="Sudão do Sul">Sudão do Sul</option>
+                        <option value="Sudão">Sudão</option>
+                        <option value="Suécia">Suécia</option>
+                        <option value="Suíça">Suíça</option>
+                        <option value="Suriname">Suriname</option>
+                        <option value="Tadjiquistão">Tadjiquistão</option>
+                        <option value="Tailândia">Tailândia</option>
+                        <option value="Taiwan">Taiwan</option>
+                        <option value="Tanzânia">Tanzânia</option>
+                        <option value="Tchéquia">Tchéquia</option>
+                        <option value="Timor-Leste">Timor-Leste</option>
+                        <option value="Togo">Togo</option>
+                        <option value="Tonga">Tonga</option>
+                        <option value="Trinidad e Tobago">Trinidad e Tobago</option>
+                        <option value="Tunísia">Tunísia</option>
+                        <option value="Turcomenistão">Turcomenistão</option>
+                        <option value="Turquia">Turquia</option>
+                        <option value="Tuvalu">Tuvalu</option>
+                        <option value="Ucrânia">Ucrânia</option>
+                        <option value="Uganda">Uganda</option>
+                        <option value="Uruguai">Uruguai</option>
+                        <option value="Uzbequistão">Uzbequistão</option>
+                        <option value="Vanuatu">Vanuatu</option>
+                        <option value="Vaticano">Vaticano</option>
+                        <option value="Venezuela">Venezuela</option>
+                        <option value="Vietnã">Vietnã</option>
+                        <option value="Zâmbia">Zâmbia</option>
+                        <option value="Zimbábue">Zimbábue</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" id="lbl_inst"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Instituição de
+                        Destino</label>
+                    <input type="text" name="instituicao_destino" required class="form-control"
+                        placeholder="Ex: Sorbonne"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Início</label>
+                    <input type="date" name="data_inicio" required class="form-control"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Fim</label>
+                    <input type="date" name="data_fim" required class="form-control"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Tipo</label>
+                    <select name="tipo_mobilidade" class="form-control form-select"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                        <option value="Doutorado Sanduíche">Doutorado Sanduíche</option>
+                        <option value="Pos-Doutorado">Pós-Doutorado (Exterior)</option>
+                        <option value="Estágio Sênior">Estágio Sênior</option>
+                        <option value="Co-tutela">Co-tutela</option>
+                        <option value="Dupla Diplomação">Dupla Diplomação</option>
+                        <option value="Visita Técnica">Visita Técnica</option>
+                        <option value="Intercâmbio (Graduação)">Intercâmbio (Graduação)</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label"
+                        style="color: #111827; font-weight: 500; display: block; margin-bottom: 0.5rem;">Agência
+                        (Opcional)</label>
+                    <input type="text" name="agencia_fomento" class="form-control" placeholder="Ex: CAPES-PrInt"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+            </div>
+
+            <div class="d-flex gap-2" style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary"
+                    style="flex: 1; padding: 0.75rem; background-color: var(--primary-color); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Salvar
+                    Registro</button>
+                <button type="button" class="btn btn-secondary"
+                    style="flex: 1; padding: 0.75rem; background-color: #9ca3af; color: white; border: none; border-radius: 0.375rem; cursor: pointer;"
+                    onclick="document.getElementById('mobilidadeModal').style.display='none'">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- MODAL: DADOS SOCIAIS -->
+{% include 'bolsistas/modal_dados_sociais.html' %}
+
+<script>
+    function updateMobLabels() {
+        const fluxo = document.getElementById('mob_tipo_fluxo').value;
+        const lblPais = document.getElementById('lbl_pais');
+        const lblInst = document.getElementById('lbl_inst');
+
+        if (fluxo === 'entrada') {
+            lblPais.innerText = "País de Origem (Instituição Parceira)";
+            lblInst.innerText = "Instituição de Origem (Parceira)";
+        } else {
+            lblPais.innerText = "País de Destino (Exterior)";
+            lblInst.innerText = "Instituição de Destino (Parceira)";
+        }
+    }
+</script>
+{% endif %}
+
+<script>
+    // GLOBAL STATE
+    let currentModalidades = [];
+
+    // DOM ELEMENTS
+    const editalSelect = document.getElementById('edital_select');
+    const modalidadeSelect = document.getElementById('modalidade_select');
+    const dataInicioCurso = document.querySelector('input[name="data_inicio_curso"]');
+    const dataInicioBolsa = document.querySelector('input[name="data_inicio_bolsa"]');
+    const mesesDuracao = document.querySelector('input[name="meses_duracao"]');
+    const dataFimBolsa = document.querySelector('input[name="data_fim_bolsa"]');
+    const isPdseCheckbox = document.getElementById('is_pdse');
+    const pdseFields = document.getElementById('pdse_fields');
+
+    // --- HELPER: MATERNITY FOCUS ---
+    function focusMaternidade() {
+        const section = document.getElementById('section-afastamentos');
+
+        // Open Modal
+        openAfastamentoModal();
+
+        // Pre-select Maternidade
+        setTimeout(() => {
+            const tipoSelect = document.getElementById('afast_tipo');
+            if (tipoSelect) {
+                tipoSelect.value = 'maternidade';
+                tipoSelect.style.border = '2px solid var(--primary-color)';
+                setTimeout(() => tipoSelect.style.border = '1px solid #d1d5db', 2000);
+            }
+        }, 100);
+
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // --- HELPER: TOGGLE PDSE ---
+    function togglePdseFields() {
+        if (isPdseCheckbox && pdseFields) {
+            pdseFields.style.display = isPdseCheckbox.checked ? 'block' : 'none';
+        }
+    }
+
+    // --- HELPER: GET MATERNITY BONUS ---
+
+    // --- HELPER: GET SUSPENSION DURATION ---
+    function getSuspensionDuration() {
+        let suspended = 0;
+        const rows = document.querySelectorAll('#tabela-afastamentos tbody tr');
+        // Fallback if table ID absent, use generic table logic from getMaternityBonus
+        const tables = document.querySelectorAll('table');
+        if (tables.length > 0) {
+            const rows = tables[0].querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length > 2) {
+                    const tipo = cells[0].textContent.trim().toLowerCase();
+                    const duracao = parseInt(cells[2].textContent.trim()) || 0;
+                    if (tipo.includes('trancamento') || tipo.includes('saude') || tipo.includes('pdse')) {
+                        suspended += duracao;
+                    }
+                }
+            });
+        }
+        return suspended;
+    }
+
+    function getMaternityBonus() {
+        let bonus = 0;
+        // Parse table if exists
+        const rows = document.querySelectorAll('#tabela-afastamentos tbody tr'); // ID needs to be added to table? 
+        // Current table has no ID in view! 
+        // Table is inside .form-section. Let's select generic.
+        const tables = document.querySelectorAll('table');
+        if (tables.length > 0) {
+            // Usually the first table in the view
+            const rows = tables[0].querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length > 2) {
+                    const tipo = cells[0].textContent.trim().toLowerCase();
+                    const duracao = parseInt(cells[2].textContent.trim()) || 0;
+                    if (tipo.includes('maternidade')) {
+                        bonus += Math.min(duracao, 6);
+                    }
+                }
+            });
+        }
+        return Math.min(bonus, 6);
+    }
+
+    // --- API: LOAD MODALIDADES ---
+    async function loadModalidades(editalId, selectedId = null) {
+        if (!modalidadeSelect) return;
+
+        modalidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+        modalidadeSelect.disabled = true;
+
+        try {
+            const response = await fetch(`/api/modalidades/${editalId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 400) {
+                    // CSRF or Session Error -> Trigger Global Recovery Modal
+                    const data = await response.json();
+
+                    if (window.handleSessionExpired) {
+                        window.handleSessionExpired(function () {
+                            // Retry the exact same call
+                            loadModalidades(editalId, selectedId);
+                        });
+                    } else {
+                        alert(`Sessão Expirada!\n\n${data.message}\n\nPor favor, recarregue a página.`);
+                    }
+
+                    modalidadeSelect.innerHTML = '<option value="">Sessão Restaurada. Tente novamente.</option>';
+                    return;
+                }
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            currentModalidades = data; // Cache
+
+            modalidadeSelect.innerHTML = '<option value="">Selecione...</option>';
+            data.forEach(m => {
+                const max = m.max_meses ? ` (Max: ${m.max_meses} meses)` : '';
+                const option = document.createElement('option');
+                option.value = m.id;
+                option.textContent = `${m.nivel} - Mensal: R$ ${m.valor} - Vagas: ${m.vagas}${max}`;
+                if (selectedId && m.id == selectedId) option.selected = true;
+                modalidadeSelect.appendChild(option);
+            });
+            modalidadeSelect.disabled = false;
+
+            // Trigger logic immediately if data exists
+            calculateSystem();
+
+        } catch (error) {
+            console.error('Erro:', error);
+            modalidadeSelect.innerHTML = '<option value="">Erro ao carregar (Verifique conexão)</option>';
+        }
+    }
+
+    // --- CORE LOGIC: CALCULATE & VALIDATE ---
+    function calculateSystem() {
+        // Clear previous warnings
+        if (typeof warningDiv !== 'undefined') warningDiv.style.display = 'none';
+
+        // Update Visibility
+
+        // --- 1. DEFINIÇÕES DE ENTRADA (Inputs) ---
+        // Data de Início do Curso (IC)
+        if (!dataInicioCurso || !dataInicioCurso.value) return;
+        const IC = new Date(dataInicioCurso.value + 'T00:00:00');
+
+        // Data de Início da Bolsa (IB)
+        if (!dataInicioBolsa || !dataInicioBolsa.value) return;
+        const IB = new Date(dataInicioBolsa.value + 'T00:00:00');
+
+        const modId = modalidadeSelect ? modalidadeSelect.value : null;
+        const selectedMod = currentModalidades.find(m => m.id == modId);
+
+        // Modalidade Cadastrada (M) - Payment Limit (Regra 6)
+        const M = (selectedMod && selectedMod.max_meses) ? selectedMod.max_meses : 0;
+
+        // AL: Academic Limit (Regra 5) - Decoupled Logic
+        let AcademicLimit = M; // Fallback
+        if (selectedMod && selectedMod.nivel) {
+            const n = selectedMod.nivel.toUpperCase();
+            if (n.includes('GRADUA') || n.includes('INICIA')) AcademicLimit = 60; // 5 Years
+            else if (n.includes('MESTR') || n.includes('MASTER')) AcademicLimit = 24;
+            else if (n.includes('DOUTOR') || n.includes('DOCTOR')) AcademicLimit = 48;
+        }
+
+        // Meses de Duração (D) - Input Manual
+        let D = parseInt(mesesDuracao.value) || 0;
+
+        // --- 2. REGRAS DE NEGÓCIO E TRAVAS ---
+
+        // Precedência Acadêmica: IB nunca pode ser anterior a IC.
+        // Precedência Acadêmica: IB nunca pode ser anterior a IC.
+        // Validar apenas se anos forem razoáveis (evitar erro durante digitação manual de ano '0024')
+        if (IB.getFullYear() > 1900 && IC.getFullYear() > 1900) {
+            if (IB < IC) {
+                // Check if active element is the input (still typing/interacting?)
+                // 'change' event fires on commit.
+                alert('Atenção: A Bolsa não pode iniciar antes do Curso.\n Ajuste para a data de início do curso ou posterior.');
+                dataInicioBolsa.value = dataInicioCurso.value;
+                return calculateSystem();
+            }
+        }
+
+        // Limite de Vínculo (Data Final Fatal)
+        // Cálculo: Data Limite = IC + (M meses) - 1 mês.
+        // OBS: JS handles month overflow. (e.g. 01/05 + 24m -> 01/05.. -1d -> 30/04?)
+        // Spec says: "mês anterior ao mês de aniversário".
+        // Example: IC 01/05/2025 + 24m = 01/05/2027. - 1 day??
+        // Spec Example: IC 01/05/2025 -> Limit 01/04/2027.
+        // Wait. 01/05/25 to 01/05/27 is exact 2 years.
+        // "encerr-se no mês anterior". => April 2027.
+        // But is it end of April or 1st of April?
+        // Spec Example says: "Data Limite imutável é 01/04/2027".
+        // That is exactly (IC + M months) - 1 month.
+        // Let's trust the formula: IC + (M-1) months.
+
+        // Extensions (Maternity/Suspension) push the FATAL LIMIT.
+        const bonus = getMaternityBonus();
+        const suspension = getSuspensionDuration();
+        const totalExtensions = bonus + suspension;
+
+        const AL_extended = AcademicLimit + totalExtensions;
+
+        // LimitDate = IC + (AL_extended - 1) months.
+        const LimitDate = new Date(IC);
+        LimitDate.setMonth(LimitDate.getMonth() + (AL_extended - 1));
+
+        // Spec says "01/04/2027". So we keep the day?
+        // If IC is 01/05, Limit is 01/04. Correct.
+        // What if IC is 15/05? Limit is 15/04?
+        // Assumption: Yes, preserves day.
+
+        const LimitDateStr = LimitDate.toISOString().split('T')[0];
+
+        // --- 3. LÓGICA DE CÁLCULO ---
+
+        // Passo A (Cálculo do Saldo de Meses)
+        // Saldo = Meses entre IB e LimitDate.
+        // Logic: (LimitDate - IB) in months.
+        // Simplest: (LimitYear - IBYear)*12 + (LimitMonth - IBMonth).
+        // Plus 1?
+        // Example 1: IB 01/05/25. Limit 01/04/27.
+        // Diff = (2027-2025)*12 + (4-5) = 24 - 1 = 23.
+        // Spec Scenario 1 says: "Se IB = 01/05/2025, o saldo é de 24 meses." 
+        // My diff formula gave 23.
+        // So the formula for Saldo must be Inclusive: Diff + 1.
+
+        let diffMonths = (LimitDate.getFullYear() - IB.getFullYear()) * 12 + (LimitDate.getMonth() - IB.getMonth());
+
+        // Adjust for days?
+        // If LimitDay < IBDay? 
+        // Spec examples use 01.
+        // Let's assume inclusive diff.
+        // Saldo = Diff + 1.
+        let Saldo = diffMonths + 1;
+
+        // Correction from Spec Scenario 1:
+        // IC 01/05/25. M=24. Limit=01/04/27. IB=01/05/25.
+        // Diff = 23. Saldo = 24.
+
+        // Scenario 2: IB 01/06/25. Limit 01/04/27.
+        // Diff = (2027-2025)*12 + (4-6) = 24 - 2 = 22.
+        // Spec says Saldo = 23.
+        // So yes, Formula is Diff + 1.
+
+        // Sanity Check: If IB > LimitDate? Saldo <= 0.
+        if (Saldo < 0) Saldo = 0;
+
+        // Also Saldo cannot exceed M (Modalidade Limit)?? 
+        // Spec says: "O sistema deve bloquear se D for maior que o limite da Modalidade (M)."
+        // So D <= min(Saldo, M).
+        // Actually M_extended (if we allow maternity to increase duration?).
+        // Spec example didn't mention maternity, but we must keep it supported.
+        // Payment Cap: Cannot exceed Modality Max + Maternity
+        const PaymentCap = M + bonus;
+
+        // Effective Max Duration for Field (Constraint 1: Balance, Constraint 2: Payment Cap)
+        let ConstraintBalance = Saldo;
+        let ConstraintPayment = PaymentCap;
+
+        let StandardMax = Math.min(ConstraintBalance, ConstraintPayment);
+
+        // CHECK EXCEPTION: Previsão de Defesa
+        const previsaoInput = document.querySelector('input[name="previsao_defesa"]');
+        let PrevisãoDate = null;
+        if (previsaoInput && previsaoInput.value) {
+            PrevisãoDate = new Date(previsaoInput.value + 'T00:00:00');
+        }
+
+        let ExceptionGranted = false;
+
+        // Check if (IB + D) <= Previsão
+        let valD = D > 0 ? D : 1;
+        const ProposedEnd = new Date(IB);
+        ProposedEnd.setMonth(ProposedEnd.getMonth() + (valD - 1) + suspension);
+
+        if (PrevisãoDate) {
+            const endY = ProposedEnd.getFullYear();
+            const endM = ProposedEnd.getMonth();
+            const prevY = PrevisãoDate.getFullYear();
+            const prevM = PrevisãoDate.getMonth();
+
+            if (endY < prevY || (endY === prevY && endM <= prevM)) {
+                ExceptionGranted = true;
+            }
+        }
+
+        let MaxD = StandardMax;
+        if (ExceptionGranted) {
+            MaxD = ConstraintPayment; // Only limited by payment cap
+        }
+
+        // Passo B (Validação do Input)
+        // User inputs D manually.
+        // If D > Saldo -> Block / Warn.
+        // If D > M -> Block / Warn.
+
+        // We set the Input Max
+        mesesDuracao.max = MaxD;
+
+        // If running validation (on input change or load)
+        const isManualChange = (document.activeElement === mesesDuracao);
+
+        if (D > MaxD) {
+            let msg = `Atenção: A duração máxima permitida (${MaxD} meses) foi excedida.\n`;
+            msg += `Limites:\n - Acadêmico (Saldo): ${ConstraintBalance}\n - Pagamentos (Modalidade): ${ConstraintPayment}`;
+
+            if (PrevisãoDate && !ExceptionGranted) {
+                msg += `\n\nA Previsão de Defesa (${previsaoInput.value}) não cobre o período solicitado.`;
+            } else if (!PrevisãoDate && ConstraintBalance < D) {
+                msg += `\n\n(Dica: Se houver extensão autorizada, preencha a 'Previsão de Defesa' para liberar o prazo).`;
+            }
+
+            alert(msg);
+            D = MaxD;
+            mesesDuracao.value = D > 0 ? D : '';
+        }
+
+        // Passo C (Resultado Final: Fim da Bolsa)
+        // Fórmula: Fim da Bolsa = IB + (D - 1) meses.
+        // Example: IB 01/05/25 + (24-1=23)m = 01/04/27. Matches.
+        // Example: IB 01/06/25 + (12-1=11)m = 01/05/26. Matches Spec.
+
+        if (D > 0) {
+            const FimBolsa = new Date(IB);
+            FimBolsa.setMonth(FimBolsa.getMonth() + (D - 1));
+            dataFimBolsa.value = FimBolsa.toISOString().split('T')[0];
+
+            // Note: Suspension Logic Update
+            // The user spec "End = IB + (D-1)" is for ACTIVE PAYMENT MONTHS?
+            // "Variabilidade da Bolsa: O número de pagamentos é variável".
+            // If there is a suspension, the Payments pause, but the End Date moves?
+            // User spec doesn't explicitly mention suspension handling in the formula C.
+            // "Trancamento pauses the counter".
+            // So, "Fim da Bolsa" (Calendar Date) should likely encompass the suspension period.
+            // Formula C calculates the "Last Payment Month".
+            // If suspended, the "Last Calendar Month" is later.
+            // Let's stick to the Spec C for "Fim da Bolsa" implies the theoretical end of payments?
+            // OR checks "Limit Date".
+
+            // Let's refine:
+            // If 24 payments. 6m suspension.
+            // Real time elapsed = 30m.
+            // Fim da Bolsa (Calendar) = IB + 30m?
+            // The spec formula C: IB + (D-1). This seems to ignore suspension.
+            // BUT, if we blindly follow spec C, we violate the "Trancamento" rule from before.
+            // I will ADD suspension to result C to maintain data integrity.
+            // FimBolsa = IB + (D-1) + Suspension.
+
+            FimBolsa.setMonth(FimBolsa.getMonth() + suspension);
+            dataFimBolsa.value = FimBolsa.toISOString().split('T')[0];
+        }
+
+        // UI Feedback
+        // If necessary, show Limit Date on screen?
+        console.log(`IC: ${IC.toLocaleDateString()}, Limit: ${LimitDate.toLocaleDateString()}, Balance: ${Saldo}, MaxD: ${MaxD}`);
+    }
+
+    // --- EVENT LISTENERS ---
+    if (editalSelect) {
+        editalSelect.addEventListener('change', function () {
+            if (this.value) {
+                loadModalidades(this.value);
+                const selectedOption = this.options[this.selectedIndex];
+                const regrasContainer = document.getElementById('regras_edital_container');
+                const regrasTexto = document.getElementById('regras_edital_texto');
+                if (regrasContainer && selectedOption) {
+                    const regras = selectedOption.getAttribute('data-regras');
+                    if (regras && regras.trim() !== '') {
+                        regrasTexto.innerText = regras;
+                        regrasContainer.style.display = 'block';
+                    } else {
+                        regrasContainer.style.display = 'none';
+                    }
+                }
+            } else {
+                const regrasContainer = document.getElementById('regras_edital_container');
+                if (regrasContainer) regrasContainer.style.display = 'none';
+            }
+        });
+    }
+
+    if (modalidadeSelect) modalidadeSelect.addEventListener('change', calculateSystem);
+    if (dataInicioBolsa) dataInicioBolsa.addEventListener('change', calculateSystem);
+    // Previsão Defesa needs to trigger check too
+    const previsaoInput = document.querySelector('input[name="previsao_defesa"]');
+    if (previsaoInput) previsaoInput.addEventListener('change', calculateSystem);
+
+    if (dataFimBolsa) dataFimBolsa.addEventListener('change', calculateSystem);
+    if (mesesDuracao) mesesDuracao.addEventListener('input', calculateSystem);
+
+    // Initial Load Logic
+    window.addEventListener('DOMContentLoaded', () => {
+        {% if bolsista %}
+        if (editalSelect && editalSelect.value) {
+            var rawId = "{{ bolsista.modalidade_id }}";
+            if (rawId && rawId !== 'None') {
+                loadModalidades(editalSelect.value, rawId);
+            } else {
+                loadModalidades(editalSelect.value, null);
+            }
+
+            // Check for rules on load
+            const selectedOption = editalSelect.options[editalSelect.selectedIndex];
+            const regrasContainer = document.getElementById('regras_edital_container');
+            const regrasTexto = document.getElementById('regras_edital_texto');
+            if (regrasContainer && selectedOption) {
+                const regras = selectedOption.getAttribute('data-regras');
+                if (regras && regras.trim() !== '') {
+                    regrasTexto.innerText = regras;
+                    regrasContainer.style.display = 'block';
+                }
+            }
+        }
+        {% endif %}
+    });
+</script>
+
+<script>
+    // [NEW V10.9] Refined Level Match Strategy
+    const isLevelCompatible = (progLevels, requiredLevel) => {
+        if (!requiredLevel) return true;
+        
+        const matches = {
+            'M': ['M', 'MP'], // Mestrado Acadêmico aceita Profissional
+            'D': ['D', 'DP'], // Doutorado Acadêmico aceita Profissional
+            'MP': ['MP'],     // Se o edital for estrito MP, só aceita MP
+            'DP': ['DP']      // Se o edital for estrito DP, só aceita DP
+        };
+
+        const validLevels = matches[requiredLevel] || [requiredLevel];
+        return progLevels.some(level => validLevels.includes(level));
+    };
+
+    function filterPrograms() {
+        // 1. Get Filters
+        const campusFilter = document.getElementById('campus_filter');
+        const campusId = campusFilter ? campusFilter.value : "";
+        const modalidadeSelect = document.getElementById('modalidade_select');
+        const progSelect = document.getElementById('programa_id');
+
+        if (!progSelect || progSelect.tagName !== 'SELECT') return;
+
+        // 2. Determine Required Level from Modality
+        let requiredLevel = null;
+        if (modalidadeSelect && modalidadeSelect.value && typeof currentModalidades !== 'undefined') {
+            const selectedMod = currentModalidades.find(m => m.id == modalidadeSelect.value);
+            if (selectedMod) {
+                const n = (selectedMod.nivel || "").toUpperCase();
+                if (n.includes('MESTRADO PROFISSIONAL')) requiredLevel = 'MP';
+                else if (n.includes('DOUTORADO PROFISSIONAL')) requiredLevel = 'DP';
+                else if (n.includes('MESTRADO')) requiredLevel = 'M';
+                else if (n.includes('DOUTORADO')) requiredLevel = 'D';
+            }
+        }
+
+        const options = Array.from(progSelect.querySelectorAll('option')).filter(opt => opt.value);
+        
+        // Group options by code to handle duplicates
+        const groups = {};
+        options.forEach(opt => {
+            const code = opt.dataset.codigo;
+            if (!groups[code]) groups[code] = { options: [] };
+            
+            const progCampus = opt.dataset.campusId;
+            const progLevels = (opt.dataset.niveis || '').split(',').map(s => s.trim());
+            const isMulticampi = opt.dataset.multicampi === 'true';
+            const relatedCampuses = JSON.parse(opt.dataset.relatedCampuses || '[]');
+
+            // VISIBILITY CHECK (Broad)
+            const matchCampusBroad = !campusId || progCampus === campusId || (isMulticampi && relatedCampuses.includes(parseInt(campusId)));
+            const matchLevel = isLevelCompatible(progLevels, requiredLevel);
+
+            if (matchCampusBroad && matchLevel) {
+                opt.dataset.isMatch = "true";
+                opt.dataset.isPrimary = (progCampus === campusId) ? "true" : "false";
+                groups[code].options.push(opt);
+            } else {
+                opt.dataset.isMatch = "false";
+                opt.style.display = 'none';
+            }
+        });
+
+        // DEDUPLICATION: For each group, show only the best representative
+        Object.values(groups).forEach(group => {
+            if (group.options.length === 0) return;
+
+            // Priority: 1. Record that matches selected campus exactly | 2. First record available
+            const best = group.options.find(o => o.dataset.isPrimary === "true") || group.options[0];
+            
+            best.style.display = '';
+            // Hide all others in the group
+            group.options.forEach(o => {
+                if (o !== best) o.style.display = 'none';
+            });
+        });
+
+        // Validation: If selected option is now hidden, reset value
+        const currentSelected = progSelect.options[progSelect.selectedIndex];
+        if (currentSelected && currentSelected.value && currentSelected.style.display === 'none') {
+            progSelect.value = "";
+        }
+    }
+
+    // Attach to Modality Change too
+    document.addEventListener('DOMContentLoaded', () => {
+        filterPrograms();
+        // Add listeners
+        const campus = document.getElementById('campus_filter');
+        const mod = document.getElementById('modalidade_select');
+
+        if (campus) campus.addEventListener('change', filterPrograms);
+        if (mod) mod.addEventListener('change', filterPrograms);
+    });
+</script>
+
+<!-- CAMPUS MANAGEMENT MODAL -->
+<div id="campusModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; margin: 10% auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="margin-top:0; color:var(--primary-color);">Nova Instituição / Campus</h3>
+        <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">O local será disponibilizado imediatamente na listagem.</p>
+        <form id="campusForm" onsubmit="event.preventDefault(); saveCampus();">
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Instituição Sede (Ex: UFPR, USP, PUC)</label>
+                <input type="text" id="campus_instituicao"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Nome do Campus (Ex: Rebouças, Sede, Matriz)</label>
+                <input type="text" id="campus_nome"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Cidade (Ex: Curitiba)</label>
+                <input type="text" id="campus_cidade"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Sigla Automática / Interna (Ex: UFPR-CWB)</label>
+                <input type="text" id="campus_sigla"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" onclick="closeCampusModal()" class="btn"
+                    style="background: #e5e7eb; color: #374151;">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Instituição</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- PROGRAM MANAGEMENT MODAL -->
+<div id="programModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; margin: 10% auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 id="modalTitle" style="margin-top:0; color:var(--primary-color);">Novo Programa</h3>
+        <form id="programForm" onsubmit="event.preventDefault(); saveProgram();">
+            <input type="hidden" id="prog_id">
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Campus</label>
+                <select id="prog_campus"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+                    {% for c in campuses %}
+                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Nome do
+                    Programa</label>
+                <input type="text" id="prog_nome"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Sigla (Ex:
+                    PPGEM)</label>
+                <input type="text" id="prog_sigla"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Código Sucupira
+                    (Opcional)</label>
+                <input type="text" id="prog_codigo"
+                    style="width: 100%; padding: 0.5rem; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" onclick="closeProgramModal()" class="btn"
+                    style="background: #e5e7eb; color: #374151;">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Programa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCampusModal() {
+        document.getElementById('campusModal').style.display = 'block';
+        document.getElementById('campusForm').reset();
+    }
+    
+    function closeCampusModal() {
+        document.getElementById('campusModal').style.display = 'none';
+    }
+    
+    async function saveCampus() {
+        const data = {
+            instituicao: document.getElementById('campus_instituicao').value,
+            cidade: document.getElementById('campus_cidade').value,
+            nome: document.getElementById('campus_nome').value,
+            sigla: document.getElementById('campus_sigla').value
+        };
+
+        try {
+            const res = await fetch('/api/campus', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                // Update NAPI Institution Dropdown
+                const instSelect = document.getElementById('instituicao_napi');
+                if (instSelect) {
+                    const exists = Array.from(instSelect.options).some(opt => opt.value === json.instituicao);
+                    if (!exists) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = json.instituicao;
+                        newOpt.textContent = json.instituicao;
+                        instSelect.appendChild(newOpt);
+                    }
+                    instSelect.value = json.instituicao;
+                }
+
+                // Update Campus Filter
+                const campusFilter = document.getElementById('campus_filter');
+                const progCampus = document.getElementById('prog_campus');
+                
+                const newOptionHTML = `<option value="${json.id}">${json.instituicao} - ${json.nome} (${json.sigla})</option>`;
+                
+                if (campusFilter) campusFilter.insertAdjacentHTML('beforeend', newOptionHTML);
+                if (progCampus) progCampus.insertAdjacentHTML('beforeend', newOptionHTML);
+                
+                if (campusFilter) campusFilter.value = json.id; // auto select
+                closeCampusModal();
+                if (window.filterPrograms) filterPrograms(); // Run filter to visually update courses
+            } else {
+                alert('Erro: ' + json.error);
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Erro de conexão.');
+        }
+    }
+    function openProgramModal() {
+        document.getElementById('programModal').style.display = 'block';
+
+        // Check Main Select
+        const mainSelect = document.getElementById('programa_id');
+        if (mainSelect.value) {
+            editProgram(mainSelect.value);
+        } else {
+            // Create Mode
+            document.getElementById('programForm').reset();
+            document.getElementById('prog_id').value = '';
+            document.getElementById('modalTitle').innerText = 'Novo Programa';
+
+            // Auto-select current campus filter
+            const currentCampus = document.getElementById('campus_filter').value;
+            if (currentCampus) document.getElementById('prog_campus').value = currentCampus;
+        }
+    }
+
+    async function editProgram(id) {
+        document.getElementById('modalTitle').innerText = 'Editar Programa';
+        try {
+            const res = await fetch(`/api/programas/${id}`);
+            const data = await res.json();
+            if (data.id) {
+                document.getElementById('prog_id').value = data.id;
+                document.getElementById('prog_campus').value = data.campus_id;
+                document.getElementById('prog_nome').value = data.nome;
+                document.getElementById('prog_sigla').value = data.sigla;
+                document.getElementById('prog_codigo').value = data.codigo || '';
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Erro ao carregar dados do programa.');
+        }
+    }
+
+    function closeProgramModal() {
+        document.getElementById('programModal').style.display = 'none';
+    }
+
+    async function saveProgram() {
+        const id = document.getElementById('prog_id').value;
+        const data = {
+            campus_id: document.getElementById('prog_campus').value,
+            nome: document.getElementById('prog_nome').value,
+            sigla: document.getElementById('prog_sigla').value,
+            codigo: document.getElementById('prog_codigo').value
+        };
+
+        const url = id ? `/api/programas/${id}` : '/api/programas';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                // Update Select
+                const select = document.getElementById('programa_id');
+                if (select && select.tagName === 'SELECT') {
+                    let option = select.querySelector(`option[value="${json.id}"]`);
+
+                    if (!option) {
+                        option = document.createElement('option');
+                        option.value = json.id;
+                        select.appendChild(option);
+                    }
+
+                    option.textContent = `${json.nome} (${json.sigla}) - ${json.campus_nome || 'Novo'}`;
+                    option.dataset.campusId = json.campus_id;
+                    option.dataset.codigo = json.id;
+                    option.dataset.niveis = "M, D, MP, DP, G";
+                    option.dataset.multicampi = "false";
+
+                    // Select it
+                    select.value = json.id;
+                } else if (select) {
+                    // Fallback for hidden input
+                    select.value = json.id;
+                }
+
+                // Trigger Filter
+                if (window.filterPrograms) window.filterPrograms();
+
+                alert('Programa salvo com sucesso!');
+                closeProgramModal();
+            } else {
+                alert('Erro: ' + json.error);
+            }
+        } catch (e) {
+            alert('Erro de conexão: ' + e);
+        }
+    }
+</script>
+<!-- MODAL: ATIVAÇÃO GOVERNANÇA -->
+{% if bolsista and bolsista.id and bolsista.status_governanca == 'PENDENTE' %}
+<div id="ativacaoModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; backdrop-filter: blur(4px);">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 12px; max-width: 450px; margin: 10% auto; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <h3 style="margin-top:0; color:#059669; display: flex; align-items: center; gap: 0.5rem;">
+            {{ icon('check-circle', size=24) }} Ativar Bolsa NAPI
+        </h3>
+        <p style="color: #4b5563; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            A bolsa será ativada e a vigência será ajustada conforme a <strong>Data de Liberação da Fundação Araucária</strong>.
+        </p>
+        
+        <form action="{{ url_for('bolsistas.ativar', id=bolsista.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Data de Liberação (Araucária)</label>
+                <input type="date" name="data_liberacao" required onfocus="this.showPicker()"
+                    style="width: 100%; padding: 0.75rem; border:1px solid #d1d5db; border-radius:6px; font-size: 1rem;">
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="button" onclick="closeAtivacaoModal()" class="btn"
+                    style="flex: 1; background: #f3f4f6; color: #374151; padding: 0.75rem; border: none; border-radius: 6px;">Cancelar</button>
+                <button type="submit" class="btn"
+                    style="flex: 1; background: #059669; color: white; padding: 0.75rem; border: none; border-radius: 6px; font-weight: 600;">Confirmar Ativação</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openAtivacaoModal() {
+        document.getElementById('ativacaoModal').style.display = 'block';
+    }
+    function closeAtivacaoModal() {
+        document.getElementById('ativacaoModal').style.display = 'none';
+    }
+</script>
+{% endif %}
+
+</body>
+</html>
+<!-- SOCIAL DATA MODAL -->
+<div id="socialModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2500;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 900px; margin: 2% auto; position: relative; max-height: 90vh; overflow-y: auto;">
+
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
+            <h2 style="margin: 0; color: var(--primary-color);">📊 Coleta de Dados Socioeconômicos</h2>
+            <button onclick="closeSocialModal()"
+                style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="socialForm" onsubmit="event.preventDefault(); saveSocialData();">
+
+            <!-- ABAS DE NAVEGAÇÃO -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb;">
+                <button type="button" class="tab-btn active" onclick="switchTab(1)"
+                    style="padding: 1rem; background: none; border: none; border-bottom: 3px solid var(--primary-color); font-weight: bold; cursor: pointer;">1.
+                    Identidade</button>
+                <button type="button" class="tab-btn" onclick="switchTab(2)"
+                    style="padding: 1rem; background: none; border: none; color: #6b7280; cursor: pointer;">2.
+                    Indígenas</button>
+                <button type="button" class="tab-btn" onclick="switchTab(3)"
+                    style="padding: 1rem; background: none; border: none; color: #6b7280; cursor: pointer;">3.
+                    Trajetória</button>
+                <button type="button" class="tab-btn" onclick="switchTab(4)"
+                    style="padding: 1rem; background: none; border: none; color: #6b7280; cursor: pointer;">4.
+                    Permanência</button>
+            </div>
+
+            <!-- BLOCO 1: IDENTIDADE -->
+            <div id="tab-1" class="tab-content">
+                <h3 style="margin-bottom: 1.5rem; color: #374151;">Bloco 1: Identificação Étnico-Racial e de Gênero</h3>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Como você se autodeclara em
+                        relação à sua cor ou raça?</label>
+                    <select id="raca_cor" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Branca">Branca</option>
+                        <option value="Preta">Preta</option>
+                        <option value="Parda">Parda</option>
+                        <option value="Amarela">Amarela</option>
+                        <option value="Indígena">Indígena</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Identidade de Gênero</label>
+                    <select id="genero_identidade" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Mulher Cis">Mulher (Cis)</option>
+                        <option value="Mulher Trans">Mulher (Trans)</option>
+                        <option value="Homem Cis">Homem (Cis)</option>
+                        <option value="Homem Trans">Homem (Trans)</option>
+                        <option value="Não-binário">Não-binário</option>
+                        <option value="Outros">Outros</option>
+                        <option value="Prefere não declarar">Prefere não declarar</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Orientação Sexual <span
+                            style="font-weight: normal; color: #6b7280;">(opcional)</span></label>
+                    <select id="orientacao_sexual" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Heterossexual">Heterossexual</option>
+                        <option value="Homossexual">Homossexual</option>
+                        <option value="Bissexual">Bissexual</option>
+                        <option value="Outros">Outros</option>
+                        <option value="Prefere não declarar">Prefere não declarar</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Você se considera uma pessoa
+                        com deficiência (PcD)?</label>
+                    <div style="display: flex; gap: 2rem; margin-bottom: 0.5rem;">
+                        <label><input type="radio" name="pcd" value="false" checked onclick="togglePcd(false)">
+                            Não</label>
+                        <label><input type="radio" name="pcd" value="true" onclick="togglePcd(true)"> Sim</label>
+                    </div>
+                    <input type="text" id="pcd_detalhe" placeholder="Especificar (Decreto 3.298/99)"
+                        style="display: none; width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 0.5rem;">
+                </div>
+            </div>
+
+            <!-- BLOCO 2: INDÍGENAS E QUILOMBOLAS -->
+            <div id="tab-2" class="tab-content" style="display: none;">
+                <h3 style="margin-bottom: 1.5rem; color: #374151;">Bloco 2: Povos Indígenas e Comunidades Tradicionais
+                </h3>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Qual o seu povo/etnia de
+                        origem?</label>
+                    <input type="text" id="etnia_origem" placeholder="Ex: Kaingang, Guarani"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Vínculo com comunidade ou
+                        terra indígena?</label>
+                    <select id="vinculo_comunidade" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Reside na terra">Sim, resido na terra indígena</option>
+                        <option value="Reside fora para estudo">Sim, possuo vínculo, mas resido fora para fins de estudo
+                        </option>
+                        <option value="Não possui vínculo">Não possuo vínculo direto atual</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Qual a sua língua
+                        materna?</label>
+                    <input type="text" id="lingua_materna"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e5e7eb;">
+                <h4 style="margin-bottom: 1rem; color: #374151;">Comunidades Quilombolas</h4>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Você se autodeclara
+                        quilombola?</label>
+                    <div style="display: flex; gap: 2rem;">
+                        <label><input type="radio" name="is_quilombola" value="false" checked
+                                onclick="toggleQuilombola(false)"> Não</label>
+                        <label><input type="radio" name="is_quilombola" value="true" onclick="toggleQuilombola(true)">
+                            Sim</label>
+                    </div>
+                </div>
+
+                <div id="quilombola_detail" style="display: none; margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nome da Comunidade
+                        Quilombola:</label>
+                    <input type="text" id="comunidade_quilombola" placeholder="Ex: Comunidade João Surá"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+            </div>
+
+            <!-- BLOCO 3: TRAJETÓRIA -->
+            <div id="tab-3" class="tab-content" style="display: none;">
+                <h3 style="margin-bottom: 1.5rem; color: #374151;">Bloco 3: Trajetória Educacional e Socioeconômica</h3>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Ensino Médio concluído
+                        em:</label>
+                    <select id="ensino_medio_origem" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Escola Pública">Integralmente em escola pública</option>
+                        <option value="Privada com Bolsa">Escola privada com bolsa integral</option>
+                        <option value="Privada sem Bolsa">Escola privada sem bolsa</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Beneficiário de cotas em
+                        níveis anteriores?</label>
+                    <div style="display: flex; gap: 2rem;">
+                        <label><input type="radio" name="cotista_anterior" value="true"> Sim</label>
+                        <label><input type="radio" name="cotista_anterior" value="false"> Não</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Renda familiar per capita
+                        bruta mensal:</label>
+                    <select id="renda_per_capita" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Até 0,5 SM">Até 0,5 salário mínimo</option>
+                        <option value="Entre 0,5 e 1 SM">Entre 0,5 e 1 salário mínimo</option>
+                        <option value="Entre 1 e 1,5 SM">Entre 1 e 1,5 salário mínimo</option>
+                        <option value="Superior a 1,5 SM">Superior a 1,5 salário mínimo</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Você é a primeira pessoa da
+                        sua família a cursar ensino superior?</label>
+                    <div style="display: flex; gap: 2rem;">
+                        <label><input type="radio" name="primeira_geracao_superior" value="true"> Sim</label>
+                        <label><input type="radio" name="primeira_geracao_superior" value="false"> Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCO 4: PERMANÊNCIA -->
+            <div id="tab-4" class="tab-content" style="display: none;">
+                <h3 style="margin-bottom: 1.5rem; color: #374151;">Bloco 4: Indicadores de Permanência</h3>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Principal fonte de renda
+                        atual:</label>
+                    <select id="fonte_renda" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Trabalho">Trabalho assalariado</option>
+                        <option value="Família">Auxílio de familiares</option>
+                        <option value="Bolsa">Não possuo renda (dependência de bolsa)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Possui dependentes
+                        legais?</label>
+                    <div style="display: flex; gap: 2rem;">
+                        <label><input type="radio" name="possui_dependentes" value="true"> Sim</label>
+                        <label><input type="radio" name="possui_dependentes" value="false"> Não</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Situação de Moradia:</label>
+                    <select id="situacao_moradia" class="form-control"
+                        style="width: 100%; padding: 0.8rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <option value="">Selecione...</option>
+                        <option value="Própria/Familiar">Própria/Familiar</option>
+                        <option value="Alugada/Compartilhada">Alugada/Compartilhada</option>
+                        <option value="Casa Estudante">Casa de Estudante/Alojamento</option>
+                    </select>
+                </div>
+
+                <div
+                    style="margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" onclick="closeSocialModal()" class="btn"
+                        style="background: #e5e7eb; color: #374151; padding: 0.8rem 1.5rem;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                        style="padding: 0.8rem 1.5rem; background-color: #0ea5e9; border: none;">Salvar Dados
+                        Sociais</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    const BOLSISTA_ID_SOC = "{{ bolsista.id if bolsista else '' }}";
+
+    function openSocialModal() {
+        if (!BOLSISTA_ID_SOC) {
+            alert('Salve o bolsista primeiro!');
+            return;
+        }
+        document.getElementById('socialModal').style.display = 'block';
+        loadSocialData();
+    }
+
+    function closeSocialModal() {
+        document.getElementById('socialModal').style.display = 'none';
+    }
+
+    function switchTab(tabIndex) {
+        // Hide all
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.style.borderBottom = 'none';
+            el.style.fontWeight = 'normal';
+            el.style.color = '#6b7280';
+        });
+
+        // Show selected
+        document.getElementById('tab-' + tabIndex).style.display = 'block';
+
+        // Style Active Btn
+        const activeBtn = document.querySelectorAll('.tab-btn')[tabIndex - 1];
+        activeBtn.style.borderBottom = '3px solid var(--primary-color)';
+        activeBtn.style.fontWeight = 'bold';
+        activeBtn.style.color = 'var(--primary-color)';
+    }
+
+    function togglePcd(isSim) {
+        document.getElementById('pcd_detalhe').style.display = isSim ? 'block' : 'none';
+    }
+
+    function toggleQuilombola(isSim) {
+        document.getElementById('quilombola_detail').style.display = isSim ? 'block' : 'none';
+    }
+
+    function toggleRefugiado(isSim) {
+        document.getElementById('refugiado_fields').style.display = isSim ? 'block' : 'none';
+    }
+
+    async function loadSocialData() {
+        try {
+            const res = await fetch(`/bolsistas/${BOLSISTA_ID_SOC}/dados_sociais`);
+            const data = await res.json();
+
+            if (data.raca_cor) document.getElementById('raca_cor').value = data.raca_cor;
+            if (data.genero_identidade) document.getElementById('genero_identidade').value = data.genero_identidade;
+            if (data.orientacao_sexual) document.getElementById('orientacao_sexual').value = data.orientacao_sexual;
+
+            // Radio PCD
+            const pcdVal = data.pcd === true ? 'true' : 'false';
+            const pcdRad = document.querySelector(`input[name="pcd"][value="${pcdVal}"]`);
+            if (pcdRad) pcdRad.checked = true;
+            togglePcd(data.pcd === true);
+            if (data.pcd_detalhe) document.getElementById('pcd_detalhe').value = data.pcd_detalhe;
+
+            if (data.etnia_origem) document.getElementById('etnia_origem').value = data.etnia_origem;
+            if (data.vinculo_comunidade) document.getElementById('vinculo_comunidade').value = data.vinculo_comunidade;
+            if (data.lingua_materna) document.getElementById('lingua_materna').value = data.lingua_materna;
+
+            // Radio Quilombola
+            if (data.is_quilombola !== undefined && data.is_quilombola !== null) {
+                const quilVal = data.is_quilombola ? 'true' : 'false';
+                const quilRad = document.querySelector(`input[name="is_quilombola"][value="${quilVal}"]`);
+                if (quilRad) quilRad.checked = true;
+                toggleQuilombola(data.is_quilombola === true);
+            }
+            if (data.comunidade_quilombola) document.getElementById('comunidade_quilombola').value = data.comunidade_quilombola;
+
+            // [NEW 2026] Refugiados
+            if (data.is_refugiado !== undefined && data.is_refugiado !== null) {
+                const refVal = data.is_refugiado ? 'true' : 'false';
+                const refRad = document.querySelector(`input[name="is_refugiado"][value="${refVal}"]`);
+                if (refRad) refRad.checked = true;
+                toggleRefugiado(data.is_refugiado === true);
+            }
+            if (data.pais_origem_refugio) document.getElementById('pais_origem_refugio').value = data.pais_origem_refugio;
+            if (data.status_legal_refugio) document.getElementById('status_legal_refugio').value = data.status_legal_refugio;
+            if (data.idioma_materno) document.getElementById('idioma_materno').value = data.idioma_materno;
+            if (data.necessidades_especificas) document.getElementById('necessidades_especificas').value = data.necessidades_especificas;
+
+            if (data.ensino_medio_origem) document.getElementById('ensino_medio_origem').value = data.ensino_medio_origem;
+
+            // Radio Cotista
+            if (data.cotista_anterior !== undefined && data.cotista_anterior !== null) {
+                const cotVal = data.cotista_anterior ? 'true' : 'false';
+                const cotRad = document.querySelector(`input[name="cotista_anterior"][value="${cotVal}"]`);
+                if (cotRad) cotRad.checked = true;
+            }
+
+            if (data.renda_per_capita) document.getElementById('renda_per_capita').value = data.renda_per_capita;
+
+            // Radio Primeira Geração
+            if (data.primeira_geracao_superior !== undefined && data.primeira_geracao_superior !== null) {
+                const pgVal = data.primeira_geracao_superior ? 'true' : 'false';
+                const pgRad = document.querySelector(`input[name="primeira_geracao_superior"][value="${pgVal}"]`);
+                if (pgRad) pgRad.checked = true;
+            }
+
+            if (data.fonte_renda) document.getElementById('fonte_renda').value = data.fonte_renda;
+
+            // Radio Dependentes
+            if (data.possui_dependentes !== undefined && data.possui_dependentes !== null) {
+                const depVal = data.possui_dependentes ? 'true' : 'false';
+                const depRad = document.querySelector(`input[name="possui_dependentes"][value="${depVal}"]`);
+                if (depRad) depRad.checked = true;
+            }
+
+            if (data.situacao_moradia) document.getElementById('situacao_moradia').value = data.situacao_moradia;
+
+        } catch (e) {
+            console.error('Erro ao carregar dados sociais', e);
+        }
+    }
+
+    async function saveSocialData() {
+        const getRadioInfo = (name) => {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? (el.value === 'true') : null;
+        };
+
+        const payload = {
+            raca_cor: document.getElementById('raca_cor').value,
+            genero_identidade: document.getElementById('genero_identidade').value,
+            orientacao_sexual: document.getElementById('orientacao_sexual').value,
+            pcd: getRadioInfo('pcd'),
+            pcd_detalhe: document.getElementById('pcd_detalhe').value,
+
+            etnia_origem: document.getElementById('etnia_origem').value,
+            vinculo_comunidade: document.getElementById('vinculo_comunidade').value,
+            lingua_materna: document.getElementById('lingua_materna').value,
+            is_quilombola: getRadioInfo('is_quilombola'),
+            comunidade_quilombola: document.getElementById('comunidade_quilombola').value,
+
+            // [NEW 2026] Refugiados e Dados Humanitários
+            is_refugiado: getRadioInfo('is_refugiado'),
+            pais_origem_refugio: document.getElementById('pais_origem_refugio').value,
+            status_legal_refugio: document.getElementById('status_legal_refugio').value,
+            idioma_materno: document.getElementById('idioma_materno').value,
+            necessidades_especificas: document.getElementById('necessidades_especificas').value,
+
+            ensino_medio_origem: document.getElementById('ensino_medio_origem').value,
+            cotista_anterior: getRadioInfo('cotista_anterior'),
+            renda_per_capita: document.getElementById('renda_per_capita').value,
+            primeira_geracao_superior: getRadioInfo('primeira_geracao_superior'),
+
+            fonte_renda: document.getElementById('fonte_renda').value,
+            possui_dependentes: getRadioInfo('possui_dependentes'),
+            situacao_moradia: document.getElementById('situacao_moradia').value
+        };
+
+        try {
+            const res = await fetch(`/bolsistas/${BOLSISTA_ID_SOC}/dados_sociais`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+                alert('Dados salvos com sucesso!');
+                closeSocialModal();
+            } else {
+                alert('Erro ao salvar: ' + json.message);
+            }
+        } catch (e) {
+            alert('Erro de conexão: ' + e);
+        }
+    }
+</script>
+
+<!-- Botão "Cadastro Rápido" movido para o sticky-footer -->
+
+<!-- MODAL CADASTRO RÁPIDO (YOKO v10) -->
+<div id="modalCadastroRapido" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 4000;">
+    <div class="modal-content"
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 800px; margin: 5% auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
+            <h3 style="color: var(--primary-color); margin: 0;">
+                <i class="lucide-zap mr-2"></i> Cadastro Rápido (Parsing Inteligente)
+            </h3>
+            <button onclick="closeCadastroRapidoModal()"
+                style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="color: #6b7280; font-size: 0.95rem; margin-bottom: 1rem;">
+            Cole abaixo o conteúdo do formulário de cadastramento (Stricto Sensu). O sistema extrairá os dados e
+            preencherá os campos automaticamente.
+        </p>
+
+        <div style="margin-bottom: 1.5rem;">
+            <textarea id="textAreaCadastroRapido" class="form-control" rows="12"
+                placeholder="Cole aqui o texto do formulário..."
+                style="font-family: monospace; width: 100%; font-size: 0.85rem; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" onclick="closeCadastroRapidoModal()" class="btn"
+                style="background: #e5e7eb; color: #374151; border: none; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 500; cursor: pointer;">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnProcessarParsing"
+                onclick="executarParsingInteligente()"
+                style="background: var(--primary-color); border: none; padding: 0.75rem 1.5rem; border-radius: 0.375rem; color: white; font-weight: 600; cursor: pointer;">
+                <i class="lucide-cpu mr-2"></i> Processar e Preencher
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openCadastroRapidoModal() {
+        document.getElementById('modalCadastroRapido').style.display = 'block';
+    }
+
+    function closeCadastroRapidoModal() {
+        document.getElementById('modalCadastroRapido').style.display = 'none';
+        document.getElementById('textAreaCadastroRapido').value = '';
+    }
+
+    // Close on click outside
+    window.addEventListener('click', function (event) {
+        const modal = document.getElementById('modalCadastroRapido');
+        if (event.target == modal) {
+            closeCadastroRapidoModal();
+        }
+    });
+
+    async function executarParsingInteligente() {
+        const rawText = document.getElementById('textAreaCadastroRapido').value;
+        const btn = document.getElementById('btnProcessarParsing');
+
+        if (!rawText.trim()) {
+            alert("Por favor, cole o texto do formulário antes de processar.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="lucide-refresh-cw spin mr-2"></i> Processando...';
+
+        try {
+            const response = await fetch('/api/parse-bolsista', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({ text: rawText })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Helpers para atribuição segura
+                const setValue = (selector, value) => {
+                    const el = document.querySelector(selector);
+                    if (el && value) el.value = value;
+                };
+
+                // Helper para selects baseados em texto
+                const setSelectByText = (selector, textToMatch, triggerChange = true) => {
+                    if (!textToMatch) return;
+                    const select = document.querySelector(selector);
+                    if (!select) return;
+
+                    const lowerText = textToMatch.toLowerCase().trim();
+                    let matched = false;
+
+                    // Match exato ou parcial
+                    for (let i = 0; i < select.options.length; i++) {
+                        const optionText = select.options[i].text.toLowerCase();
+                        if (optionText.includes(lowerText)) {
+                            select.selectedIndex = i;
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (matched && triggerChange) {
+                        select.dispatchEvent(new Event('change'));
+                    }
+                };
+
+                // Mapeamento Direto nos Campos (IDs/Names conforme o form.html)
+                setValue('input[name="nome"]', data.nome);
+                setValue('input[name="cpf"]', data.cpf);
+                setValue('input[name="data_nascimento"]', data.nascimento);
+
+                // Dados Bancários
+                setValue('input[name="banco"]', data.banco);
+                setValue('input[name="agencia"]', data.agencia);
+                if (data.conta && data.dv) {
+                    setValue('input[name="conta"]', `${data.conta}-${data.dv}`);
+                } else if (data.conta) {
+                    setValue('input[name="conta"]', data.conta);
+                }
+
+                // Vigência Acadêmica/Bolsa
+                setValue('input[name="data_inicio_curso"]', data.ingresso);
+                setValue('input[name="data_inicio_bolsa"]', data.inicio_atividades);
+                setValue('input[name="meses_duracao"]', data.meses);
+                setValue('input[name="previsao_defesa"]', data.previsao_defesa);
+
+                // Tentar selecionar o programa se o parse capturou a view (pode precisar de regex)
+                // O programa seria mapeado posteriormente por regras de semelhança, porém o MVP
+                // confia na entrada textual para os demais selects.
+
+                // Selects Inteligentes
+                // O preenchimento do Edital foi desabilitado por solicitação do usuário
+                // para evitar conflitos no carregamento assíncrono das modalidades.
+
+                // Campus
+                if (data.campus) setSelectByText('#campus_filter', data.campus);
+
+                // Programa
+                if (data.codigo_programa) {
+                    setSelectByText('#programa_id', data.codigo_programa);
+                } else if (data.programa) {
+                    setSelectByText('#programa_id', data.programa);
+                }
+
+                closeCadastroRapidoModal();
+                alert("Campos extraídos e preenchidos com sucesso!\nSempre revise os dados com a Plataforma Sucupira.");
+            } else {
+                throw new Error(data.error || "Formato não reconhecido.");
+            }
+        } catch (err) {
+            alert("Erro na leitura: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="lucide-cpu mr-2"></i> Processar e Preencher';
+        }
+    }
+    // [NEW V10.8] Soft Warning para Matrícula Duplicativa
+    document.addEventListener('DOMContentLoaded', function() {
+        const matriculaInput = document.getElementById('matricula');
+        const warningFeedback = document.getElementById('matricula-warning');
+
+        if (matriculaInput) {
+            matriculaInput.addEventListener('blur', function() {
+                const value = this.value.trim();
+                if (value.length > 0) {
+                    fetch(`/api/check_matricula?matricula=${value}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.exists) {
+                                matriculaInput.style.borderColor = '#f59e0b';
+                                matriculaInput.style.backgroundColor = '#fffbeb';
+                                warningFeedback.innerText = '⚠️ ' + data.message;
+                                warningFeedback.style.display = 'block';
+                            } else {
+                                matriculaInput.style.borderColor = '';
+                                matriculaInput.style.backgroundColor = '';
+                                warningFeedback.style.display = 'none';
+                            }
+                        });
+                }
+            });
+        }
+    });
+</script>
+
+<script src="{{ url_for('static', filename='js/ui-toggle.js') }}"></script>
+{% endblock %}

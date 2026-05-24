@@ -1,0 +1,116 @@
+[
+    {
+        "id": 4,
+        "numero": "EDITAL C-NAPI-ROBOTICA nº 04/2026 DIVULGAÇÃO",
+        "descricao": "APOIO PARA DIVULGAÇÃO E PROMOÇÃO",
+        "agencia": "Fundação Araucária",
+        "data_inicio": "2026-03-16",
+        "data_fim": "2029-03-16",
+        "rodadas": [
+            {
+                "id": 4,
+                "nome": "Etapa  única",
+                "descricao": "",
+                "data_inicio": "2026-02-16",
+                "data_fim": "2029-02-22",
+                "ativa": true
+            }
+        ],
+        "regras": []
+    },
+    {
+        "id": 2,
+        "numero": "EDITAL C-NAPI-ROBOTICA nº 02/2026 - ADMINISTRATIVO",
+        "descricao": "APOIO ADMINISTRATIVO",
+        "agencia": "Fundação Araucária",
+        "data_inicio": "2026-12-16",
+        "data_fim": "2028-10-16",
+        "rodadas": [
+            {
+                "id": 2,
+                "nome": "Etapa  única",
+                "descricao": "",
+                "data_inicio": "2026-02-16",
+                "data_fim": "2028-10-16",
+                "ativa": true
+            }
+        ],
+        "regras": []
+    },
+    {
+        "id": 3,
+        "numero": "EDITAL C-NAPI-ROBOTICA nº 03/2026 - BOLSISTAS",
+        "descricao": "BOLSISTAS",
+        "agencia": "Fundação Araucária",
+        "data_inicio": "2026-03-16",
+        "data_fim": "2028-10-16",
+        "rodadas": [
+            {
+                "id": 3,
+                "nome": "candidaturas  fev 2026",
+                "descricao": "",
+                "data_inicio": "2026-02-01",
+                "data_fim": "2028-10-01",
+                "ativa": true
+            },
+            {
+                "id": 5,
+                "nome": "candidaturas  mar 2026",
+                "descricao": "23064.000512/2026-74",
+                "data_inicio": "2026-03-01",
+                "data_fim": "2026-03-31",
+                "ativa": true
+            }
+        ],
+        "regras": [
+            {
+                "id": 1,
+                "descricao": "fev/2026: \nFelipe Gustavo Bombardelli\nJosé Mário Nishihara de Albuquerque\nMikael Nedel Hartmann\nAlexandre Raphael Marques de Freitas\nArthur Vaz\nÉrico Meger\nEros Henrique Lunardon Andrade\nGustavo Goncalves da Rocha\nKimberly Rotman Mendonça Santos\nLuís Felipe de Barros Côrtes\nThauane Goulart\nThiago de Lima Millano Montini\nVitor Gabriel Cagol Escobar\nJean Carlos Garcia\nLucas Nascimento Guedes\nMarcia Tika Wakabayashi",
+                "ordem": 0
+            },
+            {
+                "id": 2,
+                "descricao": "mar/2026: Emanuelle Lino Scheifer\nPedro Domingos Tricossi dos Santos\nJulia Silveira Acras\nMaria Eduarda Prada da Silva\nSamantha Vanessa Golim Stocco\nJoão Francisco Patelli de Souza\nMateus Donizeti Luciano\nBeatriz Regina Nahas\nGabriela Bianchi Todt",
+                "ordem": 0
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "numero": "EDITAL C-NAPI-ROBOTICA nº 01/2026",
+        "descricao": "PESQUISADORES",
+        "agencia": "Fundação Araucária",
+        "data_inicio": null,
+        "data_fim": null,
+        "rodadas": [
+            {
+                "id": 6,
+                "nome": "Etapa  única",
+                "descricao": "",
+                "data_inicio": "2026-02-16",
+                "data_fim": "2026-03-02",
+                "ativa": true
+            }
+        ],
+        "regras": []
+    },
+    {
+        "id": 1,
+        "numero": "EQUIPE DO PROJETO",
+        "descricao": "EQUIPE DO PROJETO",
+        "agencia": "Fundação Araucária",
+        "data_inicio": "2026-02-16",
+        "data_fim": "2029-02-16",
+        "rodadas": [
+            {
+                "id": 1,
+                "nome": "Etapa  única",
+                "descricao": "",
+                "data_inicio": "2026-02-16",
+                "data_fim": "2029-02-16",
+                "ativa": true
+            }
+        ],
+        "regras": []
+    }
+]

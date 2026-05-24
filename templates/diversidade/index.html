@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .diversity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .diversity-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .diversity-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .diversity-card .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .diversity-card .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .diversity-card .card-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .diversity-card .card-percent {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color);
+    }
+
+    .chart-container {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .bar-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .bar-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .bar-label {
+        min-width: 120px;
+        font-size: 0.9rem;
+        color: var(--text-color);
+    }
+
+    .bar-track {
+        flex: 1;
+        height: 24px;
+        background: var(--bg-secondary);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding-left: 8px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: width 0.5s ease;
+    }
+
+    .bar-count {
+        min-width: 50px;
+        text-align: right;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .programs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .programs-table th,
+    .programs-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .programs-table th {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .programs-table td {
+        color: var(--text-color);
+    }
+
+    .programs-table tbody tr:hover {
+        background: var(--bg-secondary);
+    }
+
+    /* Icon backgrounds */
+    .icon-purple {
+        background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    }
+
+    .icon-pink {
+        background: linear-gradient(135deg, #ec4899, #f472b6);
+    }
+
+    .icon-cyan {
+        background: linear-gradient(135deg, #06b6d4, #22d3ee);
+    }
+
+    .icon-amber {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    }
+
+    .icon-green {
+        background: linear-gradient(135deg, #10b981, #34d399);
+    }
+
+    .icon-red {
+        background: linear-gradient(135deg, #ef4444, #f87171);
+    }
+</style>
+
+<div style="max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--text-color); margin: 0;">
+            <i data-lucide="users" style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle;"></i>
+            Dashboard de Diversidade
+        </h2>
+        <span style="color: var(--text-muted); font-size: 0.9rem;">
+            {{ total_bolsistas }} bolsistas com dados cadastrados
+        </span>
+    </div>
+
+    <!-- Cards de Métricas -->
+    <div class="diversity-grid">
+        <!-- Mulheres -->
+        <div class="diversity-card">
+            <div class="card-icon icon-pink">
+                <i data-lucide="user" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.mulheres }}</div>
+            <div class="card-label">Mulheres (Cis/Trans)</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.mulheres_pct) }}% do total</div>
+        </div>
+
+        <!-- Homens -->
+        <div class="diversity-card">
+            <div class="card-icon icon-cyan">
+                <i data-lucide="user" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.homens }}</div>
+            <div class="card-label">Homens (Cis/Trans)</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.homens_pct) }}% do total</div>
+        </div>
+
+        <!-- Pretos/Pardos -->
+        <div class="diversity-card">
+            <div class="card-icon icon-amber">
+                <i data-lucide="users" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.pretos_pardos }}</div>
+            <div class="card-label">Pretos e Pardos</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.pretos_pardos_pct) }}% do total</div>
+        </div>
+
+        <!-- Indígenas -->
+        <div class="diversity-card">
+            <div class="card-icon icon-green">
+                <i data-lucide="leaf" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.indigenas }}</div>
+            <div class="card-label">Indígenas</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.indigenas_pct) }}% do total</div>
+        </div>
+
+        <!-- Quilombolas -->
+        <div class="diversity-card">
+            <div class="card-icon icon-purple">
+                <i data-lucide="home" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.quilombolas }}</div>
+            <div class="card-label">Quilombolas</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.quilombolas_pct) }}% do total</div>
+        </div>
+
+        <!-- PcD -->
+        <div class="diversity-card">
+            <div class="card-icon icon-red">
+                <i data-lucide="accessibility" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div class="card-value">{{ stats.pcd }}</div>
+            <div class="card-label">Pessoas com Deficiência</div>
+            <div class="card-percent">{{ "%.1f"|format(stats.pcd_pct) }}% do total</div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Raça/Cor -->
+    <div class="chart-container">
+        <div class="section-title">Distribuição por Raça/Cor</div>
+        <div class="bar-chart">
+            {% for item in raca_data %}
+            <div class="bar-item">
+                <span class="bar-label">{{ item.label }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ item.pct }}%; background: {{ item.color }};">
+                        {% if item.pct > 10 %}{{ "%.1f"|format(item.pct) }}%{% endif %}
+                    </div>
+                </div>
+                <span class="bar-count">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Gráfico de Gênero -->
+    <div class="chart-container">
+        <div class="section-title">Distribuição por Identidade de Gênero</div>
+        <div class="bar-chart">
+            {% for item in genero_data %}
+            <div class="bar-item">
+                <span class="bar-label">{{ item.label }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ item.pct }}%; background: {{ item.color }};">
+                        {% if item.pct > 10 %}{{ "%.1f"|format(item.pct) }}%{% endif %}
+                    </div>
+                </div>
+                <span class="bar-count">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Programas com maior diversidade -->
+    <div class="chart-container">
+        <div class="section-title">Programas com Maior Representatividade de Grupos Historicamente Excluídos</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            Considera Pretos, Pardos, Indígenas, Quilombolas e PcD
+        </p>
+        <table class="programs-table">
+            <thead>
+                <tr>
+                    <th>Programa</th>
+                    <th>Campus</th>
+                    <th>Total Diversos</th>
+                    <th>% do Programa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prog in top_programas %}
+                <tr>
+                    <td>{{ prog.nome }}</td>
+                    <td>{{ prog.campus }}</td>
+                    <td>{{ prog.count }}</td>
+                    <td>{{ "%.1f"|format(prog.pct) }}%</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted);">
+                        Nenhum dado disponível
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Primeira Geração -->
+    <div class="chart-container">
+        <div class="section-title">Primeira Geração no Ensino Superior</div>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div>
+                <div style="font-size: 3rem; font-weight: 700; color: var(--primary-color);">{{ stats.primeira_geracao
+                    }}</div>
+                <div style="color: var(--text-muted);">bolsistas são primeira geração</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar-track" style="height: 32px;">
+                    <div class="bar-fill icon-purple" style="width: {{ stats.primeira_geracao_pct }}%;">
+                        {{ "%.1f"|format(stats.primeira_geracao_pct) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Reinitialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base_pdf.html' %}
+
+{% block title %}Relatório de Governança e Transparência{% endblock %}
+{% block report_title %}
+RELATÓRIO DE GOVERNANÇA E TRANSPARÊNCIA {{ ano }}<br>
+<span style="font-size: 10px; font-weight: normal; text-transform: none;">Rastreabilidade de Recursos por Campus e
+    Programa</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- Resumo Executivo -->
+<div class="section-title">Resumo Geral</div>
+<table>
+    <tr>
+        <th width="70%">Descrição</th>
+        <th width="30%">Valor Total (R$)</th>
+    </tr>
+    <tr>
+        <td>Total de Recursos Distribuídos no Exercício {{ ano }}</td>
+        <td class="font-bold">{{ total_geral | format_currency }}</td>
+    </tr>
+    <tr>
+        <td>Total de Campi Contemplados</td>
+        <td>{{ dados_por_campus|length }}</td>
+    </tr>
+</table>
+
+<!-- Detalhamento por Campus -->
+<div class="section-title">Detalhamento por Unidade (Campus > Programa)</div>
+
+{% for campus, programas in dados_por_campus.items() %}
+<div
+    style="margin-top: 15px; margin-bottom: 5px; font-weight: bold; font-size: 11px; background-color: #f0f0f0; padding: 3px; border-bottom: 1px solid #ccc;">
+    CAMPUS: {{ campus | upper }}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th width="15%">Cód. Programa</th>
+            <th width="55%">Programa de Pós-Graduação</th>
+            <th width="10%">Campus</th>
+            <th width="20%">Total Recebido (R$)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in programas %}
+        <tr>
+            <td>{{ p.codigo }}</td>
+            <td>{{ p.programa }}</td>
+            <td class="text-center">{{ p.sigla_campus }}</td>
+            <td>{{ p.valor | format_currency }}</td>
+        </tr>
+        {% endfor %}
+        <!-- Subtotal do Campus -->
+        <tr class="total-row">
+            <td colspan="3" class="text-right">Total {{ campus }}:</td>
+            <td>
+                {% set subtotal = programas | sum(attribute='valor') %}
+                {{ subtotal | format_currency }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+{% endfor %}
+
+<div style="margin-top: 30px; font-size: 9px; color: #666; text-align: justify;">
+    <strong>Nota de Auditoria:</strong> Este relatório demonstra a alocação primária dos recursos.
+    A execução detalhada (despesas específicas) pode ser consultada nos relatórios Trimestrais e Anuais
+    individuais de cada programa ou nota de empenho. A governança destes dados segue os princípios
+    de transparência pública.
+</div>
+
+{% endblock %}

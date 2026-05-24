@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Editar Programa</h1>
+    <a href="{{ url_for('admin.admin_programas_lista') }}"
+ class="btn" style="background-color: #e5e7eb;">Voltar</a>
+</div>
+
+<div class="card" style="max-width: 800px;">
+    <form method="POST" action="{{ url_for('admin.admin_programas_editar', id=programa.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nome do Programa</label>
+            <input type="text" name="nome_programa" value="{{ programa.nome_programa }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Sigla</label>
+            <input type="text" name="sigla_programa" value="{{ programa.sigla_programa }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Código Sucupira</label>
+            <input type="text" name="codigo_programa" value="{{ programa.codigo_programa or '' }}"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Instituição / Campus</label>
+            <select name="campus_id" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                {% for c in campuses %}
+                <option value="{{ c.id }}" {% if programa.campus_id == c.id %}selected{% endif %}>{{ c.instituicao }} - {{ c.nome }} ({{ c.sigla_campus }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Níveis Ofertados (Separados por
+                vírgula)</label>
+            <input type="text" name="niveis" value="{{ programa.niveis or '' }}" placeholder="Ex: M, D"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+            <small style="color: #666; margin-top: 5px; display: block;">Use 'M' para Mestrado e 'D' para
+                Doutorado.</small>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nota CAPES</label>
+            <select name="nota_capes"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                <option value="">Selecione...</option>
+                {% for i in range(3, 8) %}
+                <option value="{{ i }}" {% if programa.nota_capes==i|string %}selected{% endif %}>{{ i }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

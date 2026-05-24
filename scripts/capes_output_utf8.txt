@@ -1,0 +1,35 @@
+--- Ficheiro: capes_Lista de Concess§es.xlsx ---
+Count: 5
+Columns: ['N·mero do Processo', 'Projeto', 'Programa CAPES', 'Edital', 'InstituiþÒo', 'Responsßvel', 'VigÛncia', 'SituaþÒo']
+Sample row 0:
+{'N·mero do Processo': nan, 'Projeto': nan, 'Programa CAPES': nan, 'Edital': nan, 'InstituiþÒo': 'Principal', 'Responsßvel': nan, 'VigÛncia': 'do Processo', 'SituaþÒo': nan}
+
+
+--- Ficheiro: capes_cotas.xlsx ---
+Count: 5
+Columns: ['Modalidade', 'Grupo de Pagamento', 'Tipo de VÝnculo', 'Qtd. Concedida', 'Qtd. Utilizada', 'Qtd. DisponÝvel']
+Sample row 0:
+{'Modalidade': 'Total:', 'Grupo de Pagamento': nan, 'Tipo de VÝnculo': nan, 'Qtd. Concedida': 429, 'Qtd. Utilizada': 387, 'Qtd. DisponÝvel': 42}
+
+
+--- Ficheiro: capes_cotas_ppg.xlsx ---
+Count: 55
+Columns: ['InstituiþÒo Participante', 'Responsßvel', 'Modalidade', 'Grupo de', 'Tipo VÝnculo', 'Qtd.', 'Qtd..1', 'Qtd..2']
+Sample row 0:
+{'InstituiþÒo Participante': nan, 'Responsßvel': nan, 'Modalidade': nan, 'Grupo de': 'Pagamento', 'Tipo VÝnculo': 'PPG/┴rea', 'Qtd.': 'Concedida', 'Qtd..1': 'Utilizada', 'Qtd..2': 'DisponÝvel'}
+
+
+--- Ficheiro: capes_ies.xlsx ---
+Count: 5
+Columns: ['InstituiþÒo Participante', 'Responsßvel', 'Modalidade', 'Grupo de', 'Tipo VÝnculo', 'Qtd.', 'Qtd..1', 'Qtd..2']
+Sample row 0:
+{'InstituiþÒo Participante': nan, 'Responsßvel': nan, 'Modalidade': nan, 'Grupo de': 'Pagamento', 'Tipo VÝnculo': 'PPG/┴rea', 'Qtd.': 'Concedida', 'Qtd..1': 'Utilizada', 'Qtd..2': 'DisponÝvel'}
+
+
+--- Ficheiro: capes_ppg_todos_bolsistas.xlsx ---
+Count: 1579
+Columns: ['InstituiþÒo', 'Responsßvel', 'Tipo VÝnculo', 'Modalidade', 'Pagamento', 'Beneficißrio', 'VigÛncia', 'SituaþÒo', 'AþÒo']
+Sample row 0:
+{'InstituiþÒo': '40006018 (UTFPR) UNIVERSIDADE TECNOLËGICA FEDERAL DO PARAN┴', 'Responsßvel': 'PRO-REITOR', 'Tipo VÝnculo': 'Discente PPG (Plataforma Sucupira) - 40006018008P6 - ENGENHARIA CIVIL', 'Modalidade': 'Doutorado', 'Pagamento': 'Bolsa Doutorado', 'Beneficißrio': '100.146.414-10 - ADELANIA DE OLIVEIRA SOUZA', 'VigÛncia': '01/07/2023 - 30/06/2027', 'SituaþÒo': 'Acompanhamento - Em acompanhamento', 'AþÒo': nan}
+
+

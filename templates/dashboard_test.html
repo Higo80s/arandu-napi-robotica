@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- HERO SECTION - Landing Page -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title fade-in-up">Sistema de Gestão de Editais</h1>
+        <p class="hero-subtitle fade-in-up delay-1">
+            UTFPR - Controle Inteligente de Bolsas e Programas de Pós-Graduação
+        </p>
+
+        <div class="hero-stats fade-in-up delay-2">
+            <div class="hero-stat-card">
+                {{ icon('book-open', size=48, color='white', class='stat-icon-lucide') }}
+                <div class="stat-number" data-target="{{ total_programas or 0 }}">0</div>
+                <div class="stat-label">Programas</div>
+            </div>
+            <div class="hero-stat-card">
+                {{ icon('users', size=48, color='white', class='stat-icon-lucide') }}
+                <div class="stat-number" data-target="{{ total_discentes or 0 }}">0</div>
+                <div class="stat-label">Discentes</div>
+            </div>
+            <div class="hero-stat-card">
+                {{ icon('building', size=48, color='white', class='stat-icon-lucide') }}
+                <div class="stat-number" data-target="{{ total_campi or 0 }}">0</div>
+                <div class="stat-label">Campi</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<section class="quick-actions fade-in-up delay-3">
+    <h2>Acesso Rápido</h2>
+    <div class="action-grid">
+        <a href="{{ url_for('bolsistas.index') }}" class="action-card">
+            {{ icon('users', size=48, class='card-icon-lucide') }}
+            <h3>Discentes</h3>
+            <p>Gerenciar bolsistas</p>
+            <span class="card-badge">{{ total_discentes or 0 }} ativos</span>
+        </a>
+
+        <a href="{{ url_for('editais.index') }}" class="action-card">
+            {{ icon('clipboard-list', size=48, class='card-icon-lucide') }}
+            <h3>Editais</h3>
+            <p>Controle de editais</p>
+            <span class="card-badge">{{ total_editais or 0 }} vigentes</span>
+        </a>
+
+        <a href="{{ url_for('posdoc.index') }}" class="action-card">
+            {{ icon('microscope', size=48, class='card-icon-lucide') }}
+            <h3>Pós-Doc</h3>
+            <p>Residentes</p>
+            <span class="card-badge">{{ total_posdoc or 0 }} ativos</span>
+        </a>
+
+        <a href="{{ url_for('reports.index') }}" class="action-card">
+            {{ icon('file-bar-chart', size=48, class='card-icon-lucide') }}
+            <h3>Relatórios</h3>
+            <p>Exportar dados</p>
+            <span class="card-badge">Excel, PDF</span>
+        </a>
+    </div>
+</section>
+
+<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+<div class="topbar-dashboard">
+    <h1 style="display: none;">Dashboard</h1>
+    <span class="date-display" id="dateDisplay"
+        style="color: var(--text-muted); display: block; margin-bottom: 1rem;"></span>
+</div>
+
+<!-- SECTION 1: FINANCEIRO -->
+<h2
+    style="margin-bottom: 15px; border-left: 5px solid var(--primary-color); padding-left: 10px; color: var(--text-color);">
+    Investimentos</h2>
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+    <div class="card" style="text-align: center; border-left: 4px solid var(--primary-color);">
+        <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Arrecadação Atual (Jan-Dez)
+        </h3>
+        <p class="display-text" id="totalYTD" style="color: var(--primary-color);">R$ 0,00</p>
+    </div>
+    <div class="card" style="text-align: center; border-left: 4px solid var(--success-color);">
+        <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Folha Mensal Atual</h3>
+        <p class="display-text" id="totalMonthly" style="color: var(--success-color);">R$ 0,00</p>
+    </div>
+</div>
+
+<div class="finance-layout">
+    <!-- Pie Chart -->
+    <div class="card">
+        <h3>Distribuição por Nível (R$)</h3>
+        <div class="chart-container" style="height: 300px; position: relative;">
+            <canvas id="levelChart"></canvas>
+        </div>
+    </div>
+
+
+
+    <!-- Detailed Lists (Tabbed) -->
+    <div class="card" style="min-height: 300px;">
+        <div class="tabs"
+            style="display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; padding-bottom: 0.5rem;">
+            <button class="tab-btn active" onclick="openTab(event, 'tabEdital')">Por Edital</button>
+            <button class="tab-btn" onclick="openTab(event, 'tabCampus')">Por Campus</button>
+            <button class="tab-btn" onclick="openTab(event, 'tabPrograma')">Por Programa</button>
+        </div>
+
+        <div id="tabEdital" class="tab-content" style="display: block;">
+            <div id="listEdital" style="max-height: 250px; overflow-y: auto;"></div>
+        </div>
+
+        <div id="tabCampus" class="tab-content" style="display: none;">
+            <div id="listCampus" style="max-height: 250px; overflow-y: auto;"></div>
+        </div>
+
+        <div id="tabPrograma" class="tab-content" style="display: none;">
+            <div id="listPrograma" style="max-height: 250px; overflow-y: auto;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+<!-- SECTION 2: OCUPAÇÃO -->
+<h2 style="margin-bottom: 15px; border-left: 5px solid #8b5cf6; padding-left: 10px; color: var(--text-color);">Ocupação
+    de Vagas</h2>
+
+<div class="vacancy-layout">
+    <div class="card" style="max-height: 500px; overflow-y: auto;">
+        <!-- <h3 style="margin-bottom: 1rem;">Detalhamento de Vagas</h3> -->
+        <div id="listVacancy"></div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Utils
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    };
+
+    const createListItem = (label, value) => {
+        return `
+ <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color);">
+ <span style="font-weight: 500; font-size: 0.9rem;">${label}</span>
+ <span style="font-family: monospace; font-weight: bold;">${formatCurrency(value)}</span>
+ </div>
+ `;
+    };
+
+    const createVacancyItem = (item) => {
+        const color = item.vacant > 0 ? 'var(--success-color)' : 'var(--text-muted)';
+        return `
+ <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color);">
+ <span style="font-weight: 500; font-size: 0.9rem;">${item.label}</span>
+ <div style="text-align: right;">
+ <span style="font-weight: bold;">${item.vagas} Total</span>
+ <span style="font-size: 0.8rem; color: ${color}; margin-left: 5px;">(${item.vacant} Disp.)</span>
+ </div>
+ </div>
+ `;
+    };
+
+    document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    fetch('/api/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalYTD').textContent = formatCurrency(data.financeiro.anual_ytd);
+            document.getElementById('totalMonthly').textContent = formatCurrency(data.financeiro.mensal_atual);
+
+            const populateList = (elementId, items, renderer) => {
+                const el = document.getElementById(elementId);
+                if (!items || items.length === 0) {
+                    el.innerHTML = '<p class="text-muted">Sem dados</p>';
+                    return;
+                }
+                el.innerHTML = items.map(renderer).join('');
+            };
+
+            populateList('listEdital', data.financeiro.por_edital, item => createListItem(item.label, item.value));
+            populateList('listCampus', data.financeiro.por_campus, item => createListItem(item.label, item.value));
+            populateList('listPrograma', data.financeiro.por_programa, item => createListItem(item.label, item.value));
+            populateList('listVacancy', data.ocupacao, createVacancyItem);
+
+            const labelsLevel = data.financeiro.por_nivel.map(i => i.label);
+            const dataLevel = data.financeiro.por_nivel.map(i => i.value);
+
+            const ctxPie = document.getElementById('levelChart').getContext('2d');
+            new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: labelsLevel,
+                    datasets: [{
+                        data: dataLevel,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        })
+        .catch(err => console.error("Error loading dashboard data:", err));
+</script>
+
+<style>
+    .display-text {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+    }
+
+    /* Responsive Grid Layout */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .finance-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* Tab container takes half */
+        gap: 20px;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-muted);
+        border-radius: 0.375rem;
+        transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+        background: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    .tab-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .vacancy-layout {
+        display: block;
+    }
+
+    @media (max-width: 1024px) {
+        .finance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .summary-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

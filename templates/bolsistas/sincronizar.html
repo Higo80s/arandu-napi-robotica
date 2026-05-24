@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Sincronização Acadêmica v10.9 — Arandú{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --sync-blue: #1e3a5f;
+    --academic-blue: #3b82f6;
+    --capes-green: #059669;
+    --warning-amber: #d97706;
+    --danger-red: #dc2626;
+    --card-radius: 12px;
+  }
+  .sync-hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+  }
+  .sync-hero h2 { font-size: 1.6rem; font-weight: 700; margin: 0; }
+  .sync-hero p { opacity: 0.85; margin: 0.5rem 0 0; }
+  .upload-zone {
+    border: 2px dashed #94a3b8;
+    border-radius: var(--card-radius);
+    padding: 3rem;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .upload-zone:hover { border-color: var(--academic-blue); background: #eff6ff; }
+  .upload-zone input[type=file] { display: none; }
+  .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .pill-blue { background: #dbeafe; color: #1d4ed8; }
+  .pill-green { background: #dcfce7; color: #15803d; }
+  .pill-amber { background: #fef3c7; color: #92400e; }
+  .impact-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .impact-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .impact-row:last-child { border-bottom: none; }
+  .match-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; }
+  .match-ok { background: #dcfce7; color: #166534; }
+  .match-pending { background: #fef9c3; color: #854d0e; }
+  .btn-sync-confirm {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .btn-sync-confirm:hover { transform: translateY(-2px); }
+  .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; }
+</style>
+
+<div class="container-fluid" style="max-width: 960px; padding: 2rem;">
+
+  <div class="sync-hero">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span style="font-size: 2.5rem;">🔄</span>
+      <div>
+        <h2>Motor de Sincronização Acadêmica</h2>
+        <p>v10.9 — Identidade UTFPR × Base CAPES | Pipeline de Confiança com Snapshot Automático</p>
+      </div>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'success' if cat == 'success' else 'warning' if cat == 'warning' else 'danger' }}" style="border-radius: 8px; margin-bottom: 1rem;">
+        {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not step or step == 'upload' %}
+  <!-- ETAPA 1: UPLOAD -->
+  <div class="impact-card">
+    <h5 style="color: #1e3a5f; margin-bottom: 0.5rem;">📁 Etapa 1 de 2: Seleção do Arquivo</h5>
+    <p style="color: #64748b; font-size: 0.9rem;">Selecione o CSV exportado do Sistema Acadêmico (ex: <code>Alunos_bolsistas_todos_fevereiro_2026.csv</code>).</p>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('bolsistas.sincronizar') }}">
+      <input type="hidden" name="step" value="upload">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="upload-zone" onclick="document.getElementById('arquivo_academico').click()">
+        <div class="upload-icon">📂</div>
+        <p style="font-weight: 600; color: #334155; margin: 0;">Clique para selecionar o arquivo CSV</p>
+        <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 0;">Encoding aceito: UTF-8 / UTF-8-BOM</p>
+        <input type="file" name="arquivo_academico" id="arquivo_academico" accept=".csv" onchange="mostrarArquivo(this)">
+      </div>
+      <div id="arquivo-nome" style="text-align:center; margin-top: 0.75rem; font-weight: 600; color: #1d4ed8; display:none;"></div>
+
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+        <a href="{{ url_for('bolsistas.index') }}" class="btn-cancel">Cancelar</a>
+        <button type="submit" class="btn-sync-confirm">
+          🔍 Analisar Impacto
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="impact-card" style="background: #fffbeb; border-color: #fcd34d;">
+    <h6 style="color: #92400e;">🛡️ Segurança Garantida</h6>
+    <ul style="color: #78350f; margin: 0; padding-left: 1.2rem; font-size: 0.9rem;">
+      <li>Um <strong>Snapshot Memento</strong> será criado automaticamente antes de qualquer alteração.</li>
+      <li>Você verá o <strong>resumo de impacto</strong> antes de confirmar o processo.</li>
+      <li>Apenas campos de <strong>identidade</strong> são atualizados (Matrícula, E-mail, Data de Defesa).</li>
+    </ul>
+  </div>
+
+  {% elif step == 'preview' %}
+  <!-- ETAPA 2: PRÉ-VISUALIZAÇÃO -->
+  <div class="impact-card">
+    <h5 style="color: #1e3a5f; margin-bottom: 1rem;">📊 Etapa 2 de 2: Resumo de Impacto</h5>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+      <span class="stat-pill pill-blue">📋 Total CSV: {{ resumo.total_csv }}</span>
+      <span class="stat-pill pill-green">✅ Matches: {{ resumo.matches }}</span>
+      <span class="stat-pill pill-amber">⏳ Pendentes: {{ resumo.pendentes }}</span>
+    </div>
+
+    {% if matches %}
+    <h6 style="color: #166534; margin-bottom: 0.75rem;">✅ Registros que serão atualizados ({{ matches|length }})</h6>
+    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem;">
+      {% for m in matches[:20] %}
+      <div class="impact-row">
+        <div>
+          <strong>{{ m.bolsista.nome }}</strong>
+          <span style="font-size: 0.8rem; color: #64748b; margin-left: 0.5rem;">CPF: {{ m.bolsista.cpf }}</span>
+        </div>
+        <div style="text-align: right;">
+          {% if m.registro_csv.matricula %}
+            <span class="match-tag match-ok">RA: {{ m.registro_csv.matricula }}</span>
+          {% endif %}
+          {% if m.registro_csv.data_defesa_str %}
+            <span class="match-tag match-pending" style="margin-left: 4px;">Defesa: {{ m.registro_csv.data_defesa_str }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if matches|length > 20 %}
+      <p style="text-align:center; color: #94a3b8; padding: 0.5rem; font-size: 0.85rem;">... e mais {{ matches|length - 20 }} registros</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if pendentes %}
+    <h6 style="color: #92400e; margin-top: 1rem; margin-bottom: 0.5rem;">⏳ CPFs sem match no Arandú ({{ pendentes|length }}) — não serão criados automaticamente</h6>
+    <div style="max-height: 150px; overflow-y: auto; background: #fef3c7; border-radius: 8px; padding: 0.75rem; font-size: 0.85rem;">
+      {% for p in pendentes[:10] %}
+        <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+          <span>{{ p.nome }}</span>
+          <span style="color: #92400e;">{{ p.matricula }}</span>
+        </div>
+      {% endfor %}
+      {% if pendentes|length > 10 %}
+        <p style="color: #92400e; margin: 0.5rem 0 0; text-align:center;">... e mais {{ pendentes|length - 10 }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('bolsistas.sincronizar') }}" style="margin-top: 1.5rem;">
+      <input type="hidden" name="step" value="confirm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <a href="{{ url_for('bolsistas.sincronizar') }}" class="btn-cancel">↩ Refazer Upload</a>
+        <button type="submit" class="btn-sync-confirm">
+          ✅ Confirmar Sincronização ({{ resumo.matches }} registros)
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  function mostrarArquivo(input) {
+    if (input.files && input.files[0]) {
+      const nome = input.files[0].name;
+      const el = document.getElementById('arquivo-nome');
+      el.innerText = '📄 ' + nome;
+      el.style.display = 'block';
+    }
+  }
+</script>
+{% endblock %}

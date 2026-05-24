@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Estilos locais para as abas */
+    .doc-tabs {
+        display: flex;
+        gap: 10px;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 20px;
+    }
+
+    .doc-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-muted);
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .doc-tab:hover {
+        color: var(--primary-color);
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+
+    .doc-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+        font-weight: bold;
+    }
+
+    .doc-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .doc-content.active {
+        display: block;
+    }
+
+    .download-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+
+    .download-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .download-icon {
+        background: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        padding: 10px;
+        border-radius: 8px;
+        margin-right: 15px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="card" style="max-width: 1200px; margin: 0 auto; min-height: 80vh;">
+
+    <!-- Cabeçalho -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="color: var(--primary-color); margin: 0;">Central de Documentação</h1>
+            <p style="color: var(--text-muted); margin-top: 5px;">Recursos, manuais e guias técnicos do Sistema de
+                Gestão de Editais.</p>
+        </div>
+        <span class="badge" style="background: #e0f2fe; color: #0284c7; padding: 5px 10px;">Versão 7.0 (Modular
+            Refactoring)</span>
+    </div>
+
+    <!-- Navegação por Abas -->
+    <div class="doc-tabs">
+        <div class="doc-tab active" onclick="switchTab('guia')">Guia do Usuário</div>
+        <div class="doc-tab" onclick="switchTab('downloads')">Downloads & Manuais</div>
+        <div class="doc-tab" onclick="switchTab('tecnico')">Arquitetura & Segurança</div>
+    </div>
+
+    <!-- CONTEÚDO 1: GUIA DO USUÁRIO (Legado do tutorial.html) -->
+    <div id="guia" class="doc-content active">
+        <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+            <strong>👋 Bem-vindo!</strong> Este guia rápido cobre as operações essenciais do dia a dia.
+        </div>
+
+        <details open
+            style="margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color);">
+            <summary style="padding: 1rem; cursor: pointer; font-weight: 600;">1. Workflow de Editais</summary>
+            <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+                <ul style="padding-left: 20px; line-height: 1.6;">
+                    <li><strong>Criar Edital:</strong> Inicie inserindo o número oficial e agência (ex: 01/2025).</li>
+                    <li><strong>Modalidades:</strong> Configure as regras de negócio (Valor, Duração Max, Vagas).</li>
+                    <li><strong>Vigência:</strong> O sistema bloqueará automaticamente datas que excedam a duração
+                        configurada.</li>
+                </ul>
+            </div>
+        </details>
+
+        <details
+            style="margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color);">
+            <summary style="padding: 1rem; cursor: pointer; font-weight: 600;">2. Cadastro de Discentes</summary>
+            <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+                <p>Ao inserir um novo bolsista:</p>
+                <ul style="padding-left: 20px;">
+                    <li>Use a busca inteligente para encontrar o Programa.</li>
+                    <li>O cálculo de término é automático baseada na data de início.</li>
+                    <li><strong>Atenção:</strong> CPFs duplicados serão rejeitados.</li>
+                </ul>
+            </div>
+        </details>
+
+        <details
+            style="margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color);">
+            <summary style="padding: 1rem; cursor: pointer; font-weight: 600;">3. Importação em Massa</summary>
+            <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+                <p>Suportamos carga de dados via Excel (.xlsx) e CSV.</p>
+                <p>Modelos suportados: <strong>Sucupira Principal</strong>, <strong>Fundação Araucária</strong> e
+                    <strong>Pós-Doc</strong>.
+                </p>
+            </div>
+        </details>
+
+        <details
+            style="margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color);">
+            <summary style="padding: 1rem; cursor: pointer; font-weight: 600;">4. Dados Sociais & Coleta</summary>
+            <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+                <p>O sistema agora coleta dados de identidade, trajetória e permanência.</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Privacidade:</strong> Dados sensíveis protegidos.</li>
+                    <li><strong>Relatórios:</strong> Geração de estatísticas automáticas para o Plano de Permanência.
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+
+    <!-- CONTEÚDO 2: DOWNLOADS & MANUAIS -->
+    <div id="downloads" class="doc-content">
+        <h3 style="margin-bottom: 1.5rem;">Biblioteca de Arquivos</h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+            <!-- Manual -->
+            <a href="{{ url_for('admin.docs_download', filename='MANUAL_DO_SISTEMA.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card">
+                    <div class="download-icon">{{ icon('book', size=24) }}</div>
+                    <div>
+                        <div style="font-weight: 600;">Manual do Usuário</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Guia ilustrado passo-a-passo (PDF)
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Docs Téc -->
+            <a href="{{ url_for('admin.docs_download', filename='DOCUMENTACAO_COMPLETA.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card">
+                    <div class="download-icon">{{ icon('file-code', size=24) }}</div>
+                    <div>
+                        <div style="font-weight: 600;">Documentação Técnica</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Para desenvolvedores e TI (PDF)</div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Banco de Dados -->
+            <a href="{{ url_for('admin.docs_download', filename='ESTUDO_BANCO_DADOS.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card">
+                    <div class="download-icon">{{ icon('database', size=24) }}</div>
+                    <div>
+                        <div style="font-weight: 600;">Estudo de Banco de Dados</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Diagrama ER e Dicionário (PDF)</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="alert alert-warning" style="margin-top: 2rem;">
+            {{ icon('alert-triangle', size=18) }}
+            <strong>Nota:</strong> Todos os documentos são confidenciais e de uso interno da instituição.
+        </div>
+    </div>
+
+    <!-- CONTEÚDO 3: TÉCNICO & SEGURANÇA (Hardcore Docs Updated) -->
+    <div id="tecnico" class="doc-content">
+        <h3 style="margin-bottom: 1.5rem;">Documentação Técnica Avançada</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            Análises profundas sobre a evolução do sistema, decisões de design críticas e governança de dados sensíveis.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+            <!-- Arquitetura Crítica -->
+            <a href="{{ url_for('admin.docs_download', filename='ARQUITETURA_CRITICA.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #f59e0b;">
+                    <div class="download-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        {{ icon('cpu', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Arquitetura Crítica & Histórico</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Evolução Monolítica, Incidente "Processo Zumbi", Decisões de Design (V1-V2) e Roadmap (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Segurança e Governança -->
+            <a href="{{ url_for('admin.docs_download', filename='SEGURANCA_GOVERNANCA.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #ef4444;">
+                    <div class="download-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        {{ icon('shield-alert', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Segurança & Governança de Dados</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Proteção LGPD, Ciclo de Vida do Dado, Prevenção de Injeção e Plano de Resposta a Incidentes
+                            (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Relatorio Refatoracao V7 -->
+            <a href="{{ url_for('static', filename='docs/RELATORIO_REFATORACAO_V7.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #3b82f6;">
+                    <div class="download-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        {{ icon('layers', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Relatório Refatoração V7.0</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Detalhes da Arquitetura Modular, Blueprints e Atualização do Banco de Dados (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- SEÇÃO: Planejamento Estratégico -->
+        <h3 style="margin: 2rem 0 1rem 0;">Planejamento Estratégico (Futuro)</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+
+            <!-- Plano Etapas -->
+            <a href="{{ url_for('admin.docs_download', filename='PLANO_GESTAO_ETAPAS_EDITAL.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #10b981;">
+                    <div class="download-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        {{ icon('calendar', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Gestão de Etapas (V8)</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Plano técnico: Cronogramas múltiplos e Rodadas de Seleção (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Plano Social -->
+            <a href="{{ url_for('admin.docs_download', filename='PLANO_EXPANSAO_SOCIOECONOMICO.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #8b5cf6;">
+                    <div class="download-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                        {{ icon('users', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Expansão Socioeconômica (V7)</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Coleta de dados sensíveis, LGPD e políticas de permanência (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Modelagem Dados -->
+            <a href="{{ url_for('admin.docs_download', filename='MODELAGEM_DADOS_SOCIAIS.pdf') }}" target="_blank"
+                data-no-spinner="true" style="text-decoration: none; color: inherit;">
+                <div class="download-card" style="border-left: 4px solid #8b5cf6;">
+                    <div class="download-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                        {{ icon('database', size=24) }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Modelagem de Dados Sociais</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                            Schema SQLAlchemy para perfil demográfico e sensível (PDF).
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <div
+            style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+            <h4 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                {{ icon('info', size=20) }} Resumo da Stack
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 0.9em;">
+                    <li><strong>Backend:</strong> Python 3.12 + Flask</li>
+                    <li><strong>Architecture:</strong> Modular Blueprints (V7.0)</li>
+                    <li><strong>Database:</strong> PostgreSQL (Prod) / SQLite (Dev)</li>
+                </ul>
+                <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 0.9em;">
+                    <li><strong>Frontend:</strong> Jinja2 + CSS Nativo</li>
+                    <li><strong>Server:</strong> Waitress (WSGI Production)</li>
+                    <li><strong>Security:</strong> SQLAlchemy ORM (Anti-Injection)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function switchTab(tabId) {
+        // Hide all
+        document.querySelectorAll('.doc-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.doc-tab').forEach(el => el.classList.remove('active'));
+
+        // Show selected
+        document.getElementById(tabId).classList.add('active');
+
+        // Update tab style
+        const tabs = document.querySelectorAll('.doc-tab');
+        if (tabId === 'guia') tabs[0].classList.add('active');
+        if (tabId === 'downloads') tabs[1].classList.add('active');
+        if (tabId === 'tecnico') tabs[2].classList.add('active');
+    }
+</script>
+
+{% endblock %}

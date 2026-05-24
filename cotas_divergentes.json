@@ -1,0 +1,28 @@
+[
+    {
+        "codigo": "40006018028P7",
+        "nome": "ENSINO DE CIÊNCIA E TECNOLOGIA",
+        "excel": {
+            "mestrado": 0,
+            "doutorado": 18,
+            "nome": "ENSINO DE CIÊNCIA E TECNOLOGIA"
+        },
+        "banco": {
+            "mestrado": 0,
+            "doutorado": 0
+        }
+    },
+    {
+        "codigo": "4006018022P9",
+        "nome": "N/A",
+        "excel": {
+            "mestrado": 0,
+            "doutorado": 0,
+            "nome": "N/A"
+        },
+        "banco": {
+            "mestrado": 8,
+            "doutorado": 0
+        }
+    }
+]

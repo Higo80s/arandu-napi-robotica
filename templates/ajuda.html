@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Centro de Ajuda & Suporte</h1>
+    <div style="font-size: 0.9em; color: var(--text-muted); text-align: right;">
+        Manual do Administrador - NAPI-Robótica / FUNTEF
+    </div>
+</div>
+
+<div class="main-content" style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+    
+    <!-- Header: Ações Rápidas -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Guia de Operação NAPI</h2>
+            <p style="margin: 0.5rem 0 0; color: var(--text-muted); font-size: 0.95rem;">
+                Fluxos de trabalho integrados à base FUNTEF/CONVENIAR.
+            </p>
+        </div>
+        <button onclick="window.print()" class="btn btn-primary">
+            <i data-lucide="file-text" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+            Baixar Manual (PDF)
+        </button>
+    </div>
+
+    <div class="help-sections" style="display: grid; gap: 2rem;">
+        
+        <!-- Seção 1: Gestão de Bolsistas -->
+        <section class="card" style="padding: 1.5rem;">
+            <h3><i data-lucide="users" style="vertical-align: middle; margin-right: 10px;"></i> 1. Gestão de Bolsistas</h3>
+            <p>O sistema Arandú Napi-Robótica padroniza o ciclo de vida dos bolsistas conforme as diretrizes da FUNTEF:</p>
+            <ul style="line-height: 1.6;">
+                <li><strong>Cadastro:</strong> Utilize o botão "Novo(a) Bolsista" no menu lateral. Certifique-se de que o CPF seja válido para evitar conflitos com a base do Sistema Acadêmico.</li>
+                <li><strong>Vigências:</strong> O sistema monitora automaticamente o término das bolsas. Alertas de encerramento aparecem no Dashboard 30 dias antes do fim.</li>
+                <li><strong>Monitoramento Mensal:</strong> Verifique a seção de Alertas para identificar bolsistas com previsão de defesa vencida.</li>
+            </ul>
+        </section>
+
+        <!-- Seção 2: Relatórios e Auditoria -->
+        <section class="card" style="padding: 1.5rem;">
+            <h3><i data-lucide="file-spreadsheet" style="vertical-align: middle; margin-right: 10px;"></i> 2. Relatórios e Auditoria</h3>
+            <p>Todas as exportações foram adaptadas para o ecossistema NAPI/FUNTEF:</p>
+            <ul style="line-height: 1.6;">
+                <li><strong>Folha de Pagamento:</strong> Gere o Excel mensal para liquidação junto à FUNTEF. O cabeçalho já inclui a identificação do projeto.</li>
+                <li><strong>ID Convênio:</strong> Os relatórios utilizam o campo "ID Convênio / FUNTEF" para rastreabilidade financeira, substituindo o antigo ID CAPES.</li>
+                <li><strong>Auditoria Automática:</strong> O sistema realiza o cruzamento de dados entre a base local e o Sistema Acadêmico, sinalizando divergências de matrícula ou nome.</li>
+            </ul>
+        </section>
+
+        <!-- Seção 3: Segurança e Memento -->
+        <section class="card" style="padding: 1.5rem; border-left: 4px solid var(--primary-color);">
+            <h3><i data-lucide="shield-check" style="vertical-align: middle; margin-right: 10px;"></i> 3. Segurança e Editor Visual</h3>
+            <p>O Arandú utiliza o padrão <strong>Memento</strong> para garantir a integridade da interface:</p>
+            <blockquote style="background: var(--bg-hover); padding: 1rem; border-radius: 8px; font-style: italic; border-left: 3px solid #ccc; margin: 1rem 0;">
+                "Cada alteração de texto realizada através do Editor Visual gera um Ponto de Restauração automático na tabela de Histórico (UIMementoHistory)."
+            </blockquote>
+            <p>Em caso de erro na edição de rótulos (ex: renomeação acidental), o Administrador Master pode reverter para o snapshot anterior através do console de gerenciamento.</p>
+        </section>
+
+        <!-- Seção 4: Suporte Técnico -->
+        <section style="background: #1e293b; color: white; padding: 2rem; border-radius: 12px; text-align: center;">
+            <h3 style="color: #60a5fa;"><i data-lucide="message-square" style="vertical-align: middle; margin-right: 10px;"></i> Suporte à Coordenação</h3>
+            <p>Para questões técnicas, erros de sistema ou solicitações de novas funcionalidades, entre em contato:</p>
+            <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem;">
+                <div>
+                    <span style="display: block; font-weight: bold; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase;">E-mail</span>
+                    <span>higosantos@utfpr.edu.br</span>
+                </div>
+                <div>
+                    <span style="display: block; font-weight: bold; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase;">Projeto</span>
+                    <span>NAPI-Robótica / UTFPR</span>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+</div>
+
+<style>
+    .help-sections h3 {
+        color: var(--text-color);
+        margin-top: 0;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .help-sections ul {
+        padding-left: 1.25rem;
+    }
+    @media print {
+        .topbar, .sidebar-wrapper, .btn-primary {
+            display: none !important;
+        }
+        .main-content {
+            padding: 0;
+            max-width: 100%;
+        }
+        .card {
+            border: 1px solid #eee !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="static/images/app_icon.ico">
+    <title>Carregando - Arandu</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            /* Pure white for logo fusion */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Watermark Background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vh;
+            background: url('static/images/simbolo_marangatu.png') no-repeat center center;
+            background-size: contain;
+            opacity: 0.03;
+            /* Very subtle watermark */
+            z-index: -1;
+        }
+
+        .splash-content {
+            text-align: center;
+            animation: fadeIn 1.5s ease-out forwards;
+        }
+
+        .splash-logo {
+            width: 250px;
+            height: auto;
+            margin-bottom: 24px;
+            /* Shadow removed for flat integration */
+            /* Animation pulse */
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        .splash-text {
+            font-size: 1.2rem;
+            color: #64748b;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-top: 20px;
+            opacity: 0;
+            animation: slideUp 1s ease-out 0.5s forwards;
+        }
+
+        /* Amazon Green Counter style (Minimalist) */
+        .percent-counter {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1.1rem;
+            /* Small & Elegant */
+            font-weight: 500;
+            color: #00693E;
+            /* Verde Amazônia */
+            margin-top: 15px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.8s forwards;
+            letter-spacing: 0.05em;
+        }
+
+        .loader-bar-container {
+            width: 200px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1s forwards;
+        }
+
+        .loader-bar {
+            width: 100%;
+            height: 100%;
+            background: #00693E;
+            /* Matching Green */
+            transform: translateX(-100%);
+            animation: loading 2s infinite ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                filter: brightness(100%);
+            }
+
+            50% {
+                transform: scale(1.05);
+                filter: brightness(105%);
+            }
+
+            100% {
+                transform: scale(1);
+                filter: brightness(100%);
+            }
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            50% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes fadeOutContent {
+            to {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+        }
+
+        .splash-content.fading-out {
+            animation: fadeOutContent 0.8s ease-in forwards;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="splash-content">
+        <!-- Relative path assumes file is in project root -->
+        <img src="./static/images/logo_arandu.png" class="splash-logo" alt="Carregando..."
+            onerror="this.style.display='none'">
+        <!-- Relative path assumes file is in project root -->
+
+        <div class="percent-counter" id="percentBox">0%</div>
+        <div class="loader-bar-container">
+            <div class="loader-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        const TARGET_URL = 'http://127.0.0.1:5003/';
+        const CHECK_INTERVAL = 1000; // 1 second
+        const MIN_DISPLAY_TIME = 3500;
+        const MAX_RETRIES = 30; // 30 seconds timeout
+        let retries = 0;
+        const startTime = Date.now();
+
+        // Counter Animation Logic
+        let currentPercent = 0;
+        const percentBox = document.getElementById('percentBox');
+        let stopCounter = false;
+
+        const progressInterval = setInterval(() => {
+            if (stopCounter) return;
+            if (currentPercent < 95) {
+                currentPercent += Math.floor(Math.random() * 2) + 1;
+                if (currentPercent > 95) currentPercent = 95;
+                percentBox.textContent = currentPercent + '%';
+            }
+        }, 80);
+
+        function checkServer() {
+            retries++;
+
+            fetch(TARGET_URL, { mode: 'no-cors' })
+                .then(() => {
+                    const outputTime = Date.now();
+                    const elapsedTime = outputTime - startTime;
+                    const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
+
+                    setTimeout(finishLoading, remainingTime);
+                })
+                .catch(() => {
+                    if (retries > MAX_RETRIES) {
+                        // Instead of showing error, force redirect as last resort
+                        window.location.replace(TARGET_URL);
+                    } else {
+                        setTimeout(checkServer, CHECK_INTERVAL);
+                    }
+                });
+        }
+
+        function finishLoading() {
+            clearInterval(progressInterval);
+            percentBox.textContent = '100%';
+
+            const content = document.querySelector('.splash-content');
+            content.classList.add('fading-out');
+
+            setTimeout(() => {
+                window.location.replace(TARGET_URL);
+            }, 800);
+        }
+
+        // Failsafe: Force redirect after 10 seconds if nothing happens (e.g. fetch issues)
+        setTimeout(() => {
+            window.location.replace(TARGET_URL);
+        }, 10000);
+
+        checkServer();
+    </script>
+
+
+
+</html>

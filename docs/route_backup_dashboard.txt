@@ -1,0 +1,11 @@
+@app.route('/')
+def index():
+    """Landing Page com estatísticas gerais"""
+    stats = {
+        'total_programas': ProgramaAcademico.query.count(),
+        'total_discentes': Bolsista.query.filter_by(ativo=True).count(),
+        'total_campi': Campus.query.filter(Campus.sigla_campus != 'MULTI').count(),
+        'total_editais': Edital.query.filter(Edital.data_fim >= date.today()).count(),
+        'total_posdoc': Residente.query.filter_by(ativo=True).count()
+    }
+    return render_template('dashboard.html', **stats)

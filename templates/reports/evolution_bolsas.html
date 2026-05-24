@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <div style="flex-grow: 1;">
+        <h1>Evolução de Bolsas (2014-2025)</h1>
+        <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">
+            Relatório consolidado baseado na volumetria anual (Snapshot).
+        </p>
+    </div>
+
+    <div>
+        <a href="{{ url_for('reports.download_evolucao_bolsas') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-file-excel me-2"></i> Baixar Excel
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+
+    <div class="alert alert-info" style="margin: 0 0 20px 0;">
+        <i class="fas fa-info-circle me-2"></i> <strong>Nota Metodológica:</strong>
+        Os dados abaixo referem-se a bolsas ativas no ano de referência (Vigência).
+        <br>
+        <span style="font-size: 0.85rem;">Valores marcados em <strong>negrito</strong> são maiores que zero.</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 1rem;">Código</th>
+                    <th style="padding: 1rem;">Sigla</th>
+                    <th style="padding: 1rem;">Campus</th>
+                    <th style="padding: 1rem;">Tipo</th>
+                    <th style="padding: 1rem;">Nível</th>
+                    <th style="padding: 1rem;">Agência</th>
+                    {% for ano in anos %}
+                    <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 600;">{{ ano }}</th>
+                    {% endfor %}
+                    <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 600;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table_data %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <!-- 1. Código -->
+                    <td
+                        style="padding: 0.75rem 1rem; font-family: monospace; color: var(--text-muted); font-size: 0.9rem;">
+                        {{ row.codigo_programa }}
+                    </td>
+
+                    <!-- 2. Sigla (With Tooltip) -->
+                    <td style="padding: 0.75rem 1rem;" data-search="{{ row.sigla }}">
+                        <span class="badge" title="{{ row.programa }}"
+                            style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary-color); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: help;">
+                            {{ row.sigla }}
+                        </span>
+                    </td>
+
+                    <!-- 3. Campus -->
+                    <td style="padding: 0.75rem 1rem;" data-search="{{ row.campus }}">
+                        {{ row.campus }}
+                    </td>
+
+                    <!-- 4. Tipo -->
+                    <td style="padding: 0.75rem 1rem;" data-search="{{ row.tipo }}">
+                        {% if row.tipo == 'Profissional' %}
+                        <span class="badge"
+                            style="background-color: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">Profissional</span>
+                        {% else %}
+                        <span class="badge"
+                            style="background-color: #f3f4f6; color: #374151; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">Acadêmico</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- 5. Nível -->
+                    <td style="padding: 0.75rem 1rem;" data-search="{{ row.nivel }}">
+                        {% if row.nivel == 'Mestrado' %}
+                        <span
+                            style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: #e0f2fe; color: #0369a1; font-weight: 600;">Mestrado</span>
+                        {% elif row.nivel == 'Doutorado' %}
+                        <span
+                            style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: #fef3c7; color: #b45309; font-weight: 600;">Doutorado</span>
+                        {% else %}
+                        <span
+                            style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: #dcfce7; color: #15803d; font-weight: 600;">{{
+                            row.nivel }}</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- 6. Agência -->
+                    <td style="padding: 0.75rem 1rem;" data-search="{{ row.agencia }}">{{ row.agencia }}</td>
+
+                    <!-- Years -->
+                    {% for val in row.valores %}
+                    <td style="padding: 0.75rem 1rem; text-align: center;">
+                        {% if val > 0 %}
+                        <span style="font-weight: 600; color: var(--text-color);">{{ val }}</span>
+                        {% else %}
+                        <span style="color: #e5e7eb;">-</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+
+                    <!-- Actions -->
+                    <td style="padding: 0.75rem 1rem; text-align: center;">
+                        <button class="btn-icon edit-volumetria" data-programa-id="{{ row.programa_id }}"
+                            data-programa="{{ row.programa }}" data-nivel="{{ row.nivel }}"
+                            data-agencia="{{ row.agencia }}" data-year-values='{{ row.valores | tojson }}'
+                            title="Editar quantitativos por ano"
+                            style="cursor: pointer; background: transparent; border: none; color: var(--primary-color);">
+                            {{ icon('edit-2', size=16) }}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if not table_data %}
+                <tr>
+                    <td colspan="{{ 7 + anos|length }}"
+                        style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        Nenhum dado encontrado.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DataTables Scripts -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+<style>
+    .filter-select {
+        width: 100%;
+        padding: 4px;
+        font-size: 0.8rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        margin-top: 5px;
+        background-color: white;
+    }
+
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 1rem;
+    }
+
+    /* Discrete Grid Lines */
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #e5e7eb !important;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        var table = $('.table').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+            },
+            paging: true,
+            info: true,
+            ordering: true,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+            order: [[1, 'asc']],
+            initComplete: function () {
+                // Columns: 
+                // 0: Código, 1: Sigla, 2: Campus, 3: Tipo, 4: Nível, 5: Agência
+                this.api().columns([1, 2, 3, 4, 5]).every(function () {
+                    var column = this;
+                    var title = $(column.header()).text().trim();
+                    var select = $('<select class="filter-select"><option value="">Filtrar ' + title + '</option></select>')
+                        .appendTo($(column.header()))
+                        .on('click', function (e) { e.stopPropagation(); })
+                        .on('change', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+
+                    var uniqueData = new Set();
+                    column.data().each(function (d, j) {
+                        // Extract text from data-search attribute or text content
+                        // Since we use render from HTML, we might need to be careful.
+                        // However, we added data-search attributes to the TD elements! 
+                        // DataTables by default uses content. 
+                        // Let's rely on the text content stripped of HTML tags, 
+                        // OR better: use the data-search attribute if possible, but DataTables API `column.data()`
+                        // returns the cell 'sort' or 'filter' data if configured, or the cell content.
+                        // Without explicit columns configuration, it returns the content (HTML).
+
+                        var $d = $('<div>').html(d); // Parse HTML
+                        var val = $d.text().trim();
+                        if (val) uniqueData.add(val);
+                    });
+
+                    // Sort and append
+                    Array.from(uniqueData).sort().forEach(function (val) {
+                        select.append('<option value="' + val + '">' + val + '</option>');
+                    });
+                });
+            }
+        });
+    });
+</script>
+
+<!-- Edit Modal -->
+<div id="editModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+        style="background: white; padding: 2rem; border-radius: 8px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: var(--text-color);">Editar Quantitativos de Bolsas</h3>
+
+        <div id="editModalContent">
+            <div style="background: #f9fafb; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <p style="margin: 0.25rem 0;"><strong>Programa:</strong> <span id="modalPrograma"></span></p>
+                <p style="margin: 0.25rem 0;"><strong>Nível:</strong> <span id="modalNivel"></span></p>
+                <p style="margin: 0.25rem 0;"><strong>Agência:</strong> <span id="modalAgencia"></span></p>
+            </div>
+
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">Quantidades por Ano:</p>
+            <div id="yearInputs"
+                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+                <!-- Year inputs will be dynamically generated -->
+            </div>
+
+            <div style="margin: 1rem 0;">
+                <label for="justificativa"
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Justificativa da Alteração
+                    *</label>
+                <textarea id="justificativa" rows="3" placeholder="Descreva o motivo das alterações..."
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+
+            <div id="error" style="color: red; margin: 0.5rem 0; display: none;"></div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button id="cancelEdit" class="btn btn-secondary">Cancelar</button>
+            <button id="saveEdit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRowData = null;
+
+    // Open modal
+    $(document).on('click', '.edit-volumetria', function () {
+        const $btn = $(this);
+        currentRowData = {
+            programa_id: $btn.data('programa-id'),
+            agencia: $btn.data('agencia'),
+            nivel: $btn.data('nivel'),
+            valores: {}
+        };
+
+        $('#modalPrograma').text($btn.data('programa'));
+        $('#modalNivel').text($btn.data('nivel'));
+        $('#modalAgencia').text($btn.data('agencia'));
+
+        // Get year values from button data
+        const yearValuesStr = $btn.attr('data-year-values') || '[]';
+        const yearValues = JSON.parse(yearValuesStr);
+        const anos = {{ anos | tojson
+    }};
+
+    // Generate year inputs
+    let yearInputsHtml = '';
+    anos.forEach((ano, index) => {
+        const val = yearValues[index] || 0;
+        currentRowData.valores[ano] = val;
+        yearInputsHtml += `
+                <div>
+                    <label for="year_${ano}" style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-muted);">${ano}</label>
+                    <input type="number" 
+                           id="year_${ano}" 
+                           data-year="${ano}"
+                           min="0"
+                           value="${val}"
+                           style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;" />
+                </div>
+            `;
+    });
+
+    $('#yearInputs').html(yearInputsHtml);
+    $('#justificativa').val('');
+    $('#error').hide();
+
+    $('#editModal').css('display', 'flex');
+    });
+
+    // Close modal
+    $('#cancelEdit').click(function () {
+        $('#editModal').hide();
+    });
+
+    // Save edit
+    $('#saveEdit').click(function () {
+        let justificativa = $('#justificativa').val().trim();
+
+        if (!justificativa) {
+            $('#error').text('Justificativa é obrigatória').show();
+            return;
+        }
+
+        // Collect year values
+        const anos = {{ anos | tojson
+    }};
+    let yearUpdates = {};
+    let hasChanges = false;
+
+    anos.forEach(ano => {
+        const newVal = parseInt($(`#year_${ano}`).val()) || 0;
+        const oldVal = currentRowData.valores[ano] || 0;
+        yearUpdates[ano] = newVal;
+        if (newVal !== oldVal) hasChanges = true;
+    });
+
+    if (!hasChanges) {
+        $('#error').text('Nenhuma alteração detectada').show();
+        return;
+    }
+
+    $.ajax({
+        url: '/reports/evolution/edit',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            programa_id: currentRowData.programa_id,
+            agencia: currentRowData.agencia,
+            nivel: currentRowData.nivel,
+            year_updates: yearUpdates,
+            justificativa_ajuste: justificativa
+        }),
+        success: function (response) {
+            if (response.success) {
+                $('#editModal').hide();
+                location.reload(); // Reload to show updated data
+            } else {
+                $('#error').text(response.error || 'Erro ao salvar').show();
+            }
+        },
+        error: function (xhr) {
+            let error = 'Erro ao salvar';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                error = xhr.responseJSON.error;
+            }
+            $('#error').text(error).show();
+        }
+    });
+    });
+</script>
+
+{% endblock %}

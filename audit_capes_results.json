@@ -1,0 +1,46 @@
+{
+    "planilhas": {
+        "ppg": {
+            "mestrado": {
+                "cota": 255,
+                "ocupado": 236
+            },
+            "doutorado": {
+                "cota": 151,
+                "ocupado": 135
+            }
+        },
+        "ies": {
+            "mestrado": {
+                "cota": 14,
+                "ocupado": 10
+            },
+            "doutorado": {
+                "cota": 9,
+                "ocupado": 6
+            }
+        }
+    },
+    "banco": {
+        "ppg": {
+            "mestrado": {
+                "cota": 255,
+                "ocupado": 239
+            },
+            "doutorado": {
+                "cota": 151,
+                "ocupado": 138
+            }
+        },
+        "ies": {
+            "mestrado": {
+                "cota": 14,
+                "ocupado": 10
+            },
+            "doutorado": {
+                "cota": 9,
+                "ocupado": 7
+            }
+        }
+    }
+}

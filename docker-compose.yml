@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 1. Aplicação Flask (Gestão de Editais)
+  web:
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://gestao_user:gestao_password@db:5432/gestao_editais_db
+      - SECRET_KEY=change_this_in_production_please
+    depends_on:
+      - db
+    volumes:
+      - ./instance:/app/instance # Opcional: Persistir logs ou arquivos locais (se houver)
+
+  # 2. Banco de Dados PostgreSQL
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: gestao_user
+      POSTGRES_PASSWORD: gestao_password
+      POSTGRES_DB: gestao_editais_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Exposto apenas se precisar conectar ferramenta externa (DBeaver)
+
+volumes:
+  postgres_data:

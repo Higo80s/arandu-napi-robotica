@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0"><i class="fas fa-chart-line"></i> Inteligência de Dados PROPPG</h2>
+            <span class="badge bg-success mt-1">Base Auditada: 2014-2025</span>
+        </div>
+        <div>
+            <a href="/reports/historic/pdf" class="btn btn-sm btn-info shadow-sm" target="_blank">
+                <i class="fas fa-history fa-sm text-white-50"></i> Histórico (PDF)
+            </a>
+            <a href="/reports/integrated/pdf" class="btn btn-sm btn-primary shadow-sm ml-2" target="_blank">
+                <i class="fas fa-file-pdf fa-sm text-white-50"></i> Relatório Integrado
+            </a>
+            <a href="/reports/audit/excel" class="btn btn-sm btn-success shadow-sm ml-2">
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Auditoria 2025
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Evolução Histórica de Bolsas (Mestrado vs Doutorado)</h6>
+        </div>
+        <div class="card-body">
+            <div class="chart-area" style="height: 400px;">
+                <canvas id="evolutionChart"></canvas>
+            </div>
+            <p class="small text-muted mt-2 text-center">
+                *Dados consolidados a partir da série histórica importada.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Distribuição de Bolsas por Nota CAPES (2025)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie" style="height: 300px;">
+                        <canvas id="qualityChart"></canvas>
+                    </div>
+                    <hr>
+                    <small>Este gráfico mostra o alinhamento do fomento com a qualidade acadêmica. A maior parte das
+                        bolsas deve estar concentrada em notas 4, 5, 6 e 7.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow border-left-warning h-100">
+                <div class="card-body">
+                    <h4 class="small font-weight-bold">Insights Automáticos</h4>
+
+                    <div class="mb-3">
+                        <span class="text-secondary">Pico Histórico de Bolsas:</span>
+                        <h3 class="font-weight-bold">{{ data.years[-1] if data.years else 'N/A' }}</h3>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-secondary">Foco do Investimento:</span>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 70%">Mestrado</div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 30%">Doutorado</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Dados injetados pelo Flask
+    const chartData = {{ data | tojson }};
+
+    // 1. Gráfico de Evolução (Linha/Barra Mista)
+    const ctxEvol = document.getElementById('evolutionChart').getContext('2d');
+    new Chart(ctxEvol, {
+        type: 'line',
+        data: {
+            labels: chartData.years,
+            datasets: [{
+                label: 'Mestrado',
+                data: chartData.mestrado,
+                borderColor: '#36b9cc', // Azul UTFPR
+                backgroundColor: 'rgba(54, 185, 204, 0.1)',
+                fill: true,
+                tension: 0.3
+            }, {
+                label: 'Doutorado',
+                data: chartData.doutorado,
+                borderColor: '#e74a3b', // Vermelho destaque
+                backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // 2. Gráfico de Qualidade (Barra ou Pizza)
+    const ctxQual = document.getElementById('qualityChart').getContext('2d');
+    new Chart(ctxQual, {
+        type: 'bar', // Pode ser 'pie' ou 'doughnut'
+        data: {
+            labels: chartData.capes_labels,
+            datasets: [{
+                label: 'Bolsas Ativas (2025)',
+                data: chartData.capes_values,
+                backgroundColor: [
+                    '#858796', // Nota 3 (Cinza)
+                    '#4e73df', // Nota 4 (Azul)
+                    '#1cc88a', // Nota 5 (Verde)
+                    '#f6c23e', // Nota 6 (Amarelo)
+                    '#e74a3b'  // Nota 7 (Vermelho/Ouro)
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            indexAxis: 'y', // Barra horizontal para melhor leitura das notas
+        }
+    });
+</script>
+{% endblock %}

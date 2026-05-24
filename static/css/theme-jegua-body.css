@@ -1,0 +1,44 @@
+/* Tema Jegua - Classe para aplicar ao body */
+body.jegua-theme {
+    --primary-color: #1a5c4a;
+    --secondary-color: #0d3b2e;
+    --accent-color: #48d1cc;
+    --background-color: #f0f7f4;
+    --border-color: #b8d4c8;
+}
+
+body.jegua-theme .sidebar {
+    background: linear-gradient(135deg, #1a5c4a 0%, #0d3b2e 100%);
+    color: #ffffff;
+    /* Fonte clara */
+}
+
+body.jegua-theme .sidebar a {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.jegua-theme .sidebar a:hover {
+    color: #ffffff;
+}
+
+body.jegua-theme .hero-section {
+    background: linear-gradient(135deg, #1a5c4a 0%, #0d3b2e 100%) !important;
+    color: #ffffff;
+    /* Fonte clara */
+}
+
+body.jegua-theme .hero-section h1,
+body.jegua-theme .hero-section p,
+body.jegua-theme .hero-section .stat-label {
+    color: #ffffff;
+}
+
+body.jegua-theme .hero-stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+body.jegua-theme .btn-primary {
+    background: #1a5c4a;
+    color: #ffffff;
+}

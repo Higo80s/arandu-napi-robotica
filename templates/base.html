@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+
+<head>
+    <!-- ═══════════════════════════════════════════════════════════
+         THEME GUARD (Anti-FOUC) — deve ser o PRIMEIRO script do head.
+         Aplica a cor de fundo no <html> de forma SÍNCRONA, antes de
+         qualquer CSS ou render, eliminando o "flashbang" branco.
+         ═══════════════════════════════════════════════════════════ -->
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme') || 'robotica';
+            var valid = ['light', 'dark', 'utfpr', 'jegua', 'robotica', 'msdos'];
+            if (valid.indexOf(theme) === -1) theme = 'robotica';
+
+            // Aplica classe no <html> imediatamente (antes do <body> existir)
+            var root = document.documentElement;
+            if (theme === 'dark')  root.classList.add('dark-mode');
+            if (theme === 'utfpr') root.classList.add('utfpr-theme');
+            if (theme === 'jegua') root.classList.add('jegua-theme');
+            if (theme === 'robotica') root.classList.add('robotica-theme');
+            if (theme === 'msdos') root.classList.add('msdos-theme');
+
+            // Pinta o fundo instantaneamente — rede de segurança contra flash
+            var bgMap = {
+                'dark':  '#111827',
+                'utfpr': '#f3f4f6',
+                'jegua': '#f0f7f4',
+                'robotica': '#0d0d16',
+                'msdos': '#000000',
+                'light': '#f3f4f6'
+            };
+            root.style.backgroundColor = bgMap[theme] || '#f3f4f6';
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arandú Napi-Robótica - Gestão de Editais</title>
+
+    <!-- Favicon - Logo NAPI Robótica -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/napi_robotica_logo.png') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logout.css') }}">
+
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-jegua.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-jegua-body.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-robotica.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-msdos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inline-icons.css') }}">
+    
+    <!-- Fontes e Ícones Globais -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+
+
+        /* ── Fade-in suave controlado por classe (Anti-FOUC v19.2) ──
+           O body começa invisível; a classe .loaded é adicionada via
+           DOMContentLoaded, depois que o tema já foi aplicado. */
+        body {
+            opacity: 0;
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.loaded {
+            opacity: 1;
+        }
+
+        /* Mobile Responsive Fixes */
+        @media (max-width: 768px) {
+            .app-container {
+                display: block !important;
+                /* Break grid */
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -260px;
+                /* Hide by default */
+                height: 100vh;
+                width: 250px !important;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .content {
+                width: 100% !important;
+                margin-left: 0 !important;
+                padding: 1rem;
+            }
+
+            .topbar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .topbar h1 {
+                font-size: 1.2rem;
+                flex-grow: 1;
+            }
+
+            #menuToggle {
+                display: block !important;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: var(--text-color);
+                margin-right: 10px;
+            }
+
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+        }
+
+        #menuToggle {
+            display: none;
+        }
+    </style>
+    <script>
+        // ── Sistema de Temas (Anti-FOUC v19.2) ──────────────────────────
+        // applyTheme() aplica a classe no <html> E no <body> para garantir
+        // retrocompatibilidade com todos os seletores CSS existentes.
+        const themes = ['light', 'dark', 'utfpr', 'jegua', 'robotica', 'msdos'];
+        const themeLabels = {
+            'light': '☀️ Claro',
+            'dark': '🌙 Escuro',
+            'utfpr': '🟡 UTFPR',
+            'jegua': '🌿 Jegua',
+            'robotica': '🤖 Robótica',
+            'msdos': '💻 MS-DOS'
+        };
+        const themeBg = {
+            'light': '#f3f4f6',
+            'dark':  '#111827',
+            'utfpr': '#f3f4f6',
+            'jegua': '#f0f7f4',
+            'robotica': '#0d0d16',
+            'msdos': '#000000'
+        };
+
+        function applyTheme(theme) {
+            const allThemeClasses = ['dark-mode', 'utfpr-theme', 'jegua-theme', 'robotica-theme', 'msdos-theme'];
+
+            // Aplica no <html> (Theme Guard) e no <body> (retrocompatibilidade)
+            document.documentElement.classList.remove(...allThemeClasses);
+            document.body.classList.remove(...allThemeClasses);
+
+            if (theme === 'dark')  { document.documentElement.classList.add('dark-mode');   document.body.classList.add('dark-mode'); }
+            if (theme === 'utfpr') { document.documentElement.classList.add('utfpr-theme'); document.body.classList.add('utfpr-theme'); }
+            if (theme === 'jegua') { document.documentElement.classList.add('jegua-theme'); document.body.classList.add('jegua-theme'); }
+            if (theme === 'robotica') { document.documentElement.classList.add('robotica-theme'); document.body.classList.add('robotica-theme'); }
+            if (theme === 'msdos') { document.documentElement.classList.add('msdos-theme'); document.body.classList.add('msdos-theme'); }
+
+            // Atualiza o backgroundColor inline no <html> para consistência
+            document.documentElement.style.backgroundColor = themeBg[theme] || '#f3f4f6';
+
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerText = themeLabels[theme];
+
+            localStorage.setItem('theme', theme);
+            document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: theme } }));
+        }
+
+        function cycleTheme() {
+            let current = localStorage.getItem('theme') || 'light';
+            let index = themes.indexOf(current);
+            let nextIndex = (index + 1) % themes.length;
+            applyTheme(themes[nextIndex]);
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            let overlay = document.querySelector('.overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.onclick = toggleSidebar;
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.toggle('active');
+        }
+
+        // DOMContentLoaded (não window.onload) — dispara assim que o HTML
+        // está parseado, sem esperar imagens ou recursos externos.
+        // Aqui: aplica o tema salvo e ativa o fade-in elegante.
+        document.addEventListener('DOMContentLoaded', function () {
+            let saved = localStorage.getItem('theme') || 'light';
+            if (!themes.includes(saved)) saved = 'light';
+            applyTheme(saved);
+
+            // Revela a página com fade suave APÓS o tema estar aplicado
+            // Pequeno requestAnimationFrame garante que o browser pintou o
+            // fundo correto antes de iniciar a transição de opacidade.
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    document.body.classList.add('loaded');
+                });
+            });
+        });
+    </script>
+
+    <!-- [FASE 4] Loading Spinner Global -->
+    <style>
+        .global-spinner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .global-spinner.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        // Exibe spinner em cliques de links e forms
+        document.addEventListener('DOMContentLoaded', function () {
+            const spinner = document.createElement('div');
+            spinner.className = 'global-spinner';
+            spinner.innerHTML = '<div class="spinner"></div>';
+            document.body.appendChild(spinner);
+
+            // Hide spinner when page is restored from bfcache (back button)
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    spinner.classList.remove('active');
+                }
+            });
+
+            // Ativa em navegação de links
+            document.addEventListener('click', function (e) {
+                const link = e.target.closest('a[href]');
+                // Não ativa spinner para: links âncora (#), links javascript, downloads, target externo, ou PDFs
+                if (link &&
+                    !link.href.includes('#') &&
+                    !link.href.startsWith('javascript:') &&
+                    !link.target &&
+                    !link.hasAttribute('download') &&
+                    !link.href.includes('_pdf') &&  // Exclui rotas de PDF
+                    !link.classList.contains('btn-download')) {  // Exclui botões de download
+                    spinner.classList.add('active');
+                }
+            });
+
+            // Ativa em submit de forms
+            document.addEventListener('submit', function (e) {
+                // Não ativa se o form tiver target=_blank ou method=GET (downloads)
+                // Modificado: adicionado check para data-no-spinner
+                const form = e.target;
+                if (!form.target &&
+                    (!form.method || form.method.toLowerCase() !== 'get') &&
+                    !form.hasAttribute('data-no-spinner')) {
+                    spinner.classList.add('active');
+                }
+            });
+        });
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+
+</head>
+
+<body>
+    {% from 'macros/icons.html' import icon %}
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="brand" style="text-align: center; margin-bottom: 1.5rem;">
+                <a href="{{ url_for('index') }}" style="text-decoration: none; display: block;">
+                    <img src="{{ url_for('static', filename='images/napi_robotica_logo.png') }}" 
+                         alt="Logo NAPI Robótica" 
+                         class="sidebar-logo scanline-effect" 
+                         style="width: 100px; height: auto; margin-bottom: 0.5rem;">
+                </a>
+                <h2 data-ui-key="brand_name" style="font-size: 1.2rem; margin: 0;">{{ ui.get('brand_name', 'Arandú') }}</h2>
+                <small style="color: var(--text-muted); font-size: 0.7rem; letter-spacing: 1px;">NAPI-ROBÓTICA v19.2</small>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}" class="active" data-ui-key="nav_dashboard">{{ ui.get('nav_dashboard', 'Dashboard') }}</a></li>
+
+                <!-- [NEW] Selector for Directors -->
+                {% if current_user.role == 'diretor_campus' and director_programs %}
+                <li style="padding: 0 1rem; margin-bottom: 1rem;">
+                    <select
+                        onchange="if(this.value) window.location.href='{{ url_for('dashboard.direcao') }}?programa_id=' + this.value; else window.location.href='{{ url_for('dashboard.direcao') }}';"
+                        style="width: 100%; padding: 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; font-size: 0.85rem;">
+                        <option value="">Visão Geral (Campus)</option>
+                        {% for prog in director_programs %}
+                        <option value="{{ prog.id }}" {% if request.args.get('programa_id')|int==prog.id %}selected{%
+                            endif %}>
+                            {{ prog.sigla_programa }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('editais.index') }}" class="nav-link">
+                        {{ icon('file-text', size=20, class='mr-2') }} <span data-ui-key="nav_editais">{{ ui.get('nav_editais', 'Editais') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                <!-- [NEW V11.4] Ações Pendentes -->
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('dashboard.alertas') }}" class="nav-link" style="position: relative;">
+                        {{ icon('alert-circle', size=20, class='mr-2') }} <span data-ui-key="nav_alertas">{{ ui.get('nav_alertas', 'Ações Pendentes') }}</span>
+                        {% if total_alerts and total_alerts > 0 %}
+                        <span
+                            style="position: absolute; right: 10px; background-color: #ef4444; color: white; border-radius: 9999px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold;">
+                            {{ total_alerts }}
+                        </span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('bolsistas.index') }}" class="nav-link">
+                        {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_bolsistas">{{ ui.get('nav_bolsistas', 'Bolsistas') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                {# <li>
+                    <a href="{{ url_for('dashboard.capes') }}" class="nav-link">
+                        {{ icon('trending-down', size=20, class='mr-2') }} <span data-ui-key="nav_capes">{{ ui.get('nav_capes', 'Painel CAPES') }}</span>
+                    </a>
+                </li> #}
+                <li>
+                    <a href="{{ url_for('proap.repasses_index') }}" class="nav-link">
+                        {{ icon('coins', size=20, class='mr-2') }} <span data-ui-key="nav_proap">{{ ui.get('nav_proap', 'Recursos') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('reports.index') }}" class="nav-link">
+                        {{ icon('bar-chart', size=20, class='mr-2') }} <span data-ui-key="nav_reports">{{ ui.get('nav_reports', 'Relatórios') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('bolsistas.diversidade') }}" class="nav-link">
+                        {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_diversity">{{ ui.get('nav_diversity', 'Diversidade') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('inter.index') }}" class="nav-link">
+                        {{ icon('globe', size=20, class='mr-2') }} <span data-ui-key="nav_inter">{{ ui.get('nav_inter', 'Internacionalização') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('admin.manual') }}" class="nav-link">
+                        {{ icon('help-circle', size=20, class='mr-2') }} <span data-ui-key="nav_manual">{{ ui.get('nav_manual', 'Manual / Ajuda') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.documentacao') }}"
+                        class="nav-link {% if request.endpoint == 'documentacao_index' %}active{% endif %}">
+                        {{ icon('book-open', size=20, class='mr-2') }} <span data-ui-key="nav_documentation">{{ ui.get('nav_documentation', 'Documentação') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- Seção Admin (Injetado) -->
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <small data-ui-key="admin_section_label"
+                        style="display: block; padding: 0 1rem; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">{{ ui.get('admin_section_label', 'Administração') }}</small>
+                </li>
+                {% endif %}
+                {% if current_user.role in ['admin', 'master'] %}
+                <li>
+                    <a href="{{ url_for('admin_users.index') }}" class="nav-link">
+                        {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_admin_users">{{ ui.get('nav_admin_users', 'Gestão de Usuários') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('database_explorer.index') }}" class="nav-link">
+                        {{ icon('database', size=20, class='mr-2') }} <span data-ui-key="nav_db_explorer">{{ ui.get('nav_db_explorer', 'Explorador de Dados') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('admin.admin_consolidado') }}" class="nav-link">
+                        {{ icon('pie-chart', size=20, class='mr-2') }} <span data-ui-key="nav_admin_consolidated">{{ ui.get('nav_admin_consolidated', 'Painel Consolidado') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('dashboard.advanced') }}" class="nav-link">
+                        {{ icon('activity', size=20, class='mr-2') }} <span data-ui-key="nav_analytics">{{ ui.get('nav_analytics', 'Analytics (Novo)') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <a href="{{ url_for('ui_editor.history') }}" class="nav-link">
+                        {{ icon('history', size=20, class='mr-2') }} <span data-ui-key="nav_ui_history">{{ ui.get('nav_ui_history', 'Histórico de UI') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.admin_programas_lista') }}" class="nav-link">
+                        {{ icon('settings', size=20, class='mr-2') }} <span data-ui-key="nav_admin_programs">{{ ui.get('nav_admin_programs', 'Gestão de Programas') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+
+
+                <!-- Seção Downloads removida na V6.2 -->
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li>
+                    <form action="{{ url_for('admin.admin_backup') }}" method="POST" style="margin: 0; padding: 0;"
+                        data-no-spinner="true"
+                        onsubmit="return confirm('Iniciar backup completo do sistema? Isso pode levar alguns segundos.');">
+                        <button type="submit" class="nav-link"
+                            style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: inherit; font: inherit;">
+                            {{ icon('database', size=20, class='mr-2') }} <span class="backup-label" data-ui-key="nav_backup">{{ ui.get('nav_backup', 'Fazer Backup') }}</span>
+                        </button>
+                    </form>
+                </li>
+                {% endif %}
+
+                <li style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link" style="color: #fca5a5;">
+                        {{ icon('log-out', size=20, class='mr-2') }} Sair
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <header class="topbar">
+                <button id="menuToggle" onclick="toggleSidebar()">☰</button>
+                <h1 data-ui-key="topbar_title">{{ ui.get('topbar_title', 'Visão Geral') }}</h1>
+                <div class="user-info">
+                    <button id="themeBtn" onclick="cycleTheme()" class="btn" style="margin-right: 1rem;">☀️
+                        Claro</button>
+                    <!-- Botão Logout -->
+                    <a href="{{ url_for('auth.logout') }}" class="btn-logout" title="Sair do Sistema">
+                        {{ icon('log-out', size=18) }}
+                        <span class="logout-text">Sair</span>
+                    </a>
+                    <span>
+                        {% if current_user.is_authenticated %}
+                        {{ current_user.nome }}
+                        {% else %}
+                        Visitante
+                        {% endif %}
+                    </span>
+                </div>
+            </header>
+
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <!-- Bootstrap 5 JS Bundle (includes Popper) - Required for modals -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // [V17] Global Paste Date Handler - Robust Version
+        // Permite colar datas no formato brasileiro DD/MM/YYYY em campos type="date"
+        (function () {
+            // Handler para converter texto DD/MM/YYYY para formato ISO
+            function convertBrazilianDate(text) {
+                const trimmed = text.trim();
+                const match = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (match) {
+                    const day = match[1].padStart(2, '0');
+                    const month = match[2].padStart(2, '0');
+                    const year = match[3];
+                    return `${year}-${month}-${day}`;
+                }
+                return null;
+            }
+
+            // Captura evento paste no documento todo (delegação)
+            document.addEventListener('paste', function (e) {
+                const target = e.target;
+                if (target && target.tagName === 'INPUT' && target.type === 'date') {
+                    const clipboardData = e.clipboardData || window.clipboardData;
+                    if (clipboardData) {
+                        const text = clipboardData.getData('text');
+                        const converted = convertBrazilianDate(text);
+                        if (converted) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            target.value = converted;
+                            target.dispatchEvent(new Event('input', { bubbles: true }));
+                            target.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
+            }, true); // Use capture phase
+
+            // Fallback: monitora input para tentar converter após digitação/paste
+            document.addEventListener('input', function (e) {
+                const target = e.target;
+                if (target && target.tagName === 'INPUT' && target.type === 'date') {
+                    // Se o valor está vazio e o campo tem texto digitado incorretamente,
+                    // tenta recuperar do valor antes da limpeza
+                    if (!target.value && target._lastPastedValue) {
+                        const converted = convertBrazilianDate(target._lastPastedValue);
+                        if (converted) {
+                            target.value = converted;
+                        }
+                        target._lastPastedValue = null;
+                    }
+                }
+            }, true);
+
+            // Captura dados antes do input limpar
+            document.addEventListener('beforeinput', function (e) {
+                const target = e.target;
+                if (target && target.tagName === 'INPUT' && target.type === 'date') {
+                    if (e.inputType === 'insertFromPaste' && e.data) {
+                        target._lastPastedValue = e.data;
+                        const converted = convertBrazilianDate(e.data);
+                        if (converted) {
+                            e.preventDefault();
+                            target.value = converted;
+                            target.dispatchEvent(new Event('input', { bubbles: true }));
+                            target.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
+            }, true);
+        })();
+
+        // Parse Twemoji
+    </script>
+
+    <!-- HTML2PDF Library (for client-side PDF generation) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script src="{{ url_for('static', filename='css/counter-animation.js') }}"></script>
+
+    <!-- [UI MEMENTO] Visual Editor Script -->
+    {% if current_user.role in ['admin', 'master'] %}
+    <script src="{{ url_for('static', filename='js/ui-editor.js') }}"></script>
+    {% endif %}
+
+    <!-- GLOBAL SESSION RECOVERY MODAL (Custom Style matching SocialData) -->
+    <div id="globalLoginModal" class="modal-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div class="modal-content"
+            style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; margin: 10% auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+            <h3 style="margin-top:0; color: #dc2626; font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">
+                ⚠️ Sessão Expirada
+            </h3>
+
+            <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 1.5rem;">
+                Para continuar sem perder seus dados, por favor, entre novamente.
+            </p>
+
+            <div id="globalLoginError" class="alert alert-danger"
+                style="display: none; font-size: 0.9rem; padding: 0.5rem;"></div>
+
+            <form id="globalLoginForm" onsubmit="handleGlobalLogin(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #374151;">Email</label>
+                    <input type="email" name="email" class="form-control" required placeholder="seu@email.com"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #374151;">Senha</label>
+                    <input type="password" name="password" class="form-control" required
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <button type="submit" class="btn"
+                    style="width: 100%; background-color: #dc2626; color: white; padding: 0.75rem; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer;">
+                    Entrar e Continuar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global Handler for Session Expiration
+        window.handleSessionExpired = function (retryCallback) {
+            const modalEl = document.getElementById('globalLoginModal');
+            if (!modalEl) return;
+
+            console.log("Session Expired. Showing Global Login Modal.");
+
+            // Store callback
+            window._pendingRetryCallback = retryCallback;
+
+            // Show Custom Modal
+            modalEl.style.display = 'block';
+        };
+
+        async function handleGlobalLogin(event) {
+            event.preventDefault();
+            const form = document.getElementById('globalLoginForm');
+            const errorDiv = document.getElementById('globalLoginError');
+            const btn = form.querySelector('button');
+
+            console.log("Attempting Global Login...");
+
+            btn.disabled = true;
+            btn.innerHTML = 'Autenticando...';
+            errorDiv.style.display = 'none';
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch("{{ url_for('auth.login') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    console.error("Failed to parse JSON response:", e);
+                    throw new Error("Erro de comunicação com o servidor.");
+                }
+
+                if (response.ok && data.success) {
+                    console.log("Login Successful!");
+
+                    // Login Success!
+                    // 1. Refresh CSRF across the page
+                    await refreshPageCsrf();
+
+                    // 2. Hide Modal
+                    const modalEl = document.getElementById('globalLoginModal');
+                    modalEl.style.display = 'none';
+
+                    // 3. Reset form
+                    form.reset();
+                    btn.disabled = false;
+                    btn.innerHTML = 'Entrar e Continuar';
+
+                    // 4. Retry pending action
+                    if (window._pendingRetryCallback) {
+                        try {
+                            console.log("Retrying pending action...");
+                            window._pendingRetryCallback();
+                        } catch (err) {
+                            console.error("Retry failed:", err);
+                        }
+                        window._pendingRetryCallback = null;
+                    }
+
+                } else {
+                    throw new Error(data.message || 'Credenciais inválidas');
+                }
+            } catch (e) {
+                console.error("Login Failed:", e);
+                errorDiv.innerText = e.message;
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'Entrar e Continuar';
+            }
+        }
+
+        async function refreshPageCsrf() {
+            try {
+                const resp = await fetch("{{ url_for('api_utils.refresh_csrf') }}");
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const newToken = data.csrf_token;
+
+                    // Update all CSRF inputs
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(el => el.value = newToken);
+
+                    // Update meta tag (if exists)
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.content = newToken;
+
+                    console.log("CSRF Tokens refreshed via Global Handler.");
+                } else {
+                    console.warn("Refresh CSRF failed with status:", resp.status);
+                }
+            } catch (e) {
+                console.error("Failed to refresh CSRF:", e);
+            }
+        }
+    </script>
+
+</html>

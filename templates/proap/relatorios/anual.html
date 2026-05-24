@@ -1,0 +1,123 @@
+{% extends "base_pdf.html" %}
+
+{% block title %}Relatório Anual PROAP{% endblock %}
+{% block report_title %}
+RELATÓRIO ANUAL - EXERCÍCIO {{ ano }}<br>
+<span style="font-size: 10px; font-weight: normal; text-transform: none;">Análise Completa do Exercício (Balanço
+    Geral)</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- Resumo Executivo -->
+<div class="section-title">Resumo Geral</div>
+<table>
+    <tr>
+        <th width="60%">Descrição</th>
+        <th width="40%">Valor (R$)</th>
+    </tr>
+    <tr>
+        <td>Total de Recursos Recebidos (Repasses)</td>
+        <td class="font-bold">R$ {{ "{:,.2f}".format(total_recebido).replace(',', 'X').replace('.', ',').replace('X',
+            '.') }}</td>
+    </tr>
+    <tr>
+        <td>Total Executado (Aplicações)</td>
+        <td class="font-bold">R$ {{ "{:,.2f}".format(total_executado).replace(',', 'X').replace('.', ',').replace('X',
+            '.') }}</td>
+    </tr>
+    <tr>
+        <td>Saldo Disponível</td>
+        <td class="font-bold">R$ {{ "{:,.2f}".format(saldo_geral).replace(',', 'X').replace('.', ',').replace('X', '.')
+            }}</td>
+    </tr>
+    <tr class="total-row">
+        <td>Taxa de Execução</td>
+        <td class="font-bold">{{ "{:.1f}".format(taxa_execucao) }}%</td>
+    </tr>
+</table>
+
+<!-- Aplicações por Programa -->
+<div class="section-title">Execução por Programa</div>
+<table>
+    <thead>
+        <tr>
+            <th width="40%">Programa de Pós-Graduação</th>
+            <th width="30%">Total Aplicado (R$)</th>
+            <th width="30%">Participação (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for prog, valor in aplicacoes %}
+        {% set percent = (valor / total_executado * 100) if total_executado > 0 else 0 %}
+        <tr>
+            <td><strong>{{ prog }}</strong></td>
+            <td>R$ {{ "{:,.2f}".format(valor).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+            <td>{{ "{:.1f}".format(percent) }}%</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td class="text-right">Total Geral:</td>
+            <td>R$ {{ "{:,.2f}".format(total_executado).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+            <td>100.0%</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Aplicações por Categoria -->
+<div class="section-title">Execução por Categoria de Despesa</div>
+<table>
+    <thead>
+        <tr>
+            <th width="55%">Categoria</th>
+            <th width="25%">Total (R$)</th>
+            <th width="20%">Participação (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cat, valor in categorias %}
+        {% set percent = (valor / total_executado * 100) if total_executado > 0 else 0 %}
+        <tr>
+            <td>{{ cat }}</td>
+            <td>R$ {{ "{:,.2f}".format(valor).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+            <td>{{ "{:.1f}".format(percent) }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Timeline Mensal -->
+<div class="section-title">Evolução Mensal da Execução</div>
+<table>
+    <thead>
+        <tr>
+            <th width="20%">Mês</th>
+            <th width="40%">Total Aplicado (R$)</th>
+            <th width="40%">Acumulado (R$)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% set acumulado = 0 %}
+        {% for mes, valor in mensal %}
+        {% set acumulado = acumulado + valor %}
+        {% set mes_nome = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes|int -
+        1] %}
+        <tr>
+            <td>{{ mes_nome }}/{{ ano }}</td>
+            <td>R$ {{ "{:,.2f}".format(valor).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+            <td class="font-bold">R$ {{ "{:,.2f}".format(acumulado).replace(',', 'X').replace('.', ',').replace('X',
+                '.') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 30px; font-size: 9px; color: #666; text-align: justify;">
+    <strong>Observações:</strong> Este relatório consolida a execução financeira completa do exercício fiscal.
+    Os valores representam a aplicação efetiva dos recursos PROAP/PROAPINHO distribuídos aos programas de pós-graduação.
+    Para detalhamento específico consulte os relatórios trimestrais e semestrais.
+</div>
+
+{% endblock %}
+
+{% block report_date %}{{ now }}{% endblock %}

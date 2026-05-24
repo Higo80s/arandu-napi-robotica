@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar d-flex justify-content-between align-items-center"
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 style="margin: 0;">Relatório de Ações Pendentes</h1>
+    <div class="actions-group" style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('dashboard.exportar_pendencias_excel') }}" class="btn btn-premium-success"
+            style="text-decoration: none;">
+            <i class="lucide-file-spreadsheet"></i> Exportar Excel
+        </a>
+        {% if current_user.role in ['admin', 'gestor'] %}
+        <a href="{{ url_for('admin.monitor_automacao') }}" class="btn btn-outline-primary"
+            style="text-decoration: none; border: 1px solid #3b82f6; color: #3b82f6; padding: 0.5rem 1rem; border-radius: 8px;">
+            <i class="lucide-activity"></i> Monitor
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="card-grid" style="grid-template-columns: 1fr;">
+
+<!-- ============================================================ -->
+<!-- 🔴 ZONA A: PRIORIDADE MÁXIMA — CANCELAMENTOS SCBA           -->
+<!-- ============================================================ -->
+<div class="card" style="border-left: 5px solid #dc2626; background: var(--card-bg);">
+    <div style="background: linear-gradient(135deg, #fef2f2, #fee2e2); padding: 1rem 1.25rem; border-bottom: 1px solid #fecaca; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; color: #991b1b; display: flex; align-items: center; gap: 8px;">
+            🔴 Ação Requerida: Cancelamentos Pendentes (SCBA)
+            {% if count_titulacao_antecipada and count_titulacao_antecipada > 0 %}
+            <span style="background: #dc2626; color: white; padding: 2px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">
+                {{ count_titulacao_antecipada }} crítico{{ 's' if count_titulacao_antecipada != 1 else '' }}
+            </span>
+            {% endif %}
+        </h3>
+        </div>
+        <a href="{{ url_for('bolsistas.conflitos') }}" class="btn btn-sm"
+            style="background: #dc2626; color: white; text-decoration: none; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+            ⚖️ Ver Todos os Conflitos
+        </a>
+    </div>
+    <div style="padding: 1rem 1.25rem;">
+        <div class="alert-msg" style="color: #6b7280; font-size: 0.88rem; margin-bottom: 1rem;">
+            Bolsistas ativos(as) cuja <strong>previsão de defesa</strong> já está vencida — o pagamento continua sendo
+            debitado indevidamente. Verifique cada caso nos sistemas e encerre a cota.
+        </div>
+
+        {% set titulacao_antecipada = bolsistas_defesa_vencida if bolsistas_defesa_vencida is defined else [] %}
+        {% if titulacao_antecipada %}
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid #fecaca; background: #fef2f2;">
+                        <th style="padding: 0.5rem;">Discente</th>
+                        <th style="padding: 0.5rem;">Matrícula</th>
+                        <th style="padding: 0.5rem;">Defesa Prevista</th>
+                        <th style="padding: 0.5rem;">Bolsa Até</th>
+                        <th style="padding: 0.5rem;">Risco (dias)</th>
+                        <th style="padding: 0.5rem;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in titulacao_antecipada %}
+                    {% set dias_risco = (b.data_fim_bolsa - b.previsao_defesa).days %}
+                    <tr style="border-bottom: 1px solid #fecaca;">
+                        <td style="padding: 0.5rem;"><strong>{{ b.nome }}</strong></td>
+                        <td style="padding: 0.5rem; font-family: monospace; font-size: 0.85rem; color: #1e40af;">
+                            {{ b.matricula or '---' }}</td>
+                        <td style="padding: 0.5rem; color: #dc2626; font-weight: bold;">
+                            {{ b.previsao_defesa|date_br }}</td>
+                        <td style="padding: 0.5rem; color: #6b7280;">{{ b.data_fim_bolsa|date_br }}</td>
+                        <td style="padding: 0.5rem;">
+                            <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+                                +{{ dias_risco }} dias
+                            </span>
+                        </td>
+                        <td style="padding: 0.5rem;">
+                            <a href="{{ url_for('bolsistas.editar', id=b.id) }}"
+                                style="background: #dc2626; color: white; padding: 3px 10px; border-radius: 5px; font-size: 0.78rem; text-decoration: none; font-weight: 600;">
+                                Encerrar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif count_titulacao_antecipada and count_titulacao_antecipada > 0 %}
+        <p style="color: #6b7280; font-style: italic; text-align: center; padding: 1rem;">
+            {{ count_titulacao_antecipada }} caso(s) detectados — execute a sincronização acadêmica para ver os detalhes.
+        </p>
+        {% else %}
+        <p style="text-align: center; color: #10b981; font-weight: 500; padding: 1rem;">
+            ✅ Nenhuma titulação antecipada detectada. Pagamentos em conformidade.
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ⚖️ ZONA B: GOVERNANÇA DE DADOS — CONFLITOS DE IDENTIDADE    -->
+<!-- ============================================================ -->
+<div class="card" style="border-left: 5px solid #4338ca;">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <div class="alert-title" style="margin: 0; color: var(--text-color);">⚠️ CPFs em Conflito ou Duplicados</div>
+        <a href="{{ url_for('bolsistas.conflitos') }}"
+            style="background: #4338ca; color: white; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; text-decoration: none; font-weight: 600;">
+            Ver Conflitos
+        </a>
+    </div>
+    <div style="padding: 1rem 1.25rem;">
+        <div class="alert-msg" style="color: #6b7280; font-size: 0.88rem;">
+            CPFs duplicados ou matrículas divergentes entre o sistema acadêmico e a base FUNTEF/CONVENIAR.
+            Use <strong>Mesclar</strong> ou <strong>Manter</strong> para resolver cada conflito.
+        </div>
+        <p style="text-align: center; color: #10b981; font-weight: 500; padding: 0.5rem;">
+            ✅ Integridade garantida — acesse a view de conflitos para verificar.
+        </p>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 📄 ZONA C: ADMINISTRATIVO — editais e prestação de contas   -->
+<!-- ============================================================ -->
+
+<!-- 1. Renovação de Editais (Expiring Soon) -->
+<div class="card" style="border-left: 5px solid #f59e0b;">
+    <h3> Editais a Vencer (Próximos 30 dias)</h3>
+    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+        Estes editais estão próximos do fim da vigência. Verifique se é necessária renovação ou encerramento de bolsas.
+    </p>
+
+    {% if expiring %}
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 0.5rem;">Edital</th>
+                <th style="padding: 0.5rem;">Agência</th>
+                <th style="padding: 0.5rem;">Vigência</th>
+                <th style="padding: 0.5rem;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for edital in expiring %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 0.5rem;">{{ edital.numero }}</td>
+                <td style="padding: 0.5rem;">{{ edital.agencia }}</td>
+                <td style="padding: 0.5rem; color: #d97706; font-weight: bold;">
+                    {{ edital.data_fim|date_br }}
+                </td>
+                <td style="padding: 0.5rem;"><a href="{{ url_for('editais.editar', id=edital.id) }}" class="btn"
+                        style="background-color: #f59e0b; color: white; padding: 4px 8px; font-size: 0.8rem;">
+                        Gerenciar
+                    </a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #10b981; font-weight: 500; padding: 1rem;">
+        Tudo em dia! Nenhum edital vencendo em breve.
+    </p>
+    {% endif %}
+</div>
+
+<!-- 2. Prestação de Contas (Expired & Pending) -->
+<div class="card" style="border-left: 5px solid #ef4444;">
+    <h3> Prestação de Contas Pendente</h3>
+    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+        Estes editais já encerraram a vigência, mas ainda não foi registrada a prestação de contas.
+    </p>
+
+    {% if pending %}
+    <style>
+        .row-pending { background-color: #fef2f2; }
+        body.dark-mode .row-pending { background-color: rgba(127, 29, 29, 0.4); color: #f3f4f6; }
+    </style>
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 0.5rem;">Edital</th>
+                <th style="padding: 0.5rem;">Agência</th>
+                <th style="padding: 0.5rem;">Vencido em</th>
+                <th style="padding: 0.5rem;">Status</th>
+                <th style="padding: 0.5rem;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for edital in pending %}
+            <tr class="row-pending" style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 0.5rem;">{{ edital.numero }}</td>
+                <td style="padding: 0.5rem;">{{ edital.agencia }}</td>
+                <td style="padding: 0.5rem; color: #dc2626;">{{ edital.data_fim|date_br }}</td>
+                <td style="padding: 0.5rem;">
+                    <span style="background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 9999px; font-size: 0.8rem; border: 1px solid #fecaca;">
+                        Pendente
+                    </span>
+                </td>
+                <td style="padding: 0.5rem;">
+                    <a href="{{ url_for('editais.editar', id=edital.id) }}" class="btn"
+                        style="background-color: #dc2626; color: white; padding: 4px 8px; font-size: 0.8rem;">
+                        Resolver
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #10b981; font-weight: 500; padding: 1rem;">
+        Ótimo! Nenhuma pendência encontrada.
+    </p>
+    {% endif %}
+</div>
+
+<!-- 3. Controle Mensal de Vigências (v17.0 - Unified & Dynamic) -->
+<div class="card shadow border-left-danger mb-4" style="border-left: 5px solid #dc2626;">
+    <div class="card-header py-3 bg-danger-soft d-flex justify-content-between align-items-center" 
+         style="background-color: #fee2e2; border-bottom: 1px solid #fecaca;">
+        <h3 class="m-0 font-weight-bold text-danger" style="color: #dc2626; margin: 0; font-size: 1.25rem;">
+            <i class="lucide-calendar mr-1"></i> Controle Mensal de Vigências
+        </h3>
+        
+        <!-- SELETOR DINÂMICO -->
+        <form action="{{ url_for('dashboard.alertas') }}" method="GET" class="d-flex gap-2 align-items-center" data-no-spinner="true">
+            <select name="mon_mes" class="form-select form-select-sm" onchange="this.form.submit()" 
+                    style="border-radius: 8px; border: 1px solid #fecaca; width: 130px; height: 32px; font-size: 0.85rem;">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {{ 'selected' if m == mon_mes else '' }}>{{ meses_nomes[m] }}</option>
+                {% endfor %}
+            </select>
+            <select name="mon_ano" class="form-select form-select-sm" onchange="this.form.submit()"
+                    style="border-radius: 8px; border: 1px solid #fecaca; width: 90px; height: 32px; font-size: 0.85rem;">
+                {% for a in anos_range %}
+                <option value="{{ a }}" {{ 'selected' if a == mon_ano else '' }}>{{ a }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="card-body" style="padding: 1.25rem;">
+        <h2 style="font-size: 1.1rem; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+            📅 Controle Mensal de Vigências (Bolsistas)
+        </h2>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+            Listagem unificada de bolsistas com encerramento previsto em <strong>{{ "%02d/%d"|format(mon_mes, mon_ano) }}</strong>.
+        </p>
+        
+        <div class="table-responsive">
+            {% if monitoring_list %}
+            <table class="table table-hover" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid #fecaca; background: #fef2f2;">
+                        <th style="padding: 0.5rem; color: #991b1b;">Discente</th>
+                        <th style="padding: 0.5rem; color: #991b1b;">Edital / Agência</th>
+                        <th style="padding: 0.5rem; color: #991b1b;">Data Fim</th>
+                        <th style="padding: 0.5rem; color: #991b1b;">Status</th>
+                        <th style="padding: 0.5rem; color: #991b1b;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in monitoring_list %}
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <strong>{{ item.nome }}</strong><br>
+                            <small class="text-muted">{{ item.programa }}</small>
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <span style="font-size: 0.8rem; color: #6b7280;">
+                                {% if item.edital %}
+                                    {{ item.edital.numero_edital or item.edital.numero }}
+                                    {% if item.edital.ano_edital %} / {{ item.edital.ano_edital }}{% endif %}
+                                    ({{ item.edital.agencia }})
+                                {% else %}
+                                    {{ item.tipo }} (Direto)
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem; font-weight: bold; color: #dc2626;">{{ item.data_fim|date_br }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% set bolsista = Bolsista.query.get(item.id) %}
+                            {% set display = bolsista.get_status_display() %}
+                            <span style="padding: 0.35rem 0.75rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; background: {{ display.bg }}; color: {{ display.color }}; border: 1px solid rgba(0,0,0,0.05);">
+                                {% if display.icon %}
+                                <i data-lucide="{{ display.icon }}" style="width: 12px; height: 12px;"></i>
+                                {% endif %}
+                                {{ display.label }}
+                            </span>
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <a href="{{ url_for(item.route_edit, id=item.id) }}" class="btn"
+                               style="background-color: #dc2626; color: white; padding: 4px 12px; font-size: 0.8rem; border-radius: 6px; text-decoration: none; display: inline-block;">
+                               <i class="lucide-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; color: #6b7280; font-style: italic; padding: 2rem;">
+                Nenhuma vigência encontrada para este período.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+
+</div> <!-- FIM .card-grid -->
+
+{% endblock %}

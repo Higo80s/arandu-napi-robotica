@@ -1,0 +1,47 @@
+/* ==================================
+   BOTÃO LOGOUT - TOPBAR
+   ================================== */
+
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+    color: #dc2626;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1.5px solid rgba(220, 38, 38, 0.2);
+    margin-left: 1rem;
+}
+
+.btn-logout:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+}
+
+.btn-logout .logout-text {
+    display: inline-block;
+}
+
+/* Mobile: esconder texto, só ícone */
+@media (max-width: 768px) {
+    .btn-logout .logout-text {
+        display: none;
+    }
+
+    .btn-logout {
+        padding: 0.6rem;
+        margin-left: 0.5rem;
+    }
+}

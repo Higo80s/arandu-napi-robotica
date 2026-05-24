@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white"><i class="fas fa-database me-2" style="color: var(--neon-cyan);"></i>Explorador de Banco de Dados</h2>
+            <p class="text-secondary small">Ferramenta de auditoria técnica e governança de dados PI 33/2025.</p>
+        </div>
+        <div class="badge bg-danger p-2 shadow-sm" style="font-size: 0.75rem; letter-spacing: 1px;">
+            ACESSO RESTRITO: MASTER/ADMIN
+        </div>
+    </div>
+
+    <div class="row">
+        {% for table in tables %}
+        <div class="col-md-4 mb-4">
+            <div class="neon-card h-100 animate-neon" style="border-top: 3px solid var(--neon-cyan);">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="text-white mb-1">{{ table.name | capitalize }}</h5>
+                    <span class="badge bg-dark text-cyan border border-cyan">{{ table.count }} registros</span>
+                </div>
+                <p class="text-secondary small mt-2">{{ table.description }}</p>
+                
+                <div class="mt-3">
+                    <label class="text-secondary x-small text-uppercase fw-bold">Colunas Visíveis</label>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for col in table.columns[:6] %}
+                        <span class="badge bg-secondary-subtle text-dark-emphasis" style="font-size: 0.65rem;">{{ col }}</span>
+                        {% endfor %}
+                        {% if table.columns | length > 6 %}
+                        <span class="text-secondary x-small">... e mais {{ table.columns | length - 6 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-4 d-grid gap-2">
+                    <a href="{{ url_for('database_explorer.view_table', table_name=table.name) }}" class="btn btn-outline-cyan btn-sm">
+                        <i class="fas fa-eye me-1"></i> Explorar Dados
+                    </a>
+                    <a href="{{ url_for('database_explorer.export_table', table_name=table.name) }}" class="btn btn-dark btn-sm text-success">
+                        <i class="fas fa-file-excel me-1"></i> Exportar para Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .btn-outline-cyan {
+        color: var(--neon-cyan);
+        border-color: var(--neon-cyan);
+    }
+    .btn-outline-cyan:hover {
+        background: var(--neon-cyan);
+        color: black;
+        box-shadow: 0 0 15px var(--neon-cyan);
+    }
+    .x-small { font-size: 0.7rem; }
+</style>
+{% endblock %}

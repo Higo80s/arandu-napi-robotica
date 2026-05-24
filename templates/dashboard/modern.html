@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+
+    <!-- Title Section -->
+    <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+        <h1 style="font-size: 1.8rem; color: var(--text-color);">{{ title }}</h1>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Visão Geral Simplificada</p>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="card-grid">
+        <!-- Card 1: Total Active -->
+        <div class="card" style="border-left: 4px solid var(--primary-color);">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                {{ icon('users', size=24, color='var(--primary-color)') }}
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Total Ativos</h3>
+            </div>
+            <div class="value" style="font-size: 2.5rem; font-weight: 700;">{{ stats.total_active|default(0) }}</div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Residentes & Discentes</p>
+        </div>
+
+        {% if current_user.role == 'coordenador_programa' %}
+        <!-- Coordinator: Monthly Investment -->
+        <div class="card" style="border-left: 4px solid var(--success-color);">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                {{ icon('dollar-sign', size=24, color='var(--success-color)') }}
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Inv. Mensal Estimado</h3>
+            </div>
+            <div class="value" style="font-size: 2.5rem; font-weight: 700;">
+                {{ stats.invest_monthly|format_currency }}
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Bolsas Ativas</p>
+        </div>
+
+        <!-- Coordinator: Scholars Count -->
+        <div class="card" style="border-left: 4px solid var(--warning-color);">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                {{ icon('graduation-cap', size=24, color='var(--warning-color)') }}
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Bolsistas</h3>
+            </div>
+            <div class="value" style="font-size: 2.5rem; font-weight: 700;">{{ stats.scholars|default(0) }}</div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Com remuneração</p>
+        </div>
+
+        {% elif current_user.role == 'diretor_campus' %}
+        <!-- Director: Programs -->
+        <div class="card" style="border-left: 4px solid var(--info-color);">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                {{ icon('book-open', size=24, color='var(--info-color)') }}
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Programas</h3>
+            </div>
+            <div class="value" style="font-size: 2.5rem; font-weight: 700;">{{ stats.programs|default(0) }}</div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">No Campus</p>
+        </div>
+
+        <!-- Director: Residents Breakdown -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                {{ icon('microscope', size=24, color='var(--text-muted)') }}
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Residentes</h3>
+            </div>
+            <div class="value" style="font-size: 2.5rem; font-weight: 700;">{{ stats.residents|default(0) }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions & Alerts Row -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 2rem;">
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                {{ icon('zap', size=20) }} Ações Rápidas
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="{{ url_for('posdoc.novo') }}" class="btn btn-primary" style="text-align: center;">
+                    Novo Residente
+                </a>
+                <a href="{{ url_for('bolsistas.novo') }}" class="btn btn-secondary" style="text-align: center;">
+                    Novo Discente
+                </a>
+                <a href="{{ url_for('reports.index') }}" class="btn btn-outline" style="text-align: center;">
+                    Relatórios
+                </a>
+            </div>
+        </div>
+
+        <!-- Alerts List (Coordinator Only primarily) -->
+        {% if alerts %}
+        <div class="card">
+            <h3
+                style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--danger-color);">
+                {{ icon('alert-circle', size=20) }} Vencendo em Breve (< 90 dias) </h3>
+                    <div style="max-height: 250px; overflow-y: auto;">
+                        {% for alert in alerts %}
+                        <div
+                            style="padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600;">{{ alert.name }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">{{ alert.type }} • Vence em {{
+                                    alert.date|date_br }}</div>
+                            </div>
+                            <span class="badge badge-warning">{{ alert.days }} dias</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+        </div>
+        {% else %}
+        <div class="card"
+            style="display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+            <div style="text-align: center;">
+                {{ icon('check-circle', size=48, color='var(--success-color)') }}
+                <p style="margin-top: 1rem;">Nenhum contrato vencendo nos próximos 90 dias.</p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary font-weight-bold">
+            <i class="lucide-activity mr-2"></i> Monitor de Automação
+        </h2>
+        <span class="badge badge-outline-secondary">Últimas 50 execuções</span>
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Tarefa</th>
+                            <th>Data/Hora</th>
+                            <th>Status</th>
+                            <th>Registros</th>
+                            <th>Detalhes/Erro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="font-weight-bold">{{ log.nome_tarefa }}</td>
+                            <td>{{ log.data_execucao.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                {% if log.status == 'SUCESSO' %}
+                                <span class="badge badge-success-premium">✓ SUCESSO</span>
+                                {% else %}
+                                <span class="badge badge-danger-premium">✗ ERRO</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.registros_processados }}</td>
+                            <td class="small text-muted">{{ log.mensagem }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                Nenhum log registrado até o momento.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .badge-success-premium {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5em 1em;
+        border-radius: 20px;
+    }
+
+    .badge-danger-premium {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        color: white;
+        padding: 0.5em 1em;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}

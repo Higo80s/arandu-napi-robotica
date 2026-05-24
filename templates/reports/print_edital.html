@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Financeiro - Edital {{ edital.numero }}</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+
+        .info-edital {
+            margin-bottom: 15px;
+            background: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-col {
+            width: 48%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #999;
+            padding: 5px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eee;
+            font-weight: bold;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 10px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .money {
+            font-family: "Courier New", monospace;
+        }
+
+        .footer-totals {
+            margin-top: 20px;
+            padding-top: 10px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #002e6d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+        }
+
+        .print-btn:hover {
+            background: #001f4d;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+
+            body {
+                padding: 0;
+                font-size: 10px;
+            }
+
+            .print-btn {
+                display: none;
+            }
+
+            .info-edital {
+                background: none;
+                border: 1px solid #000;
+            }
+
+            th {
+                background-color: #ddd !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+
+    <div class="header">
+        <h1>Universidade Tecnológica Federal do Paraná</h1>
+        <p>Projeto NAPI-Robótica - Gestão de Bolsistas</p>
+        <p>Base Administrativa: FUNTEF / CONVENIAR</p>
+    </div>
+
+    <div class="info-edital">
+        <div class="info-col">
+            <p><strong>EDITAL:</strong> {{ edital.numero }}</p>
+            <p><strong>DESCRIÇÃO:</strong> {{ edital.descricao }}</p>
+        </div>
+        <div class="info-col" style="text-align: right;">
+            <p><strong>DATA RELATÓRIO:</strong> {{ hoje.strftime('%d/%m/%Y') }}</p>
+            <p><strong>VAGAS TOTAIS:</strong> {{ edital.modalidades|sum(attribute='vagas') }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20%;">Bolsista / Beneficiário</th>
+                <th style="width: 10%;">CPF</th>
+                <th style="width: 15%;">Instituição</th>
+                <th style="width: 10%;">Modalidade</th>
+                <th style="width: 12%;">Vigência</th>
+                <th style="width: 8%;">Vlr Mês</th>
+                <th class="text-center" style="width: 5%;">P.</th>
+                <th class="text-right" style="width: 6%;">Pago</th>
+                <th class="text-right" style="width: 7%;">Prev.</th>
+                <th class="text-right" style="width: 7%;">Saldo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.nome }}</td>
+                <td>{{ item.cpf }}</td>
+                <td>{{ item.instituicao }}</td>
+                <td>{{ item.tipo }}</td>
+                <td>{{ item.inicio.strftime('%d/%m/%Y') if item.inicio else '-' }} a {{ item.fim.strftime('%d/%m/%Y') if
+                    item.fim else '-' }}</td>
+                <td>R$ {{ "%.2f"|format(item.valor) }}</td>
+                <td class="text-center">
+                    {{ item.pagos }}
+                    {% if item.is_estimado %}
+                    <span style="font-size:8px; color:#d9534f;">(Est)</span>
+                    {% endif %}
+                </td>
+                <td class="text-right money">R$ {{ "%.2f"|format(item.total_pago) }}</td>
+                <td class="text-right money">R$ {{ "%.2f"|format(item.total_prev) }}</td>
+                <td class="text-right money">R$ {{ "%.2f"|format(item.saldo) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer-totals">
+        <div class="total-row">
+            <span>TOTAL PAGO: R$ {{ "%.2f"|format(total_pago) }}</span>
+            <span style="color: #555;">|</span>
+            <span>TOTAL PREVISTO: R$ {{ "%.2f"|format(total_previsto) }}</span>
+            <span style="color: #555;">|</span>
+            <span style="color: {{ 'red' if saldo_geral < 0 else 'green' }};">SALDO RESTANTE: R$ {{
+                "%.2f"|format(saldo_geral) }}</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
+        <div>
+            <p>_______________________________________________________</p>
+            <p>Responsável pela Emissão</p>
+        </div>
+        <div>
+            <p>_______________________________________________________</p>
+            <p>Pró-Reitoria de Pesquisa e Pós-Graduação / UTFPR</p>
+        </div>
+    </div>
+
+</body>
+
+</html>

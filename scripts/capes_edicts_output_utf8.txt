@@ -1,0 +1,5 @@
+ * Banco de Dados: PostgreSQL [OK]
+ID: 4, Numero: 23/2025 (PDSE), Descricao: Doutorado SanduÝche no Exterior
+ID: 13, Numero: CAPES (IES) PROPPG, Descricao: Bolsas PROPPG
+ID: 14, Numero: CAPES PPG, Descricao: Bolsas PPG
+ID: 22, Numero: CAPES (PDPG), Descricao: Programa de Desenvolvimento da P¾s-GraduaþÒo (PDPG)

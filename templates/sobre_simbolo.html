@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Sobre o Símbolo - Gestão de Editais UTFPR</title>
+
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+ <style>
+ .simbolo-page {
+ max-width: 900px;
+ margin: 2rem auto;
+ padding: 2rem;
+ background: var(--card-bg);
+ border-radius: 1rem;
+ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+ }
+
+ .simbolo-header {
+ text-align: center;
+ margin-bottom: 3rem;
+ }
+
+ .simbolo-img {
+ width: 200px;
+ height: 200px;
+ margin: 2rem auto;
+ display: block;
+ }
+
+ .content-section {
+ margin-bottom: 2rem;
+ line-height: 1.8;
+ }
+
+ .content-section h2 {
+ color: var(--primary-color);
+ margin-bottom: 1rem;
+ border-left: 4px solid var(--primary-color);
+ padding-left: 1rem;
+ }
+
+ .prompt-box {
+ background: var(--bg-light);
+ padding: 1.5rem;
+ border-radius: 0.5rem;
+ border-left: 4px solid #48d1cc;
+ font-family: 'Courier New', monospace;
+ font-size: 0.9rem;
+ margin: 1rem 0;
+ }
+
+ .reference {
+ background: #f0f9ff;
+ padding: 1rem;
+ border-radius: 0.5rem;
+ margin: 1rem 0;
+ }
+
+ .reference a {
+ color: var(--primary-color);
+ text-decoration: none;
+ }
+
+ .reference a:hover {
+ text-decoration: underline;
+ }
+ </style>
+</head>
+
+<body>
+ <div class="simbolo-page">
+ <div class="simbolo-header">
+ <img src="{{ url_for('static', filename='images/simbolo_marangatu.png') }}" alt="Símbolo Marangatu-Yvyraija"
+ class="simbolo-img">
+ <h1>Símbolo do Sistema</h1>
+ <p style="color: var(--text-muted); font-size: 1.1rem;">
+ Marangatu (sabedoria) e Yvyraija (aprendiz) - Grafismo Indígena Kaiowá
+ </p>
+ </div>
+
+ <div class="content-section">
+ <h2>🌿 Significado Cultural</h2>
+ <p>
+ O símbolo deste sistema é inspirado nos <strong>grafismos indígenas Kaiowá</strong> do Centro-Oeste
+ brasileiro,
+ especificamente nos conceitos de <strong>Marangatu</strong> (sabedoria) e <strong>Yvyraija</strong>
+ (aprendiz).
+ </p>
+ <p>
+ A imagem representa a <strong>evolução do conhecimento brasileiro</strong>, honrando as raízes indígenas
+ como <strong>base fundamental da tecnologia</strong>. Os padrões geométricos tradicionais transformam-se
+ gradualmente em circuitos eletrônicos, simbolizando a continuidade do conhecimento ancestral nas
+ inovações modernas.
+ </p>
+ </div>
+
+ <div class="content-section">
+ <h2>🎨 Prompt de Criação</h2>
+ <div class="prompt-box">
+ fundo azul petróleo ou cinza, minimalista tipo ícone inspirada Grafismo Marangatu (sabedoria),
+ yvyraija (aprendiz) indigenas brasileiros centro oeste misturado com circuitos, como se os riscos
+ da pintura se tornassem circuito de placa mãe para mostrar a evolução do conhecimento brasileiros
+ em respeito aos indigenas e ao conhecimento ancestral base da tecnologia, não deve conter pessoas
+ </div>
+ </div>
+
+ <div class="content-section">
+ <h2>{{ icon('book-open', size=20) }} Referência Acadêmica</h2>
+ <div class="reference">
+ <strong>Artigo:</strong> GRAFISMO INDÍGENA COMO LINGUAGEM<br>
+ <strong>Autoras:</strong> Rossandra Cabreira e Adriana Sales<br>
+ <strong>Instituição:</strong> Universidade Federal da Grande Dourados (UFGD)<br>
+ <strong>Contexto:</strong> Rossandra Cabreira é indígena Kaiowá da aldeia Jaguapiru em Dourados/MS,
+ estudante da Licenciatura Intercultural na UFGD na área de Linguagens.<br>
+ <strong>Link:</strong> <a
+ href="https://files.ufgd.edu.br/arquivos/arquivos/78/LAPRAFE/Acervo/ART.%20ROSSANDRA%20CABREIRA%20Grafismos%20ind%C3%ADgena%20como%20linguagem.pdf"
+ target="_blank">
+ Acervo UFGD - Grafismos indígena como linguagem (PDF)
+ </a>
+ </div>
+ </div>
+
+ <div class="content-section">
+ <h2>💡 Filosofia do Sistema</h2>
+ <p>
+ Este sistema de gestão acadêmica busca honrar a tradição brasileira de <strong>valorizar o conhecimento
+ em todas as suas formas</strong> - desde o saber ancestral preservado pelas comunidades indígenas
+ até
+ as inovações tecnológicas contemporâneas.
+ </p>
+ <p>
+ Ao adotar este símbolo, reconhecemos que <strong>toda tecnologia moderna tem raízes no conhecimento
+ tradicional</strong> e que o respeito às culturas originárias é fundamental para construir um futuro
+ verdadeiramente inovador e inclusivo.
+ </p>
+ </div>
+
+ <div style="text-align: center; margin-top: 3rem;">
+ <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar ao Dashboard</a>
+ </div>
+ </div>
+</body>
+
+</html>

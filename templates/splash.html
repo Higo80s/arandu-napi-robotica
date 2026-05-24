@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ui.get('title', 'NAPI-Robótica') }} | Carregando...</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-robotica-neon.css') }}">
+    <style>
+        body {
+            background: #0a0e14;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+        }
+
+        .splash-container {
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            z-index: 10;
+        }
+
+        .logo-box {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .flash-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.2) 0%, transparent 70%);
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+        .main-logo {
+            width: 180px;
+            height: auto;
+            position: relative;
+            z-index: 2;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+        }
+
+        .status-text {
+            color: #00f2ff;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out 0.5s forwards;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00f2ff, #bc13fe);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.8);
+            transition: width 0.3s ease;
+        }
+
+        .loading-metrics {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .metric-line {
+            animation: slideUp 2s infinite linear;
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.3; }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(20px); }
+            100% { transform: translateY(-40px); }
+        }
+
+        /* Ambient scan line */
+        .scan-line {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.05), transparent);
+            animation: vertical-scan 4s linear infinite;
+        }
+
+        @keyframes vertical-scan {
+            0% { top: -100px; }
+            100% { top: 110%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scan-line"></div>
+    
+    <div class="splash-container">
+        <div class="logo-box">
+            <div class="flash-circle"></div>
+            <img src="{{ url_for('static', filename='images/logo_arandu.png') }}" alt="Arandu Logo" class="main-logo">
+        </div>
+
+        <div class="status-text" id="statusLabel">{{ ui.get('loading_text', 'Sincronizando DNA') }}</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="loading-metrics" id="metricsBox">
+            <div class="metric-line">CONNECTING TO POSTGRES...</div>
+            <div class="metric-line">MAPPING SCHEMA V.11.2...</div>
+            <div class="metric-line">UPDATING UI_STATE...</div>
+            <div class="metric-line">RESTORING NEON_THEME...</div>
+            <div class="metric-line">PI 33/2025 HEALTH: OK</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bar = document.getElementById('progressBar');
+            const label = document.getElementById('statusLabel');
+            const statusTexts = [
+                "{{ ui.get('step1', 'Acessando Banco de Dados') }}",
+                "{{ ui.get('step2', 'Verificando Integridade') }}",
+                "{{ ui.get('step3', 'Carregando Dashboard Master') }}",
+                "{{ ui.get('step4', 'Finalizando Rebirth') }}"
+            ];
+            
+            let progress = 0;
+            let currentStep = 0;
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress > 100) progress = 100;
+                
+                bar.style.width = progress + '%';
+                
+                if (progress > (currentStep + 1) * 25 && currentStep < statusTexts.length - 1) {
+                    currentStep++;
+                    label.innerText = statusTexts[currentStep];
+                }
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        window.location.replace("{{ url_for('auth.login', next=request.args.get('next', '')) }}");
+                    }, 800);
+                }
+            }, 80);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+=== COMPARACAO COM DADOS OFICIAIS CAPES ===
+
+DADOS OFICIAIS CAPES:
+  Total: 429
+  Mestrado PPG: 255
+  Doutorado PPG: 151
+  Mestrado IES: 14
+  Doutorado IES: 9
+
+=== DADOS DO SISTEMA ===
+
+Total bolsistas ATIVOS: 481
+  Mestrado: 307
+  Doutorado: 169
+
+=== POR EDITAL ===
+
+Recursos Próprios                        (UTFPR     ):  10 bolsistas
+14/25 (Mestrado e doutorado internaciona (CNPq      ):  20 bolsistas
+21/23 - 1357 - RT-FA - CONV 337.2023 - B (Fundação a):   5 bolsistas
+666/2025                                 (Metal Agen):   1 bolsistas
+CAPES DS (IES)                           (CAPES     ):  16 bolsistas
+CAPES DS                                 (CAPES     ): 373 bolsistas
+20/2023 - 1321 - RT-FA - CONV 313.2023 - (Fundação A):   3 bolsistas
+1676 - RT-FA - CONV 497.2024 - RENAULT   (Fundação A):   2 bolsistas
+1717 - RT-FA- CONV 032/2025 - DIKJSTRA   (Fundação A):   2 bolsistas
+12/2025 - 1756 - CT-FA - CONV 110/2025 - (Fundação A):  45 bolsistas
+CAPES (PDPG)                             (CAPES     ):   2 bolsistas
+17/2024 - M/D INTERNACIONAL              (CNPq      ):   1 bolsistas
+14/2025                                  (CNPq      ):   1 bolsistas
+
+=== DISCREPANCIA ===
+
+Diferenca total: +52
+
+Sistema tem 52 bolsistas A MAIS que o oficial CAPES

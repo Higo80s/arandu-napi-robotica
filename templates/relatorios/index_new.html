@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Painel de Relatórios</h1>
+    <div style="font-size: 0.9em; color: var(--text-muted); text-align: right;">
+        Exportação de Dados e Indicadores Estratégicos
+    </div>
+</div>
+
+<style>
+    /* Dashboard Grid Layout */
+    .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Responsive: Mobile first, stack cards */
+    @media (max-width: 768px) {
+        .reports-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    .report-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-header {
+        margin-bottom: 1rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+    }
+
+    .section-title {
+        grid-column: 1 / -1;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .btn-download {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    /* Adaptive Color Borders for PROAP Cards */
+    .proap-card-trimestral {
+        border-left-color: #0d6efd !important;
+    }
+
+    .proap-card-semestral {
+        border-left-color: #6610f2 !important;
+    }
+
+    .proap-card-anual {
+        border-left-color: #198754 !important;
+    }
+
+    .proap-card-governanca {
+        border-left-color: #d63384 !important;
+    }
+
+    /* Dark mode adaptation */
+    [data-theme="dark"] .report-card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .report-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    }
+</style>
+
+<div class="main-content">
+
+
+    <div style="margin-top: 3rem;">
+        <h2
+            style="font-size: 1.5rem; color: #334155; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 2rem;">
+            📊 Relatórios Estratégicos (Downloads)
+        </h2>
+
+        <!-- Section 1: Operacional -->
+        <div class="reports-grid">
+            <div class="section-title"> Gestão Operacional & Financeira</div>
+
+            <!-- Card: Folha de Pagamento -->
+            <div class="report-card">
+                <div class="card-header">
+                    <div class="card-title">Pagamento de Bolsas
+                    </div>
+                    <div class="card-desc">
+                        Emite a relação para liquidação de pagamento. Escolha entre planilha detalhada ou documento
+                        formal.
+                    </div>
+                </div>
+
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.85rem; font-weight: 500;">Mês de Referência</label>
+                        <input type="month" name="mes" required value="2026-01"
+                            style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit" name="tipo" value="excel" class="btn btn-primary" style="flex: 1;">
+                            <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Excel
+                        </button>
+                        <button type="submit" name="tipo" value="pdf" class="btn btn-primary" style="flex: 1;">
+                            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Card: Relatório Gráfico Financeiro -->
+            <div class="report-card">
+                <div class="card-header">
+                    <div class="card-title">Análise Financeira
+                    </div>
+                    <div class="card-desc">
+                        Dashboard visual contendo gráficos de distribuição de recursos por campus e programa.
+                    </div>
+                </div>
+
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.85rem; font-weight: 500;">Período de Análise</label>
+                        <input type="month" name="mes" required value="2026-01"
+                            style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                    <button type="submit" name="tipo" value="graficos" class="btn btn-primary btn-download">
+                        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i> Gerar Relatório Gráfico
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section 2: Estratégico Residentes -->
+        <div class="reports-grid">
+            <div class="section-title"> Gestão de Residentes (Pós-Doc)</div>
+
+            <!-- Card: Relatório Estratégico (PDF) -->
+            <div class="report-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="card-header">
+                    <div class="card-title">Relatório Estratégico
+                    </div>
+                    <div class="card-desc">
+                        Documento de inteligência com análise de perfil, distribuição geográfica e evolução.
+                        <br><strong style="font-size:0.8rem;">Ideal para apresentações e tomadas de decisão.</strong>
+                    </div>
+                </div>
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                    <input type="hidden" name="mes" value="current">
+                    <button type="submit" name="tipo" value="residentes_pdf" class="btn btn-primary btn-download">
+                        <i data-lucide="download" style="width: 16px; height: 16px;"></i> Baixar PDF
+                    </button>
+                </form>
+            </div>
+
+            <!-- Card: Lista Geral (Excel) -->
+            <div class="report-card">
+                <div class="card-header">
+                    <div class="card-title">Base de Dados Completa
+                    </div>
+                    <div class="card-desc">
+                        Exporta todos os dados cadastrais (Projetos, Supervisores, Vigências) para planilha.
+                    </div>
+                </div>
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                    <input type="hidden" name="mes" value="current">
+                    <button type="submit" name="tipo" value="residentes_excel" class="btn btn-primary btn-download">
+                        <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i> Baixar Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Section 3: Gestão Financeira (PROAP/PROAPINHO) -->
+    <div class="reports-grid">
+        <div class="section-title"> Gestão Financeira (PROAP/PROAPINHO)</div>
+
+        <!-- Card 1: Trimestral -->
+        <div class="report-card" style="border-left: 4px solid #0d6efd;">
+            <div class="card-header">
+                <div class="card-title">Relatório Trimestral</div>
+                <div class="card-desc">
+                    Detalhamento de despesas segregado por trimestres do exercício corrente.
+                </div>
+            </div>
+            <form action="{{ url_for('proap.relatorios_trimestral_pdf') }}" method="GET" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary btn-download">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i> Baixar PDF
+                </button>
+            </form>
+        </div>
+
+        <!-- Card 2: Semestral -->
+        <div class="report-card" style="border-left: 4px solid #6610f2;">
+            <div class="card-header">
+                <div class="card-title">Relatório Semestral</div>
+                <div class="card-desc">
+                    Consolidado de execução orçamentária por semestre.
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <form action="{{ url_for('proap.relatorios_semestral_pdf', semestre=1) }}" method="GET" style="flex: 1;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i data-lucide="download" style="width: 14px; height: 14px;"></i> 1º Sem
+                    </button>
+                </form>
+                <form action="{{ url_for('proap.relatorios_semestral_pdf', semestre=2) }}" method="GET" style="flex: 1;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i data-lucide="download" style="width: 14px; height: 14px;"></i> 2º Sem
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card 3: Anual -->
+        <div class="report-card" style="border-left: 4px solid #198754;">
+            <div class="card-header">
+                <div class="card-title">Relatório Anual</div>
+                <div class="card-desc">
+                    Análise completa do exercício (Balanço Geral).
+                </div>
+            </div>
+            <form action="{{ url_for('proap.relatorios_anual_pdf') }}" method="GET" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary btn-download">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i> Baixar PDF
+                </button>
+            </form>
+        </div>
+
+        <!-- Card 4: Governança (Auditoria) -->
+        <div class="report-card" style="border-left: 4px solid #d63384;">
+            <div class="card-header">
+                <div class="card-title">Governança e Transparência</div>
+                <div class="card-desc">
+                    Relatório de auditoria com rastreabilidade por Campus e Programa.
+                </div>
+            </div>
+            <form action="{{ url_for('proap.relatorios_auditoria_pdf') }}" method="GET" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary btn-download">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i> Baixar PDF
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section 4: Relatórios Históricos por Campus -->
+    <div class="reports-grid">
+        <div class="section-title"> Relatórios Históricos por Programa e
+            Agência</div>
+
+        <!-- Card: Consolidado por Campus (PRINCIPAL) -->
+        <div class="report-card" style="border-left: 4px solid #28a745;">
+            <div class="card-header">
+                <div class="card-title">Consolidado por Campus
+                </div>
+                <div class="card-desc">
+                    Demonstrativo de TODAS as bolsas de Mestrado e Doutorado cadastradas no sistema, agrupadas por
+                    Campus.
+                    <br><strong style="font-size:0.8rem;">Formato simplificado: Campus | Mestrado | Doutorado |
+                        Total</strong>
+                </div>
+            </div>
+            <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                <input type="hidden" name="mes" value="current">
+                <button type="submit" name="tipo" value="campus_consolidado" class="btn btn-primary btn-download">
+                    <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i> Baixar Excel
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Historico Unificado -->
+        <div class="report-card">
+            <div class="card-header">
+                <div class="card-title" style="color: #6c757d;">
+                    Relatório Histórico Detalhado
+                </div>
+                <div class="card-desc">
+                    Relatório completo por programa e agência (2014-2025).
+                    <br><strong style="font-size:0.8rem;">Contém abas separadas para Mestrado e Doutorado na mesma
+                        planilha.</strong>
+                </div>
+            </div>
+            <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                <input type="hidden" name="mes" value="current">
+                <button type="submit" name="tipo" value="bolsas_unificadas" class="btn btn-primary btn-download">
+                    <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i> Baixar Excel
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section 4: Acadêmico -->
+    <div class="reports-grid">
+        <div class="section-title"> Dados Acadêmicos</div>
+
+        <!-- Card: Programas Sucupira-->
+        <div class="report-card" style="border-left: 4px solid #fbbf24;">
+            <div class="card-header">
+                <div class="card-title">Programas de Pós-Graduação (Sucupira)
+                </div>
+                <div class="card-desc">
+                    Relação oficial COMPLETA com os 81 cursos (M+D separados).
+                    <br><strong style="font-size:0.8rem;">Formato Plataforma Sucupira 2025</strong>
+                </div>
+            </div>
+            <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST">
+                <input type="hidden" name="mes" value="current">
+                <button type="submit" name="tipo" value="programas_sucupira" class="btn btn-primary btn-download">
+                    <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i> Exportar Excel
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

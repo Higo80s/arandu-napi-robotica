@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Relatório PROAP{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            background: #fff;
+            padding: 20px;
+        }
+
+        /* Header */
+        .report-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3b82f6;
+        }
+
+        .report-header h1 {
+            font-size: 16px;
+            color: #2c3e50;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .report-header .subtitle {
+            font-size: 10px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        /* Section titles */
+        .section-title {
+            background-color: #3b82f6;
+            color: white;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 10px;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        tr.total-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        /* Utility classes */
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        /* Summary box */
+        .summary-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 5px solid #3b82f6;
+            margin-bottom: 20px;
+        }
+
+        .summary-box .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .summary-box .label {
+            font-size: 9px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* Footer */
+        .report-footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 9px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Report Header -->
+    <div class="report-header">
+        <h1>
+            {% block report_title %}Relatório PROAP{% endblock %}
+        </h1>
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Report Footer -->
+    <div class="report-footer">
+        Sistema de Gestão de Editais - UTFPR | Gerado em {% block report_date %}{{ now }}{% endblock %}
+    </div>
+</body>
+
+</html>

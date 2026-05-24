@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Histórico de Bolsas (2014-2025)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background: #fff;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+
+        .header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            color: #1e3a8a;
+            font-size: 18pt;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header-title small {
+            color: #64748b;
+            font-size: 10pt;
+        }
+
+        .meta-info {
+            text-align: right;
+            font-size: 9pt;
+            color: #64748b;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 8px 12px;
+            font-weight: 600;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 15px;
+            font-size: 12pt;
+        }
+
+        /* Metric Cards Row */
+        .metrics-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background: #fff;
+        }
+
+        .metric-value {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+            margin-bottom: 10px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 8pt;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>Relatório Histórico de Bolsas</h1>
+            <small>Série Temporal Auditada (2014-2025)</small>
+        </div>
+        <div class="meta-info">
+            Gerado em: {{ hoje.strftime('%d/%m/%Y') }}<br>
+            Sistema de Gestão de Editais
+        </div>
+    </div>
+
+    <!-- 1. Visão Geral (KPIs) -->
+    <div class="section">
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-value">{{ total_geral }}</div>
+                <div class="metric-label">Total de Concessões</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #16a34a;">{{ total_2025 }}</div>
+                <div class="metric-label">Bolsas em 2025</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #ea580c;">{{ max_ano }}</div>
+                <div class="metric-label">Ano de Pico</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Detalhamento Anual -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-calendar-alt"></i> Evolução Anual por Nível</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ano</th>
+                    <th style="text-align: center;">Mestrado</th>
+                    <th style="text-align: center;">Doutorado</th>
+                    <th style="text-align: center;">Total</th>
+                    <th style="text-align: center;">Evolução</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados_anuais %}
+                <tr>
+                    <td><strong>{{ row.ano }}</strong></td>
+                    <td style="text-align: center;">{{ row.mestrado }}</td>
+                    <td style="text-align: center;">{{ row.doutorado }}</td>
+                    <td style="text-align: center; font-weight: bold;">{{ row.total }}</td>
+                    <td style="text-align: center;">
+                        {% if row.delta > 0 %}
+                        <span style="color: #16a34a;"><i class="fas fa-arrow-up"></i> {{ row.delta }}%</span>
+                        {% elif row.delta < 0 %} <span style="color: #ea580c;"><i class="fas fa-arrow-down"></i> {{
+                            row.delta }}%</span>
+                            {% else %}
+                            <span style="color: #64748b;">-</span>
+                            {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. Distribuição CAPES 2025 -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-chart-pie"></i> Qualidade do Investimento (2025)</div>
+        <p style="font-size: 10pt; color: #64748b; margin-bottom: 10px;">
+            Distribuição de bolsas baseada na nota CAPES dos programas no ano corrente.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nota CAPES</th>
+                    <th style="text-align: center;">Quantidade de Bolsas</th>
+                    <th style="text-align: center;">% do Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nota, qtd, perc in dados_capes %}
+                <tr>
+                    <td>
+                        <span class="badge"
+                            style="background: {% if nota >= 6 %}#fef3c7; color: #d97706{% elif nota >= 5 %}#dcfce7; color: #15803d{% else %}#f3f4f6; color: #374151{% endif %};">
+                            Nota {{ nota }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">{{ qtd }}</td>
+                    <td style="text-align: center;">
+                        <div
+                            style="background: #e2e8f0; width: 100px; height: 8px; border-radius: 4px; display: inline-block; vertical-align: middle; margin-right: 5px;">
+                            <div style="background: #3b82f6; width: {{ perc }}%; height: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                        {{ perc }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        Universidade Tecnológica Federal do Paraná - UTFPR<br>
+        Pró-Reitoria de Pesquisa e Pós-Graduação (PROPPG)<br>
+        Relatório Gerado Automaticamente pelo Sistema de Gestão V6.2
+    </div>
+
+</body>
+
+</html>

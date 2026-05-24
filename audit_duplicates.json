@@ -1,0 +1,24 @@
+[
+    {
+        "cpf": "39935718867",
+        "count": 2,
+        "records": [
+            {
+                "id": 1046,
+                "nome": "MILTON MANZONI JUNIOR",
+                "cpf": "39935718867",
+                "edital": 14,
+                "nivel": "Doutorado",
+                "status": "Ativo"
+            },
+            {
+                "id": 1047,
+                "nome": "MILTON MANZONI JUNIOR",
+                "cpf": "39935718867",
+                "edital": 14,
+                "nivel": "Doutorado",
+                "status": "Ativo"
+            }
+        ]
+    }
+]

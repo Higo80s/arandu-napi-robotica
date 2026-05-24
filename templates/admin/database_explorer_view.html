@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('database_explorer.index') }}" class="text-cyan text-decoration-none">Banco de Dados</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ table_name | capitalize }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white">Tabela: {{ table_name | capitalize }}</h2>
+            <p class="text-secondary small">Vvisualização de registros e edição rápida de campos permitidos.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('database_explorer.export_table', table_name=table_name) }}" class="btn btn-success shadow-sm">
+                <i class="fas fa-file-excel me-2"></i> Exportar Tudo (.xlsx)
+            </a>
+        </div>
+    </div>
+
+    <div class="neon-card p-0 overflow-hidden animate-neon">
+        <div class="table-responsive" style="max-height: 70vh;">
+            <table class="table table-dark table-hover mb-0 align-middle small">
+                <thead class="sticky-top bg-dark border-bottom border-secondary">
+                    <tr style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                        {% for col in columns %}
+                        <th class="p-3 text-secondary">{{ col.name }}</th>
+                        {% endfor %}
+                        <th class="p-3 text-center">⚙️</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in pagination.items %}
+                    <tr id="row-{{ row.id }}">
+                        {% for col in columns %}
+                        <td class="p-3 border-bottom border-dark-subtle" 
+                            style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                            title="{{ getattr(row, col.name) }}">
+                            
+                            {% set is_editable = not col.primary_key and not col.foreign_keys %}
+                            
+                            <span class="value-text">{{ getattr(row, col.name) if getattr(row, col.name) is not none else 'NULL' }}</span>
+                            
+                            {% if is_editable %}
+                            <button class="btn btn-sm p-0 ms-2 text-cyan opacity-25 hover-opacity-100" 
+                                    onclick="editField('{{ table_name }}', {{ row.id }}, '{{ col.name }}', '{{ getattr(row, col.name) }}')">
+                                <i class="fas fa-pencil-alt x-small"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="p-3 text-center border-bottom border-dark-subtle">
+                             <a href="#" class="text-secondary opacity-50"><i class="fas fa-search-plus"></i></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ columns | length + 1 }}" class="text-center p-5 text-secondary">Nenhum registro encontrado nesta tabela.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação Neon -->
+        <div class="p-3 border-top border-dark-subtle d-flex justify-content-between align-items-center bg-dark">
+            <span class="text-secondary small">Mostrando {{ pagination.items | length }} de {{ pagination.total }} registros</span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link bg-dark text-cyan border-secondary" href="{{ url_for('database_explorer.view_table', table_name=table_name, page=pagination.prev_num) }}">Anterior</a>
+                    </li>
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link bg-dark text-cyan border-secondary" href="{{ url_for('database_explorer.view_table', table_name=table_name, page=pagination.next_num) }}">Próximo</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script>
+function editField(tableName, recordId, fieldName, currentValue) {
+    const newValue = prompt(`Editar campo [${fieldName}] para o registro ID ${recordId}:`, currentValue);
+    if (newValue === null || newValue === currentValue) return;
+
+    const formData = new FormData();
+    formData.append('field', fieldName);
+    formData.append('value', newValue);
+    // CSRF Token (Assumindo que está disponível via setup global do Arandú)
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    fetch(`/admin/database/update/${tableName}/${recordId}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            flashMessage('✅ Alteração salva com sucesso.', 'success');
+            window.location.reload(); // Recarrega para ver a mudança (simples e robusto)
+        } else {
+            flashMessage('❌ Erro: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        flashMessage('❌ Falha na comunicação com o servidor.', 'danger');
+    });
+}
+
+function flashMessage(text, category) {
+    // Helper simples para alertas
+    alert(text);
+}
+</script>
+
+<style>
+    .text-cyan { color: var(--neon-cyan); }
+    .btn-outline-cyan { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+    .x-small { font-size: 0.65rem; }
+    .hover-opacity-100:hover { opacity: 1 !important; }
+    .sticky-top { top: -1px; z-index: 100 !important; }
+    
+    /* Grid de colunas bem marcadas mas discretas */
+    table.table-dark {
+        border-collapse: collapse;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    table.table-dark th, table.table-dark td {
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+</style>
+{% endblock %}

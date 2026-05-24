@@ -1,0 +1,37 @@
+test_a_editais_index (__main__.RouteCoverageTest.test_a_editais_index) ... ok
+test_a_editais_novo_get (__main__.RouteCoverageTest.test_a_editais_novo_get) ... ok
+test_a_home (__main__.RouteCoverageTest.test_a_home) ... ok
+test_b_bolsistas_importar_get (__main__.RouteCoverageTest.test_b_bolsistas_importar_get) ... ok
+test_b_bolsistas_index (__main__.RouteCoverageTest.test_b_bolsistas_index) ... FAIL
+test_b_bolsistas_novo_get (__main__.RouteCoverageTest.test_b_bolsistas_novo_get) ... ok
+test_c_posdoc_index (__main__.RouteCoverageTest.test_c_posdoc_index) ... ok
+test_d_capes_dashboard (__main__.RouteCoverageTest.test_d_capes_dashboard) ... ok
+test_d_relatorios (__main__.RouteCoverageTest.test_d_relatorios) ... ok
+test_e_api_modalidades (__main__.RouteCoverageTest.test_e_api_modalidades) ... ok
+
+======================================================================
+FAIL: test_b_bolsistas_index (__main__.RouteCoverageTest.test_b_bolsistas_index)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\higosantos\Documents\gestao_editais\gestao_editais_novo\scripts\test_routes_coverage.py", line 50, in test_b_bolsistas_index
+    self.check_route('/bolsistas/', 'GET', 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\higosantos\Documents\gestao_editais\gestao_editais_novo\scripts\test_routes_coverage.py", line 31, in check_route
+    self.assertIn(status, [200, expected_code], f"Route {route} returned {status}, expected {expected_code} or 200.")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 404 not found in [200, 200] : Route /bolsistas/ returned 404, expected 200 or 200.
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.131s
+
+FAILED (failures=1)
+Testing /editais ...
+Testing /editais/novo (GET) ...
+Testing / ...
+Testing /bolsistas/importar (GET/POST)...
+Testing /bolsistas/ ...
+Testing /bolsistas/novo (GET)...
+Testing /posdoc ...
+Testing /capes/dashboard ...
+Testing /relatorios ...
+Testing /api/modalidades/1 ...

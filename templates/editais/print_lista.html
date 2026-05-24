@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Candidatos - {{ rodada.nome }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12pt;
+            color: #000;
+            background: #fff;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 16pt;
+            text-transform: uppercase;
+            margin: 0 0 5px 0;
+        }
+
+        .header h2 {
+            font-size: 14pt;
+            font-weight: normal;
+            margin: 0;
+        }
+
+        .meta {
+            margin-bottom: 20px;
+            font-size: 10pt;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9pt;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .status-selecionado {
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 40%;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 10pt;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            th {
+                background-color: #ddd !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body onload="window.print()">
+
+    <div class="no-print"
+        style="position: fixed; top: 10px; right: 10px; background: #fff; border: 1px solid #ccc; padding: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.2);">
+        <button onclick="window.print()" style="padding: 5px 15px; cursor: pointer; font-weight: bold;">Imprimir /
+            Salvar PDF</button>
+    </div>
+
+    <div class="header">
+        <h1>Universidade Tecnológica Federal do Paraná</h1>
+        <h2>Edital {{ rodada.edital.numero }} - {{ rodada.edital.agencia }}</h2>
+        <h3>{{ rodada.nome }}</h3>
+    </div>
+
+    <div class="meta">
+        <strong>Data de Emissão:</strong> {{ agora.strftime('%d/%m/%Y às %H:%M') }}<br>
+        <strong>Total de Registros:</strong> {{ candidatos|length }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="5%">#</th>
+                <th width="40%">Candidato</th>
+                <th width="20%">CPF</th>
+                <th width="20%">Status</th>
+                <th width="15%">Assinatura</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cand in candidatos %}
+            <tr class="{% if cand.status == 'SELECIONADO' %}status-selecionado{% endif %}">
+                <td>{{ loop.index }}</td>
+                <td>
+                    {{ cand.nome }}
+                    <div style="font-size: 8pt; color: #666;">{{ cand.email }}</div>
+                </td>
+                <td>{{ cand.cpf }}</td>
+                <td>{{ cand.status }}</td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div class="signature-line">
+            Coordenação do Programa
+        </div>
+        <div class="signature-line">
+            Responsável pelo Edital
+        </div>
+    </div>
+
+</body>
+
+</html>

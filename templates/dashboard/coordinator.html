@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container" style="max-width: 1200px; margin: 0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom: 2rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 1rem;">
+        <h2 style="font-weight: 700; color: var(--text-color);">{{ title }}</h2>
+        <span class="text-muted">{{ panel_subtitle | default('Painel do Coordenador') }}</span>
+    </div>
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- METRICS GRID -->
+    <div class="card-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+
+        <!-- CARD 1: BOLSISTAS (DISCENTES) -->
+        <div class="card" style="padding: 1.5rem; border-left: 5px solid #4e73df;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h5 class="text-muted" style="font-size: 0.9rem; text-transform: uppercase;">Discentes (Bolsistas)
+                    </h5>
+                    <div class="metric-value" style="font-size: 2.5rem; font-weight: bold; color: #4e73df;">
+                        {{ stats.bolsistas_count }}
+                    </div>
+                    <small class="text-muted">Vagas Ociosas: <strong>{{ stats.vagas_ociosas }}</strong></small>
+                </div>
+                <div style="background: #eff6ff; padding: 10px; border-radius: 50%; color: #4e73df;">
+                    {{ icon('graduation-cap', size=24) }}
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    <span>Inv. Mensal:</span>
+                    <strong>R$ {{ stats.invest_mensal_bolsistas | default(0) | format_currency }}</strong>
+                </div>
+                <a href="{{ url_for('bolsistas.index') }}" class="btn btn-sm btn-primary"
+                    style="width: 100%; margin-top: 0.5rem; text-align: center;">
+                    Gerenciar Discentes
+                </a>
+            </div>
+        </div>
+
+
+        <!-- CARD 3: PROAP/PROAPINHO -->
+        <div class="card" style="padding: 1.5rem; border-left: 5px solid #f6c23e;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h5 class="text-muted" style="font-size: 0.9rem; text-transform: uppercase;">PROAP/PROAPinho ({{
+                        stats.ano_atual }})</h5>
+                    <div class="metric-value" style="font-size: 1.8rem; font-weight: bold; color: #f6c23e;">
+                        R$ {{ stats.proap_total | default(0) | format_currency }}
+                    </div>
+                </div>
+                <div style="background: #fefce8; padding: 10px; border-radius: 50%; color: #f6c23e;">
+                    {{ icon('coins', size=24) }}
+                </div>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <small class="text-muted">Total de recursos recebidos no ano corrente.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: DIVERSITY & INTERNATIONALIZATION -->
+    <div class="card-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+
+        <!-- CARD: DIVERSIDADE -->
+        <div class="card" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <h5 class="text-muted" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    {{ icon('users', size=20) }} Diversidade
+                </h5>
+                <span style="background: #e5e7eb; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
+                    {{ stats.diversidade_count }} Registros
+                </span>
+            </div>
+            <p class="text-muted" style="font-size: 0.9rem;">
+                Autodeclarações de raça/cor, gênero e condições socioeconômicas.
+            </p>
+            <a href="{{ url_for('bolsistas.diversidade') }}" class="btn btn-outline-secondary btn-sm"
+                style="width: 100%;">
+                Acessar Dados de Diversidade
+            </a>
+        </div>
+
+        <!-- CARD: INTERNACIONALIZAÇÃO -->
+        <div class="card" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <h5 class="text-muted" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    {{ icon('globe', size=20) }} Internacionalização
+                </h5>
+                <span style="background: #e5e7eb; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
+                    {{ stats.inter_count }} Movimentações
+                </span>
+            </div>
+            <p class="text-muted" style="font-size: 0.9rem;">
+                Mobilidade acadêmica (Sanduíche, Estágio, Dupla Diplomação).
+            </p>
+            <a href="{{ url_for('inter.index') }}" class="btn btn-outline-secondary btn-sm" style="width: 100%;">
+                Acessar Internacionalização
+            </a>
+        </div>
+    </div>
+
+    <!-- ALERTS SECTION -->
+    <div class="card" style="padding: 1.5rem;">
+        <h3
+            style="font-size: 1.1rem; border-bottom: 2px solid #ef4444; padding-bottom: 10px; margin-bottom: 15px; color: #ef4444;">
+            {{ icon('alert-octagon', size=20) }} Vencendo em Breve (< 90 dias) </h3>
+
+                {% if alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f9fafb; text-align: left;">
+                                <th style="padding: 10px;">Programa</th>
+                                <th style="padding: 10px;">Nome</th>
+                                <th style="padding: 10px;">Tipo</th>
+                                <th style="padding: 10px;">SEI / Form</th>
+                                <th style="padding: 10px;">Vencimento</th>
+                                <th style="padding: 10px;">Dias Restantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 10px;">
+                                    <span title="{{ alert.prog_name }}"
+                                        style="cursor: help; text-decoration: underline dotted;">
+                                        {{ alert.prog_sigla }}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; font-weight: 500;">
+                                    {{ alert.name }}
+                                </td>
+                                <td style="padding: 10px;">
+                                    <span class="badge badge-primary">
+                                        Discente
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; font-size: 0.85rem;" class="text-muted">
+                                    <div>SEI: {{ alert.sei or '-' }}</div>
+                                    <div>Form: {{ alert.form or '-' }}</div>
+                                </td>
+                                <td style="padding: 10px;">{{ alert.date.strftime('%d/%m/%Y') }}</td>
+                                <td style="padding: 10px;">
+                                    <span
+                                        style="color: {{ '#ef4444' if alert.days < 30 else '#f59e0b' }}; font-weight: bold;">
+                                        {{ alert.days }} dias
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted"
+                    style="padding: 1rem; text-align: center; background: #f9fafb; border-radius: 8px;">
+                    Nenhuma bolsa vencendo nos próximos 90 dias.
+                </p>
+                {% endif %}
+    </div>
+
+</div>
+
+<style>
+    .metric-value {
+        font-family: 'Inter', sans-serif;
+        letter-spacing: -1px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-primary {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .badge-success {
+        background: #f0fdf4;
+        color: #15803d;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-outline-secondary {
+        border: 1px solid #d1d5db;
+        color: #374151;
+        background: transparent;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+    }
+</style>
+{% endblock %}

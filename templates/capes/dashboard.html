@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% from 'macros/icons.html' import icon %}
+
+{% block content %}
+
+<div class="topbar">
+    <h1 style="color: var(--primary-color);">{{ icon('bar-chart', size=20) }} Painel de Cotas CAPES (PPG+ IES)</h1>
+    <div>
+        <span style="font-size: 0.9rem; color: var(--text-muted); margin-right: 15px;">
+            <span class="status-dot disponivel"></span>
+            Disponível
+            <span class="status-dot lotado" style="margin-left:10px;"></span>
+            Lotado
+        </span>
+        <a href="{{ url_for('index') }}" class="btn btn-arandu-secondary">Voltar</a>
+    </div>
+</div>
+
+<style>
+    /* FORCE THEME-AWARE BACKGROUNDS ON ALL ELEMENTS */
+    .card {
+        background: var(--card-bg) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    .card h3 {
+        color: var(--primary-color) !important;
+    }
+
+    .card p,
+    .card small {
+        color: var(--text-muted) !important;
+    }
+
+    .table {
+        background: var(--card-bg) !important;
+        color: var(--text-color) !important;
+    }
+
+    .table th,
+    .table td {
+        background: var(--card-bg) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+    }
+
+
+    /* Default (Light Mode) */
+    .highlight-col {
+        background-color: #f8fafc;
+        color: inherit;
+    }
+
+    /* Dark Mode Override */
+    body.dark-mode .highlight-col {
+        background-color: #1f2937 !important;
+        color: #f3f4f6 !important;
+    }
+
+    /* Additional dark mode enforcement */
+    body.dark-mode .card {
+        background: #1f2937 !important;
+        color: #f3f4f6 !important;
+    }
+
+    body.dark-mode .table {
+        background: transparent !important;
+        color: #f3f4f6 !important;
+    }
+
+    body.dark-mode .table th,
+    body.dark-mode .table td {
+        background: transparent !important;
+        color: #f3f4f6 !important;
+        border-color: #374151 !important;
+    }
+
+    body.dark-mode .stats-card {
+        background: #1f2937 !important;
+    }
+
+    /* [V17] Premium Modal Styles - Theme-aware */
+    .modal-content-clean {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: var(--card-bg);
+    }
+
+    .modal-header-clean {
+        border-bottom: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-color);
+        padding: 20px 24px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body-clean {
+        padding: 24px;
+        max-height: 60vh;
+        overflow-y: auto;
+        background: var(--card-bg);
+        color: var(--text-color);
+    }
+
+    .modal-footer-clean {
+        border-top: 1px solid var(--border-color);
+        padding: 16px 24px;
+        background: var(--card-bg);
+        border-radius: 0 0 12px 12px;
+    }
+
+    .btn-premium-primary {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 500;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+
+    .btn-premium-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
+        color: white;
+    }
+
+    .table-premium {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-premium thead th {
+        background: var(--card-bg);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .table-premium tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        color: var(--text-color);
+    }
+
+    .table-premium tbody tr:hover {
+        background: var(--hover-bg, rgba(0, 0, 0, 0.02));
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-badge.ativo {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.inativo {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Popup Animation - Works with modal-dialog-centered */
+    #bolsistasModal.modal.fade .modal-dialog {
+        transform: translate(0, 0) scale(0.9);
+        opacity: 0;
+        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    }
+
+    #bolsistasModal.modal.show .modal-dialog {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+
+    #bolsistasModal .modal-backdrop.show {
+        backdrop-filter: blur(4px);
+    }
+
+    /* Stats Cards - Theme-aware */
+    .stats-card {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        text-align: center;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .stats-card-header {
+        background: var(--primary-color);
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.5rem;
+        margin: -1.5rem -1.5rem 1rem -1.5rem;
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+
+    .stats-card-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--text-color);
+        margin: 0.5rem 0;
+    }
+
+    .stats-card-detail {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .stats-card-footer {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+
+    /* Dark mode adjustments */
+    body.dark-mode .stats-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .stats-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    /* [V17 Fix] Removido o seletor body que forçava var(--background-color) 
+       pois estava conflitando com o base.html e o theme switcher */
+
+    /* Status Badge Dark Mode High Contrast */
+    body.dark-mode .status-badge.ativo {
+        background: #064e3b;
+        color: #d1fae5;
+    }
+
+    body.dark-mode .status-badge.inativo {
+        background: #7f1d1d;
+        color: #fee2e2;
+    }
+
+    /* Status Dots */
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .status-dot.disponivel {
+        background: #d1fae5;
+    }
+
+    .status-dot.lotado {
+        background: #fee2e2;
+    }
+
+    body.dark-mode .status-dot.disponivel {
+        background: #064e3b;
+        border: 1px solid #34d399;
+    }
+
+    body.dark-mode .status-dot.lotado {
+        background: #7f1d1d;
+        border: 1px solid #f87171;
+    }
+
+    /* Level Badges */
+    .level-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .level-badge.mestrado {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .level-badge.doutorado {
+        background: #ddd6fe;
+        color: #5b21b6;
+    }
+
+    body.dark-mode .level-badge.mestrado {
+        background: #1e3a8a;
+        color: #93c5fd;
+    }
+
+    body.dark-mode .level-badge.doutorado {
+        background: #4c1d95;
+        color: #a78bfa;
+    }
+
+    /* Text Balance Colors */
+    .text-balance.positive {
+        color: #065f46;
+    }
+
+    .text-balance.negative {
+        color: #991b1b;
+    }
+
+    body.dark-mode .text-balance.positive {
+        color: #34d399;
+    }
+
+    body.dark-mode .text-balance.negative {
+        color: #f87171;
+    }
+</style>
+
+<!-- Cards de Totalizadores -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <!-- Mestrado -->
+    <div class="stats-card">
+        <div class="stats-card-header">MESTRADO</div>
+        <div class="stats-card-value">{{ totais.mestrado_total }}</div>
+        <div class="stats-card-detail">
+            {{ totais.mestrado_ocupado }} ocupadas · {{ totais.mestrado_total - totais.mestrado_ocupado }} livres
+        </div>
+        <div class="stats-card-footer">
+            {{ totais.programas_mestrado }} programas
+        </div>
+    </div>
+
+    <!-- Doutorado -->
+    <div class="stats-card">
+        <div class="stats-card-header">DOUTORADO</div>
+        <div class="stats-card-value">{{ totais.doutorado_total }}</div>
+        <div class="stats-card-detail">
+            {{ totais.doutorado_ocupado }} ocupadas · {{ totais.doutorado_total - totais.doutorado_ocupado }} livres
+        </div>
+        <div class="stats-card-footer">
+            {{ totais.programas_doutorado }} programas
+        </div>
+    </div>
+
+    <!-- Total Geral Logic Removed as per User Request -->
+
+    <!-- IES Não Atribuídas (COTAS IES) -->
+    {% if totais.ies_mestrado > 0 or totais.ies_doutorado > 0 %}
+    <div class="stats-card">
+        <div class="stats-card-header">COTAS IES</div>
+        <div class="stats-card-value">{{ totais.ies_total_cotas }}</div>
+        <div class="stats-card-detail">
+            {{ totais.ies_ocupadas }} ocupadas · {{ totais.ies_livres }} livres
+        </div>
+        <div class="stats-card-footer">
+            {{ totais.ies_programas_count }} programas
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">{{ icon('graduation-cap', size=20) }} Bolsistas CAPES
+        DS (Cotas por Programa)</h3>
+    <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+        Acompanhamento consolidado de bolsas CAPES DS (Edital 14) e CAPES IES (Edital 13).
+        <br>
+        <small>Dados atualizados conforme cadastro de discentes ativos. Programas marcados com <strong>(IES)*</strong>
+            ainda não têm campus definido.</small>
+    </p>
+
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                    <th style="padding: 1rem;">PPG</th>
+                    <th style="padding: 1rem;">Campus</th>
+                    <th style="padding: 1rem; text-align: center;" class="highlight-col">Mestrado (Saldo)</th>
+                    <th style="padding: 1rem; text-align: center;">Doutorado (Saldo)</th>
+                    <th style="padding: 1rem; text-align: center;">Bolsistas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 1rem;">
+                        <strong>{{ row.nome }}</strong><br>
+                        <small style="font-family: monospace; color: var(--text-muted);">{{ row.codigo }}</small>
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-color);">
+                        {{ row.campus }}
+                    </td>
+
+                    <!-- Mestrado -->
+                    <td class="highlight-col"
+                        style="padding: 1rem; text-align: center; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);">
+                        {% if row.mestrado.cota > 0 %}
+                        {% set saldo = row.mestrado.cota - row.mestrado.ocupado %}
+
+                        <div class="text-balance {{ 'positive' if saldo > 0 else 'negative' }}"
+                            style="font-size: 1.1rem; font-weight: bold;">
+                            {{ saldo }} <span
+                                style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">vagas {{
+                                '(Excedente)' if saldo < 0 else '' }}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            {{ row.mestrado.ocupado }} / {{ row.mestrado.cota }} ({{ ((row.mestrado.ocupado /
+                            row.mestrado.cota)*100)|round|int }}%)
+                        </div>
+                        {% else %}
+                        <span style="color: #ccc;">-</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Doutorado -->
+                    <td style="padding: 1rem; text-align: center;">
+                        {% if row.doutorado.cota > 0 %}
+                        {% set saldo = row.doutorado.cota - row.doutorado.ocupado %}
+
+                        <div class="text-balance {{ 'positive' if saldo > 0 else 'negative' }}"
+                            style="font-size: 1.1rem; font-weight: bold;">
+                            {{ saldo }} <span
+                                style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">vagas</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            {{ row.doutorado.ocupado }} / {{ row.doutorado.cota }} ({{ ((row.doutorado.ocupado /
+                            row.doutorado.cota)*100)|round|int }}%)
+                        </div>
+                        {% else %}
+                        <span style="color: #ccc;">-</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- [V17] Coluna Bolsistas -->
+                    <td style="padding: 1rem; text-align: center;">
+                        <button class="btn btn-primary btn-sm btn-ver-bolsistas"
+                            data-programa-id="{{ row.pid }}"
+                            data-programa-nome="{{ row.nome }}" title="Visualizar bolsistas deste programa">
+                            {{ icon('users', size=14) }} Ver
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Seção Bolsistas IES (Edital 13) -->
+{% if bolsistas_ies %}
+<div class="card" style="margin-top: 2rem;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">{{ icon('graduation-cap', size=20) }} Bolsistas CAPES
+        IES Ativos ({{ bolsistas_ies|length }})</h3>
+    <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+        Bolsas rotativas da PROPPG (Edital 13). Alguns dados podem estar pendentes de atualização.
+    </p>
+
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                    <th style="padding: 1rem;">Bolsista</th>
+                    <th style="padding: 1rem;">Programa</th>
+                    <th style="padding: 1rem;">Campus</th>
+                    <th style="padding: 1rem; text-align: center;">Nível</th>
+                    <th style="padding: 1rem; text-align: center;">Vigência</th>
+                    <th style="padding: 1rem; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bolsistas_ies %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 1rem;">
+                        <strong>{{ b.nome }}</strong><br>
+                        <small style="font-family: monospace; color: var(--text-muted);">
+                            CPF: {{ b.cpf[:3] }}.XXX.XXX-{{ b.cpf[-2:] }}
+                        </small>
+                    </td>
+                    <td style="padding: 1rem;">
+                        {{ b.programa }}<br>
+                        <small style="font-family: monospace; color: var(--text-muted);">{{ b.codigo }}</small>
+                    </td>
+                    <td style="padding: 1rem;">
+                        {% if b.campus == 'Não informado' %}
+                        <span style="color: var(--text-muted); font-style: italic;">Pendente</span>
+                        {% else %}
+                        {{ b.campus }}
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <span class="level-badge {{ 'mestrado' if 'Mestrado' in b.nivel else 'doutorado' }}">
+                            {{ 'M' if 'Mestrado' in b.nivel else 'D' }}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.85rem;">
+                            {{ b.data_inicio }} <span style="color: var(--text-muted);">até</span> {{ b.data_fim }}
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <a href="{{ url_for('bolsistas.editar', id=b.id) }}" class="btn btn-primary btn-sm"
+                            title="Editar/Ver bolsista">
+                            {{ icon('edit', size=14) }} Ver
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+        <small style="color: var(--text-muted);">
+            <strong>Observação:</strong> Bolsas IES são cotas rotativas atribuídas pela PROPPG.
+            Dados de programa/campus podem estar pendentes de confirmação.
+        </small>
+    </div>
+</div>
+{% endif %}
+
+<!-- [V17 Modificado] Modal para Visualizar Bolsistas por Programa (Sem CDN Bootstrap) -->
+<div id="bolsistasModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); margin: 2rem; display: flex; flex-direction: column; max-height: 90vh;">
+        <div style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    {{ icon('users', size=20, color='var(--primary-color)') }}
+                </div>
+                <h3 style="margin: 0; color: var(--text-color); font-size: 1.25rem;" id="bolsistasModalTitle">Bolsistas</h3>
+            </div>
+            <button type="button" onclick="closeBolsistasModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        
+        <div style="padding: 24px; overflow-y: auto;">
+            <div id="bolsistasLoading" style="display: none; text-align: center; padding: 2rem 0; color: var(--text-muted);">
+                <p>Carregando bolsistas...</p>
+            </div>
+            
+            <div id="bolsistasEmpty" style="display: none; text-align: center; padding: 2rem 0; color: var(--text-muted);">
+                <div style="font-size: 3rem; opacity: 0.3;">{{ icon('users', size=48) }}</div>
+                <p style="margin-top: 0.5rem;">Nenhum bolsista encontrado para este programa.</p>
+            </div>
+            
+            <table class="table table-premium" id="bolsistasTable" style="display: none; width: 100%;">
+                <thead>
+                    <tr style="text-align: left;">
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color);">Nome</th>
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color);">CPF</th>
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color);">SEI</th>
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color);">Formulário</th>
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color); text-align: center;">Status</th>
+                        <th style="padding: 10px; border-bottom: 2px solid var(--border-color); text-align: center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="bolsistasTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <span id="bolsistasCount" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+            <button type="button" onclick="closeBolsistasModal()" class="btn btn-arandu-secondary">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // [V17] Função para abrir modal de bolsistas por programa
+    document.addEventListener('DOMContentLoaded', function () {
+        // Delegated event listener for all "Ver" buttons
+        document.querySelectorAll('.btn-ver-bolsistas').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const programaId = this.getAttribute('data-programa-id');
+                const programaNome = this.getAttribute('data-programa-nome');
+                showBolsistasModal(programaId, programaNome);
+            });
+        });
+    });
+
+    function closeBolsistasModal() {
+        document.getElementById('bolsistasModal').style.display = 'none';
+    }
+
+    function showBolsistasModal(programaId, programaNome) {
+        document.getElementById('bolsistasModal').style.display = 'flex';
+        document.getElementById('bolsistasModalTitle').textContent = 'Bolsistas - ' + programaNome;
+        const icon_html = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-cog"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="m19 8 2 2-2 2"/><path d="m21 8-2 2 2 2"/></svg>`;
+
+        // Reset states
+        document.getElementById('bolsistasLoading').style.display = 'block';
+        document.getElementById('bolsistasTable').style.display = 'none';
+        document.getElementById('bolsistasEmpty').style.display = 'none';
+        document.getElementById('bolsistasCount').textContent = '';
+        document.getElementById('bolsistasTableBody').innerHTML = '';
+
+        // Fetch data
+        fetch('/dashboard/api/capes/bolsistas/' + programaId)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('bolsistasLoading').style.display = 'none';
+
+                if (data.bolsistas.length === 0) {
+                    document.getElementById('bolsistasEmpty').style.display = 'block';
+                } else {
+                    const tbody = document.getElementById('bolsistasTableBody');
+
+                    data.bolsistas.forEach(b => {
+                        const statusClass = b.status === 'Ativo' ? 'ativo' : 'inativo';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${b.nome}</td>
+                            <td style="font-family: monospace;">${b.cpf}</td>
+                            <td>${b.sei}</td>
+                            <td>${b.formulario}</td>
+                            <td style="text-align: center;">
+                                <span class="status-badge ${statusClass}">${b.status}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="/bolsistas/${b.id}/editar" class="btn btn-primary btn-sm">
+                                   ${icon_html} Ver
+                                </a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    document.getElementById('bolsistasTable').style.display = 'table';
+                    document.getElementById('bolsistasCount').textContent = data.total + ' bolsista(s) encontrado(s)';
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar bolsistas:', error);
+                document.getElementById('bolsistasLoading').style.display = 'none';
+                document.getElementById('bolsistasEmpty').textContent = 'Erro ao carregar dados.';
+                document.getElementById('bolsistasEmpty').style.display = 'block';
+            });
+    }
+</script>
+
+{% endblock %}

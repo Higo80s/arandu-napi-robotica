@@ -1,0 +1,8 @@
+{% macro icon(name, size=24, color='currentColor', class='', stroke_width=2) %}
+<i data-lucide="{{ name }}" class="icon {{ class }}" width="{{ size }}" height="{{ size }}" stroke="{{ color }}"
+ stroke-width="{{ stroke_width }}"></i>
+{% endmacro %}
+
+{% macro emoji(text) %}
+<span class="emoji">{{ text }}</span>
+{% endmacro %}

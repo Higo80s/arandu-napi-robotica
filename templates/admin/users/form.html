@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="topbar">
+    <h1>{{ 'Editar' if user else 'Novo' }} Usuário</h1>
+    <a href="{{ url_for('admin_users.index') }}" class="btn" style="background-color: #e5e7eb;">Voltar</a>
+</div>
+
+<div class="card" style="max-width: 800px;">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nome Completo</label>
+            <input type="text" name="nome" value="{{ user.nome if user else '' }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
+            <input type="email" name="email" value="{{ user.email if user else '' }}" required
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Perfil de Acesso</label>
+            <select name="role" id="role" onchange="toggleScopeFields()"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                <option value="visualizador" {% if user and user.role=='visualizador' %}selected{% endif %}>Visualizador
+                    (Somente leitura)
+                </option>
+                <option value="coordenador_programa" {% if user and user.role=='coordenador_programa' %}selected{% endif
+                    %}>Coordenador de Programa
+                </option>
+                <option value="diretor_campus" {% if user and user.role=='diretor_campus' %}selected{% endif %}>Diretor
+                    de Campus
+                </option>
+                <option value="gestor" {% if user and user.role=='gestor' %}selected{% endif %}>Gestor (Acesso total)
+                </option>
+                <option value="admin" {% if user and user.role=='admin' %}selected{% endif %}>Administrador</option>
+            </select>
+            <small style="color: #666; margin-top: 5px; display: block;">
+                Coordenador vê apenas seu programa. Diretor vê todo o campus.
+            </small>
+        </div>
+
+        <!-- Campo Programa (visível apenas para coordenador_programa) -->
+        <div style="margin-bottom: 1rem;" id="campo-programa">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                Programa Vinculado <span style="color: #ef4444;">*</span>
+            </label>
+
+            <!-- Campus (Filtro) -->
+            <div style="margin-bottom: 0.75rem;">
+                <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #666;">
+                    Campus (Filtro)
+                </label>
+                <select id="campus_filter_user" onchange="filterUserPrograms()"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                    <option value="">Todos os Campus</option>
+                    {% for c in campuses %}
+                    <option value="{{ c.id }}" {% if user and user.programa and user.programa.campus_id==c.id
+                        %}selected{% endif %}>
+                        {{ c.nome }} ({{ c.sigla_campus }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Programa -->
+            <select name="programa_id" id="programa_id_user"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                <option value="">Selecione o Programa...</option>
+                {% for p in programas %}
+                <option value="{{ p.id }}" data-campus-id="{{ p.campus_id }}" {% if user and user.programa_id==p.id
+                    %}selected{% endif %}>
+                    {{ p.codigo_programa }} - {{ p.nome_programa }} - {{ p.sigla_programa }} - {{ p.campus.sigla_campus
+                    }} ({{ p.niveis if p.niveis else '?' }})
+                </option>
+                {% endfor %}
+            </select>
+            <small style="color: #666; margin-top: 5px; display: block;">
+                Coordenador terá acesso apenas aos dados deste programa.
+            </small>
+        </div>
+
+        <!-- Campo Campus (visível apenas para diretor_campus) -->
+        <div style="margin-bottom: 1rem;" id="campo-campus">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                Campus <span style="color: #ef4444;">*</span>
+            </label>
+            <select name="campus_id"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                <option value="">Selecione um campus...</option>
+                {% for c in campuses %}
+                <option value="{{ c.id }}" {% if user and user.campus_id==c.id %}selected{% endif %}>
+                    {{ c.nome }} ({{ c.sigla_campus }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                Senha {% if user %}(Deixe em branco para manter a atual){% endif %}
+            </label>
+            <input type="password" name="password" {% if not user %}required{% endif %}
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+            <small style="color: #666; margin-top: 5px; display: block;">Mínimo de 6 caracteres.</small>
+        </div>
+
+        {% if user %}
+        <div
+            style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; background-color: #f9fafb; padding: 0.75rem; border-radius: 6px; border: 1px solid #e5e7eb;">
+            <input type="checkbox" name="ativo" id="ativo" value="true" {% if user.ativo %}checked{% endif %}
+                style="width: 1.25rem; height: 1.25rem;">
+            <label for="ativo" style="font-weight: 500; color: #374151; cursor: pointer;">
+                Usuário Ativo
+            </label>
+        </div>
+        {% endif %}
+
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleScopeFields() {
+        const role = document.getElementById('role').value;
+        const campoProg = document.getElementById('campo-programa');
+        const campoCampus = document.getElementById('campo-campus');
+
+        // Mostrar campo programa apenas para coordenador_programa
+        if (role === 'coordenador_programa') {
+            campoProg.style.display = 'block';
+            campoCampus.style.display = 'none';
+        }
+        // Mostrar campo campus apenas para diretor_campus
+        else if (role === 'diretor_campus') {
+            campoProg.style.display = 'none';
+            campoCampus.style.display = 'block';
+        }
+        // Ocultar ambos para outros roles
+        else {
+            campoProg.style.display = 'none';
+            campoCampus.style.display = 'none';
+        }
+    }
+
+    function filterUserPrograms() {
+        const campusFilter = document.getElementById('campus_filter_user');
+        const programaSelect = document.getElementById('programa_id_user');
+        const selectedCampus = campusFilter.value;
+
+        Array.from(programaSelect.options).forEach(option => {
+            if (option.value === '') {
+                option.style.display = 'block'; // Always show the "Select Program" option
+                return;
+            }
+
+            const campusId = option.dataset.campusId;
+            if (!selectedCampus || campusId === selectedCampus) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // Reset selection if the currently selected option is hidden
+        if (programaSelect.selectedIndex > 0) {
+            const selectedOption = programaSelect.options[programaSelect.selectedIndex];
+            if (selectedOption.style.display === 'none') {
+                programaSelect.selectedIndex = 0; // Select "Selecione o Programa..."
+            }
+        }
+    }
+
+    // Executar ao carregar a página para mostrar campos corretos e filtrar programas
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleScopeFields();
+        filterUserPrograms(); // Call filter function on load
+    });
+</script>
+{% endblock %}

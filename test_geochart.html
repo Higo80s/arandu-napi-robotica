@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>GeoChart Test</h1>
+  <div id="regions_div" style="width: 100%; height: 500px;"></div>
+
+  <script type="text/javascript">
+    google.charts.load('current', { 'packages': ['geochart'], 'language': 'pt' });
+    google.charts.setOnLoadCallback(drawMap);
+
+    let chartMap = null;
+    let mapData = null;
+    let mapOptions = {
+        colorAxis: { colors: ['#bfdbfe', '#1d4ed8'] },
+        backgroundColor: 'transparent',
+        datalessRegionColor: '#f3f4f6',
+        defaultColor: '#f5f5f5',
+        tooltip: { isHtml: true }
+    };
+
+    function drawMap() {
+        var rawData = [["Portugal", 1]];
+        if (!rawData || rawData.length < 1) {
+            document.getElementById('regions_div').innerHTML = 'Empty';
+            return;
+        }
+        var header = [['País', 'Bolsistas']];
+        var finalData = header.concat(rawData);
+
+        mapData = google.visualization.arrayToDataTable(finalData);
+        chartMap = new google.visualization.GeoChart(document.getElementById('regions_div'));
+        chartMap.draw(mapData, mapOptions);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="padding: 2rem;">
+    <!-- Cabeçalho -->
+    <div style="margin-bottom: 2rem;">
+        <h1 style="color: var(--primary-color);">Relatórios de Gestão Financeira</h1>
+        <p style="color: #666;">Acesse os relatórios consolidados de execução orçamentária do PROAP e PROAPINHO.</p>
+    </div>
+
+    <!-- Navegação de Abas -->
+    <ul class="nav nav-tabs" id="reportTabs" role="tablist" style="margin-bottom: 2rem;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="trimestral-tab" data-bs-toggle="tab" data-bs-target="#trimestral"
+                type="button" role="tab" aria-controls="trimestral" aria-selected="true">
+                Relatório Trimestral
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="semestral-tab" data-bs-toggle="tab" data-bs-target="#semestral" type="button"
+                role="tab" aria-controls="semestral" aria-selected="false">
+                Relatório Semestral
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="anual-tab" data-bs-toggle="tab" data-bs-target="#anual" type="button"
+                role="tab" aria-controls="anual" aria-selected="false">
+                Relatório Anual
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="auditoria-tab" data-bs-toggle="tab" data-bs-target="#auditoria" type="button"
+                role="tab" aria-controls="auditoria" aria-selected="false" style="color: #d63384;">
+                {{ icon('shield') or '🛡️' }} Governança e Transparência
+            </button>
+        </li>
+    </ul>
+
+    <!-- Conteúdo das Abas -->
+    <div class="tab-content" id="reportTabsContent">
+
+        <!-- Tab 1: Relatório Trimestral -->
+        <div class="tab-pane fade show active" id="trimestral" role="tabpanel" aria-labelledby="trimestral-tab">
+            <div
+                style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 5px solid #0d6efd;">
+                <h3 class="d-flex align-items-center gap-2">
+                    {{ icon('calendar') or '📅' }} Relatório Trimestral
+                </h3>
+                <p class="text-muted">Detalhamento de despesas segregado por trimestres do exercício corrente.</p>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ url_for('proap.relatorios_trimestral_pdf') }}" class="btn btn-primary">
+                        {{ icon('download') or '⬇️' }} Baixar PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Relatório Semestral -->
+        <div class="tab-pane fade" id="semestral" role="tabpanel" aria-labelledby="semestral-tab">
+            <div
+                style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 5px solid #6610f2;">
+                <h3 class="d-flex align-items-center gap-2">
+                    {{ icon('layers') or '📚' }} Relatório Semestral
+                </h3>
+                <p class="text-muted">Consolidado de execução orçamentária por semestre.</p>
+                <div style="margin-top: 1rem;">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('proap.relatorios_semestral_pdf', semestre=1) }}"
+                            class="btn btn-outline-primary">
+                            {{ icon('download') }} 1º Semestre
+                        </a>
+                        <a href="{{ url_for('proap.relatorios_semestral_pdf', semestre=2) }}"
+                            class="btn btn-outline-primary">
+                            {{ icon('download') }} 2º Semestre
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Relatório Anual -->
+        <div class="tab-pane fade" id="anual" role="tabpanel" aria-labelledby="anual-tab">
+            <div
+                style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 5px solid #198754;">
+                <h3 class="d-flex align-items-center gap-2">
+                    {{ icon('pie-chart') or '📈' }} Relatório Anual
+                </h3>
+                <p class="text-muted">Análise completa do exercício (Balanço Geral).</p>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ url_for('proap.relatorios_anual_pdf') }}" class="btn btn-success">
+                        {{ icon('download') }} Baixar PDF Anual
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Relatório de Auditoria (Governança) -->
+        <div class="tab-pane fade" id="auditoria" role="tabpanel" aria-labelledby="auditoria-tab">
+            <div
+                style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 5px solid #d63384;">
+                <h3 class="d-flex align-items-center gap-2" style="color: #d63384;">
+                    {{ icon('shield') or '🛡️' }} Relatório de Governança e Transparência
+                </h3>
+                <p class="text-muted">
+                    Relatório detalhado para fins de <strong>auditoria interna e externa</strong>.<br>
+                    Demonstra a rastreabilidade dos pagamentos agrupados por Campus e Programa, garantindo transparência
+                    na execução dos recursos.
+                </p>
+                <div class="alert alert-light border" style="font-size: 0.9rem;">
+                    <strong>Formato do Relatório:</strong><br>
+                    Agrupamento: <em>Campus > Programa</em><br>
+                    Colunas: <em>Código, Programa, Sigla Campus, Total Recebido</em>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ url_for('proap.relatorios_auditoria_pdf') }}" class="btn btn-danger"
+                        style="background-color: #d63384; border-color: #d63384;">
+                        {{ icon('file-text') }} Baixar Relatório de Auditoria (PDF)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('proap.relatorios_index') }}" class="btn btn-outline-secondary">Voltar para Relatórios</a>
+    </div>
+</div>
+
+<!-- Bootstrap JS (Necessário para Tabs se não estiver no base) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

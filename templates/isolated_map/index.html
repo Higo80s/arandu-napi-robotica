@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Estratégico UTFPR - Ambiente Isolado</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRS9BMY=" crossorigin="" />
+
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --surface-glass: rgba(30, 30, 30, 0.6);
+            --accent-gold: #FFD700;
+            --accent-cyan: #00f3ff;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #000000 100%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hero-section {
+            padding: 3rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .hero-title {
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(90deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Marcador Pulsante */
+        .marker-pulse {
+            background-color: var(--accent-gold);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+            animation: pulse-gold 2s infinite;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .marker-pulse:hover {
+            transform: scale(1.2);
+            background-color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px var(--accent-cyan);
+        }
+
+        @keyframes pulse-gold {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+            }
+        }
+
+        /* Stats Panel */
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .btn-premium {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: none;
+            color: #000;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-premium:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+            color: #000;
+        }
+
+        .btn-premium:disabled {
+            background: #444;
+            color: #777;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hero-section">
+        <h1 class="hero-title display-4">Mapa Estratégico</h1>
+        <p class="text-secondary">Visualização Geoespacial de Recursos e Bolsas</p>
+        <span class="badge bg-dark border border-secondary text-secondary rounded-pill px-3">AMBIENTE ISOLADO</span>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div id="map"></div>
+                <div class="text-end mt-2">
+                    <small class="text-secondary" style="font-size: 0.75rem;">
+                        <span style="color: var(--accent-gold);">●</span> Campi UTFPR
+                        &nbsp;|&nbsp;
+                        Map Tiles by CartoDB
+                    </small>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div id="stats-panel" class="glass-panel h-100 p-4 d-flex flex-column">
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="text-center my-auto">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🗺️</div>
+                        <h5 class="text-white mb-2">Explore os Campi</h5>
+                        <p class="text-secondary small">Clique nos marcadores dourados no mapa para visualizar dados
+                            estratégicos.</p>
+                    </div>
+
+                    <!-- Content (Hidden by default) -->
+                    <div id="campus-details" style="display: none; animation: fadeIn 0.5s ease-out;">
+                        <h3 id="c-nome" class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">Nome do
+                            Campus</h3>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <small class="text-secondary d-block text-uppercase"
+                                        style="font-size: 0.7rem;">Bolsistas Ativos</small>
+                                    <div id="c-bolsistas" class="stat-value">0</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <small class="text-secondary d-block text-uppercase"
+                                        style="font-size: 0.7rem;">Programas</small>
+                                    <div id="c-programas" class="stat-value">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-box mb-4">
+                            <small class="text-secondary d-block text-uppercase" style="font-size: 0.7rem;">Investimento
+                                Mensal</small>
+                            <div id="c-financeiro" class="stat-value" style="color: var(--accent-gold);">R$ 0,00</div>
+                        </div>
+
+                        <div class="mt-auto">
+                            <button id="btn-dossie" class="btn btn-premium w-100 py-3" disabled>
+                                📄 Baixar Dossiê PDF
+                            </button>
+                            <small class="text-secondary mt-3 d-block text-center" style="font-size: 0.7rem;">
+                                Gera relatório completo com gráficos e dados detalhados.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // --- 1. CONFIGURAÇÃO VISUAL DO MAPA ---
+        var map = L.map('map', {
+            zoomControl: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            dragging: false,
+            boxZoom: false,
+            keyboard: false,
+            touchZoom: false
+        });
+
+        // Limites do Paraná (Sudoeste, Nordeste)
+        var paranaBounds = [
+            [-26.9, -54.9], // SW
+            [-22.3, -47.8]  // NE
+        ];
+
+        // Ajuste perfeito ao container
+        map.fitBounds(paranaBounds, { padding: [20, 20] });
+
+        // Tiles Dark Matter (CartoDB)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // --- 2. ÍCONE PULSANTE CUSTOMIZADO ---
+        var pulseIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div class='marker-pulse'></div>",
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            popupAnchor: [0, -10]
+        });
+
+        // --- 3. DADOS GEOGRÁFICOS ---
+        const campi = [
+            { sigla: 'AP', nome: 'Apucarana', coords: [-23.55, -51.46] },
+            { sigla: 'CM', nome: 'Campo Mourão', coords: [-24.04, -52.38] },
+            { sigla: 'CP', nome: 'Cornélio Procópio', coords: [-23.18, -50.65] },
+            { sigla: 'CT', nome: 'Curitiba', coords: [-25.44, -49.27] },
+            { sigla: 'DV', nome: 'Dois Vizinhos', coords: [-25.74, -53.05] },
+            { sigla: 'FB', nome: 'Francisco Beltrão', coords: [-26.07, -53.05] },
+            { sigla: 'GP', nome: 'Guarapuava', coords: [-25.39, -51.46] },
+            { sigla: 'LD', nome: 'Londrina', coords: [-23.30, -51.16] },
+            { sigla: 'MD', nome: 'Medianeira', coords: [-25.29, -54.09] },
+            { sigla: 'PB', nome: 'Pato Branco', coords: [-26.22, -52.67] },
+            { sigla: 'PG', nome: 'Ponta Grossa', coords: [-25.09, -50.16] },
+            { sigla: 'SH', nome: 'Santa Helena', coords: [-24.85, -54.33] },
+            { sigla: 'TD', nome: 'Toledo', coords: [-24.72, -53.74] }
+        ];
+
+        // Adicionar Marcadores
+        campi.forEach(c => {
+            var marker = L.marker(c.coords, { icon: pulseIcon }).addTo(map);
+
+            // Tooltip customizada
+            marker.bindTooltip(
+                `<div style='font-family: sans-serif; font-weight: bold;'>${c.sigla}</div>`,
+                {
+                    direction: 'top',
+                    className: 'leaflet-tooltip-dark', // Classe opcional se quiser estilizar tooltip
+                    offset: [0, -15]
+                }
+            );
+
+            marker.on('click', function () {
+                loadCampusStats(c.sigla);
+            });
+
+            marker.on('mouseover', function () { this.openTooltip(); });
+        });
+
+        // --- 4. FUNÇÕES DE ANIMAÇÃO E DADOS ---
+
+        const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function animateValue(obj, start, end, duration, verify_currency = false) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+
+                let currentVal = Math.floor(progress * (end - start) + start);
+
+                if (verify_currency) {
+                    // Interpolação simples para dinheiro (apenas visual)
+                    obj.innerHTML = formatter.format(currentVal);
+                } else {
+                    obj.innerHTML = currentVal;
+                }
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    // Final state exact value
+                    if (verify_currency) obj.innerHTML = formatter.format(end);
+                    else obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        async function loadCampusStats(sigla) {
+            // UI State
+            document.getElementById('empty-state').style.display = 'none';
+            const details = document.getElementById('campus-details');
+            details.style.display = 'block';
+
+            // Reset animations opacity if needed or custom simple fadein
+            details.style.opacity = '0';
+            setTimeout(() => { details.style.transition = 'opacity 0.5s'; details.style.opacity = '1'; }, 50);
+
+            document.getElementById('c-nome').innerText = 'Carregando...';
+
+            try {
+                const response = await fetch(`/api/campus-stats/${sigla}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const s = data.stats;
+
+                    document.getElementById('c-nome').innerText = `Campus ${data.campus}`;
+
+                    // Animate Counters
+                    animateValue(document.getElementById('c-bolsistas'), 0, s.bolsistas_ativos, 1000);
+                    animateValue(document.getElementById('c-programas'), 0, s.programas_ofertados, 800);
+
+                    // Money Animation (simplified logic for text)
+                    // Para dinheiro é mais complexo animar formato, vamos setar direto ou animar integer
+                    // Aqui vamos setar direto para evitar glitch visual de formatação
+                    document.getElementById('c-financeiro').innerText = formatter.format(s.custo_mensal);
+
+                    // Setup PDF Button
+                    const btn = document.getElementById('btn-dossie');
+                    btn.disabled = false;
+                    btn.onclick = function () {
+                        window.location.href = `/api/dossie-campus/${sigla}`;
+                    };
+
+                } else {
+                    document.getElementById('c-nome').innerText = 'Erro';
+                    alert('Erro ao carregar dados do campus.');
+                }
+            } catch (error) {
+                console.error("Erro API:", error);
+                document.getElementById('c-nome').innerText = 'Erro de Conexão';
+            }
+        }
+    </script>
+</body>
+
+</html>

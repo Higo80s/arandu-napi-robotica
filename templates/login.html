@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Arandu</title>
+
+    <!-- Favicon - Símbolo Marangatu -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/simbolo_marangatu.png') }}">
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simbolo.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            /* Pure white for logo fusion */
+        }
+
+        /* Login Container Animation */
+        .login-container {
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Force Flat Logo (No Shadows) */
+        .logo-simbolo,
+        .splash-logo {
+            filter: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    {% from 'macros/icons.html' import icon, emoji %}
+
+    <!-- SPLASH SCREEN START -->
+
+
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo/Header -->
+            <div class="login-header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='images/logo_arandu.png') }}" alt="Logo Arandu"
+                        class="logo-simbolo" style="width: 250px; height: auto; max-width: 100%;">
+                    <h1>Acesso ao Sistema</h1>
+                    <p class="subtitle">UTFPR - Pró-Reitoria de Pesquisa e Pós-Graduação</p>
+                    <a href="{{ url_for('admin.sobre_simbolo') }}" class="simbolo-link" target="_blank">
+                        Conheça o Arandu
+                    </a>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="login-form" id="loginForm">
+                {% if error %}
+                <div class="alert alert-error">
+                    {{ icon('alert-circle', size=20) }}
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="username">
+                        {{ icon('user', size=18, class='label-icon') }}
+                        Usuário
+                    </label>
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autofocus
+                        autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        {{ icon('lock', size=18, class='label-icon') }}
+                        Senha
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Digite sua senha" required
+                            autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            {{ icon('eye', size=18) }}
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    {{ icon('log-in', size=20, class='btn-icon') }}
+                    Entrar
+                </button>
+            </form>
+
+            <!-- Help Links -->
+            <div class="login-help">
+                <a href="#" class="help-link" onclick="showHelp('password'); return false;">
+                    {{ icon('help-circle', size=16) }}
+                    Esqueci minha senha
+                </a>
+                <a href="#" class="help-link" onclick="showHelp('access'); return false;">
+                    {{ icon('user-x', size=16) }}
+                    Não consigo acessar
+                </a>
+                <a href="#" class="help-link" onclick="showHelp('bug'); return false;">
+                    {{ icon('bug', size=16) }}
+                    Reportar problema
+                </a>
+                <a href="{{ url_for('static', filename='docs/MANUAL_DO_SISTEMA.pdf') }}" target="_blank"
+                    class="help-link">
+                    {{ icon('book-open', size=16) }}
+                    Manual do sistema
+                </a>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeHelp()">
+                    {{ icon('x', size=20) }}
+                </button>
+                <div id="helpContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

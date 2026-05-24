@@ -1,0 +1,193 @@
+<html lang="pt-BR" class="robotica-theme">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Arandú Napi-Robótica</title>
+
+    <!-- Theme Guard (Robótica Default) -->
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme') || 'robotica';
+            if (theme === 'robotica') document.documentElement.className = 'robotica-theme';
+            if (theme === 'msdos') document.documentElement.className = 'msdos-theme';
+            document.documentElement.style.backgroundColor = (theme === 'robotica') ? '#0d0d16' : '#000000';
+        })();
+    </script>
+
+    <!-- Favicon - Logo NAPI Robótica -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/napi_robotica_logo.png') }}">
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-robotica.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-msdos.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Fade-in suave */
+        body { opacity: 0; transition: opacity 0.5s ease; background-color: transparent !important; }
+        body.loaded { opacity: 1; }
+
+        .robotica-theme .login-card {
+            background: #141424 !important;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        }
+        .robotica-theme .login-card h1, .robotica-theme .form-group label { color: #00f0ff !important; }
+        .robotica-theme .form-group input { 
+            background: #1a1a2e !important; 
+            border-color: rgba(0, 240, 255, 0.2) !important; 
+            color: #e0e0fd !important;
+        }
+        .robotica-theme .btn-login {
+            background: linear-gradient(135deg, #00f0ff 0%, #bc13fe 100%) !important;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+        
+        /* Scanline transition effect */
+        .login-logo { position: relative; }
+        .login-logo::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(0, 242, 255, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .login-logo:hover::after {
+            opacity: 1;
+            animation: scanline 1.5s linear infinite;
+        }
+        @keyframes scanline {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+    </style>
+</head>
+
+<body class="robotica-theme">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('theme') || 'robotica';
+            document.body.className = theme + '-theme';
+            document.body.classList.add('loaded');
+        });
+    </script>
+    {% from 'macros/icons.html' import icon, emoji %}
+
+
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo/Header -->
+            <div class="login-header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='images/napi_robotica_logo.png') }}" alt="Logo Arandu"
+                        class="login-logo" style="width: 180px; height: auto; margin-bottom: 1rem;">
+                    <h1>Acesso ao Sistema</h1>
+                    <p class="subtitle">UTFPR - Pró-Reitoria de Pesquisa e Pós-Graduação</p>
+                    <a href="{{ url_for('admin.sobre_simbolo') }}" class="simbolo-link" target="_blank">
+                        Conheça o Arandú Napi-Robótica
+                    </a>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} text-center"
+                style="margin-bottom: 20px; padding: 10px; border-radius: 8px; font-size: 0.9em;">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="login-form" id="loginForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label for="email">
+                        {{ icon('user', size=18, class='label-icon') }}
+                        Email Institucional
+                    </label>
+                    <input type="email" id="email" name="email" placeholder="nome@utfpr.edu.br" required autofocus
+                        autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        {{ icon('lock', size=18, class='label-icon') }}
+                        Senha
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Digite sua senha" required
+                            autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            {{ icon('eye', size=18) }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                    <input type="checkbox" name="remember" id="remember" style="width: auto; margin: 0;">
+                    <label for="remember"
+                        style="margin: 0; font-weight: normal; font-size: 0.9em; color: #64748b;">Lembrar-me neste
+                        dispositivo</label>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    {{ icon('log-in', size=20, class='btn-icon') }}
+                    Entrar
+                </button>
+            </form>
+
+            <!-- Help Links -->
+            <div class="login-help">
+                <a href="#" class="help-link" onclick="showHelp('password'); return false;">
+                    {{ icon('help-circle', size=16) }}
+                    Esqueci minha senha
+                </a>
+                <a href="#" class="help-link" onclick="showHelp('access'); return false;">
+                    {{ icon('user-x', size=16) }}
+                    Não consigo acessar
+                </a>
+                <a href="#" class="help-link" onclick="showHelp('bug'); return false;">
+                    {{ icon('bug', size=16) }}
+                    Reportar problema
+                </a>
+                <a href="{{ url_for('static', filename='docs/MANUAL_DO_SISTEMA.pdf') }}" target="_blank"
+                    class="help-link">
+                    {{ icon('book-open', size=16) }}
+                    Manual do sistema
+                </a>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeHelp()">
+                    {{ icon('x', size=20) }}
+                </button>
+                <div id="helpContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Inline Toggle Password Logic if js/login.js fails or is missing
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        }
+    </script>
+</body>
+
+</html>

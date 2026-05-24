@@ -1,0 +1,26 @@
+RELATÓRIO DE GESTÃO DE EDITAIS
+==================================================
+
+MODALIDADES:
+------------------------------
+Nível: doutorado
+Vagas: 4
+Valor: R$ 3500.00
+
+Nível: mestrado
+Vagas: 4
+Valor: R$ 2500.00
+
+Nível: mestrado
+Vagas: 1
+Valor: R$ 800.00
+
+BOLSISTAS ATIVOS:
+------------------------------
+Nome: Bruno silva
+CPF: 987.654.321-00
+Nível: mestrado
+Início Bolsa: 01/03/2025
+Fim Bolsa: 28/02/2027
+Status: ativo
+

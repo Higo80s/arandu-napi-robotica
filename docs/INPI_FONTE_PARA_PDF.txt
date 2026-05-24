@@ -1,0 +1,484 @@
+REGISTRO DE PROGRAMA DE COMPUTADOR - INPI
+=========================================
+
+SISTEMA: Gestão de Editais (Versão 11.4)
+HASH SHA-256 DO PROJETO: 182075f4cb9961ef4ab31df416ae45b2dbb45ad9f9556cfa2ee9a5bef2c80062
+DATA GERAÇÃO: 
+
+--- INÍCIO DO CÓDIGO FONTE (AMOSTRAGEM) ---
+
+ARQUIVO: app.py
+----------------------------------------
+0001: """
+0002: GESTÃO DE EDITAIS - SISTEMA DE GERENCIAMENTO DE BOLSAS (V6.2)
+0003: =============================================================
+0004: 
+0005: Descrição:
+0006:     Sistema web desenvolvido em Flask para gerenciamento de Editais, Modalidades e Bolsistas.
+0007:     Permite o controle financeiro, acompanhamento de vigências e geração de relatórios.
+0008:     
+0009:     Principais Funcionalidades:
+0010:     - Cadastro de Editais e Modalidades de Bolsa.
+0011:     - Gestão de Bolsistas (Vínculo, Dados Bancários, Acadêmicos).
+0012:     - Cálculo automático de vigências e datas limite.
+0013:     - Controle de Afastamentos (Maternidade, Saúde) com ajuste automático de prazos.
+0014:     - Relatórios e Dashboard Financeiro.
+0015: 
+0016: Tecnologias:
+0017:     - Backend: Python 3.x + Flask (Framework Web)
+0018:     - Database: SQLite + SQLAlchemy (ORM)
+0019:     - Frontend: HTML5, CSS3, JavaScript (Vanilla)
+0020:     - Deploy: Waitress (Servidor de Produção)
+0021: 
+0022: Arquitetura:
+0023:     - MVC: Model (models.py), View (templates/), Controller (app.py - Rotas)
+0024:     - Normalização V5: Uso de tabelas Campus e ProgramaAcademico para integridade.
+0025: 
+0026: Histórico de Versões:
+0027:     - V5: Normalização de Banco de Dados.
+0028:     - V6.0: Inclusão do "Número do Formulário" e melhoria nos filtros.
+0029:     - V6.2: Módulo de Certificados, Campos Pós-Doc e Atualização do Dashboard.
+0030:     - V7.0: Refatoração de Arquitetura (Tabela 'residentes' separada para Pós-Doc).
+0031: 
+0032: Autor: 
+0033:     Equipe de Desenvolvimento (Assistente IA)
+0034:     Data: Dezembro 2025
+0035: """
+0036: 
+0037: # Importações Bibliotecas Padrão (Python)
+0038: import os                       # Manipulação de arquivos e sistema operacional
+0039: import csv                      # Leitura/Escrita de arquivos CSV
+0040: import io                       # Manipulação de streams de dados (para downloads)
+0041: from datetime import datetime, date # Manipulação de datas
+0042: 
+0043: # Importações de Bibliotecas de Terceiros
+0044: from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
+0045: from dateutil.relativedelta import relativedelta # Cálculos avançados de data (ex: +1 mês)
+0046: from dotenv import load_dotenv                   # Carregar variáveis de ambiente (.env)
+0047: 
+0048: # Importações do Próprio Projeto
+0049: from models import db, Edital, Modalidade, Campus, ProgramaAcademico, Bolsista, Afastamento, Acompanhamento, Residente, Campus, ProgramaAcademico
+0050: import backup_system                             # Módulo de backup automático
+0051: 
+0052: # Carregar variáveis de ambiente (Segurança: Senhas e Chaves não ficam no código)
+0053: load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+0054: 
+0055: app = Flask(__name__)
+0056: 
+0057: # Configuração do Banco de Dados
+0058: basedir = os.path.abspath(os.path.dirname(__file__))
+0059: 
+0060: # Lógica Dual: Docker (Postgres) vs Local (SQLite)
+0061: # Se a variável de ambiente DATABASE_URL existir, usamos ela.
+0062: # Caso contrário, usamos o SQLite local padrão.
+0063: db_url = os.getenv('DATABASE_URL')
+0064: 
+0065: if db_url:
+0066:     # Docker/Produção (Postgres)
+0067:     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+0068:     print(f" * Usando Banco de Dados: PostgreSQL (Produção)")
+0069: else:
+0070:     # Local/Desenvolvimento (SQLite)
+0071:     db_path = os.path.join(basedir, 'instance', 'gestao_editais_new.db')
+0072:     if os.name == 'nt':
+0073:         db_path = db_path.replace('\\', '/')
+0074:     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+0075:     print(f" * Usando Banco de Dados: SQLite (Local)")
+0076: 
+0077: app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+0078: 
+0079: # Chave Secreta para Sessão (Flash messages, Login)
+0080: app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24))
+0081: 
+0082: # Inicializar o Banco de Dados com o App
+0083: db.init_app(app)
+0084: 
+0085: 
+0086: 
+0087: 
+0088: @app.route('/')
+0089: def index():
+0090:     return render_template('dashboard.html')
+0091: 
+0092: # === EDITAIS ===
+0093: @app.route('/editais')
+0094: def editais_index():
+0095:     editais = Edital.query.all()
+0096:     return render_template('editais/index.html', editais=editais)
+0097: 
+0098: @app.route('/editais/novo', methods=['GET', 'POST'])
+0099: def editais_novo():
+0100:     if request.method == 'POST':
+
+... [CÓDIGO CONTINUA] ...
+
+========================================
+
+ARQUIVO: models.py
+----------------------------------------
+0001: """
+0002: MODELOS DE BANCO DE DADOS (SQLALCHEMY)
+0003: ======================================
+0004: 
+0005: Este arquivo define a estrutura do banco de dados (Schema) da aplicação,
+0006: utilizando a biblioteca SQLAlchemy (ORM). Cada classe abaixo representa uma tabela
+0007: no arquivo SQLite (gestao_editais_new.db).
+0008: 
+0009: Principais Entidades:
+0010: 1. Edital: O documento regulador (ex: Edital 01/2024 - PROPPG).
+0011: 2. Modalidade: Categorias dentro do edital (ex: Mestrado, Doutorado) com valores e vagas.
+0012: 3. Bolsista: O beneficiário final. É a tabela central que conecta Aluno -> Edital -> Programa.
+0013: 4. Campus & ProgramaAcademico: Tabelas auxiliares para normalização de dados (Evita erros de digitação).
+0014: 
+0015: Alterações Recentes (V5/V6):
+0016: - Normalização Campus/Programa: Substituição de textos livres por chaves estrangeiras.
+0017: - Novos Campos: Processo SEI, Número do Formulário, Comentários.
+0018: """
+0019: 
+0020: from flask_sqlalchemy import SQLAlchemy
+0021: from datetime import datetime
+0022: 
+0023: # Inicialização do objeto DB vinculada ao Flask posteriormente
+0024: db = SQLAlchemy()
+0025: 
+0026: class Edital(db.Model):
+0027:     """
+0028:     Tabela: editais
+0029:     Descrição: Armazena os editais de fomento.
+0030:     """
+0031:     __tablename__ = 'editais'
+0032:     
+0033:     id = db.Column(db.Integer, primary_key=True)
+0034:     numero = db.Column(db.String(50), nullable=False) # Ex: "01/2024"
+0035:     descricao = db.Column(db.String(200))             # Título ou resumo
+0036:     agencia = db.Column(db.String(50), nullable=False)# Ex: "CNPq", "Fundação Araucária"
+0037:     
+0038:     # Detalhes do Projeto Institucional
+0039:     codigo_projeto = db.Column(db.String(50))
+0040:     descricao_projeto = db.Column(db.Text)
+0041:     
+0042:     # Controle Administrativo (V2)
+0043:     processo_sei = db.Column(db.String(50))           # Link/Número do processo no SEI
+0044:     comentarios = db.Column(db.Text)                  # Anotações internas
+0045:     
+0046:     # [NEW V11.2 - Prod] Vigência do Edital
+0047:     data_inicio = db.Column(db.Date, nullable=True)
+0048:     data_fim = db.Column(db.Date, nullable=True)
+0049:     
+0050:     # [NEW V11.3 - Prod] Prestação de Contas
+0051:     prestacao_contas = db.Column(db.Boolean, default=False)
+0052: 
+0053:     # Relacionamentos (Cascade: Deletar Edital remove modalidades e bolsistas)
+0054:     bolsistas = db.relationship('Bolsista', backref='edital', cascade='all, delete-orphan', lazy=True)
+0055:     modalidades = db.relationship('Modalidade', backref='edital', cascade='all, delete-orphan', lazy=True)
+0056:     
+0057:     @property
+0058:     def status_prestacao(self):
+0059:         """
+0060:         Retorna o status da prestação de contas:
+0061:         - 'OK': Marcado como realizada.
+0062:         - 'PENDENTE': Não marcada e data_fim vencida.
+0063:         - 'EM_ANDAMENTO': Não marcada e data_fim futura ou não definida.
+0064:         """
+0065:         from datetime import date
+0066:         if self.prestacao_contas:
+0067:             return 'OK'
+0068:         
+0069:         hoje = date.today()
+0070:         if self.data_fim and self.data_fim < hoje:
+0071:              return 'PENDENTE'
+0072:         
+0073:         return 'NORMAL'
+0074: 
+0075: class Modalidade(db.Model):
+0076:     """
+0077:     Tabela: modalidades
+0078:     Descrição: Define os tipos de bolsa disponíveis em um edital,
+0079:     incluindo valores financeiros e limites de tempo.
+0080:     """
+0081:     __tablename__ = 'modalidades'
+0082:     
+0083:     id = db.Column(db.Integer, primary_key=True)
+0084:     edital_id = db.Column(db.Integer, db.ForeignKey('editais.id'), nullable=False)
+0085:     
+0086:     nivel = db.Column(db.String(50), nullable=False)  # Ex: "Mestrado", "Doutorado", "Iniciação Científica"
+0087:     vagas = db.Column(db.Integer, nullable=False)     # Quantidade total aprovada
+0088:     valor_mensal = db.Column(db.Float, nullable=False)# Valor da bolsa (R$)
+0089:     max_meses = db.Column(db.Integer)                 # Duração máxima permitida pelo edital (ex: 24 meses)
+0090:     
+0091:     bolsistas = db.relationship('Bolsista', backref='modalidade', lazy=True)
+0092: 
+0093: # [NORMALIZAÇÃO V5]
+0094: # As tabelas Campus e ProgramaAcademico evitam inconsistências de digitação.
+0095: 
+0096: class Campus(db.Model):
+0097:     """
+0098:     Tabela: campus
+0099:     Descrição: Lista dos 13 campi da UTFPR.
+0100:     """
+
+... [CÓDIGO CONTINUA] ...
+
+========================================
+
+ARQUIVO: requirements.txt
+----------------------------------------
+[ERRO LENDO ARQUIVO]: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+
+========================================
+
+ARQUIVO: Dockerfile
+----------------------------------------
+0001: # Base Image: Python 3.11 Slim (Leve e segura)
+0002: FROM python:3.11-slim
+0003: 
+0004: # Variáveis de Ambiente
+0005: # PYTHONDONTWRITEBYTECODE: Impede criação de .pyc
+0006: # PYTHONUNBUFFERED: Garante logs em tempo real
+0007: ENV PYTHONDONTWRITEBYTECODE=1 \
+0008:     PYTHONUNBUFFERED=1
+0009: 
+0010: # Diretório de Trabalho
+0011: WORKDIR /app
+0012: 
+0013: # Instalação de Dependências do Sistema (Bibliotecas p/ Postgres e PDF)
+0014: RUN apt-get update && apt-get install -y --no-install-recommends \
+0015:     gcc \
+0016:     libpq-dev \
+0017:     && rm -rf /var/lib/apt/lists/*
+0018: 
+0019: # Copiar Requirements e Instalar Dependências Python
+0020: # Dica: Copiar só o requirements primeiro otimiza o cache do Docker
+0021: COPY requirements.txt .
+0022: RUN pip install --no-cache-dir -r requirements.txt
+0023: RUN pip install gunicorn psycopg2-binary
+0024: 
+0025: # Copiar Código Fonte
+0026: COPY . .
+0027: 
+0028: # Criar diretório instance (para consistência, mesmo que use banco externo)
+0029: RUN mkdir -p instance
+0030: 
+0031: # Expor Porta 5000 (Padrão Flask/Gunicorn)
+0032: EXPOSE 5000
+0033: 
+0034: # Comando de Inicialização (Gunicorn com 4 workers)
+0035: # app:app -> arquivo app.py : objeto app
+0036: CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5000", "app:app"]
+
+========================================
+
+ARQUIVO: templates/base.html
+----------------------------------------
+0001: <!DOCTYPE html>
+0002: <html lang="pt-br">
+0003: 
+0004: <head>
+0005:     <meta charset="UTF-8">
+0006:     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+0007:     <title>Gestão de Editais</title>
+0008:     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+0009:     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+0010:     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+0011:     <style>
+0012:         /* Mobile Responsive Fixes */
+0013:         @media (max-width: 768px) {
+0014:             .app-container {
+0015:                 display: block !important;
+0016:                 /* Break grid */
+0017:             }
+0018: 
+0019:             .sidebar {
+0020:                 position: fixed;
+0021:                 top: 0;
+0022:                 left: -260px;
+0023:                 /* Hide by default */
+0024:                 height: 100vh;
+0025:                 width: 250px !important;
+0026:                 z-index: 1000;
+0027:                 transition: left 0.3s ease;
+0028:                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+0029:             }
+0030: 
+0031:             .sidebar.active {
+0032:                 left: 0;
+0033:             }
+0034: 
+0035:             .content {
+0036:                 width: 100% !important;
+0037:                 margin-left: 0 !important;
+0038:                 padding: 1rem;
+0039:             }
+0040: 
+0041:             .topbar {
+0042:                 display: flex;
+0043:                 flex-wrap: wrap;
+0044:                 gap: 10px;
+0045:             }
+0046: 
+0047:             .topbar h1 {
+0048:                 font-size: 1.2rem;
+0049:                 flex-grow: 1;
+0050:             }
+0051: 
+0052:             #menuToggle {
+0053:                 display: block !important;
+0054:                 background: none;
+0055:                 border: none;
+0056:                 font-size: 1.5rem;
+0057:                 cursor: pointer;
+0058:                 color: var(--text-color);
+0059:                 margin-right: 10px;
+0060:             }
+0061: 
+0062:             .overlay {
+0063:                 display: none;
+0064:                 position: fixed;
+0065:                 top: 0;
+0066:                 left: 0;
+0067:                 width: 100%;
+0068:                 height: 100%;
+0069:                 background: rgba(0, 0, 0, 0.5);
+0070:                 z-index: 999;
+0071:             }
+0072: 
+0073:             .overlay.active {
+0074:                 display: block;
+0075:             }
+0076:         }
+0077: 
+0078:         #menuToggle {
+0079:             display: none;
+0080:         }
+0081:     </style>
+0082:     <script>
+0083:         // ... Existing Theme Logic ...
+0084:         const themes = ['light', 'dark', 'utfpr'];
+0085:         const themeLabels = {
+0086:             'light': '☀️ Claro',
+0087:             'dark': '🌙 Escuro',
+0088:             'utfpr': '💛 UTFPR'
+0089:         };
+0090: 
+0091:         function applyTheme(theme) {
+0092:             document.body.classList.remove('dark-mode', 'utfpr-theme');
+0093:             if (theme === 'dark') document.body.classList.add('dark-mode');
+0094:             if (theme === 'utfpr') document.body.classList.add('utfpr-theme');
+0095: 
+0096:             const btn = document.getElementById('themeBtn');
+0097:             if (btn) btn.innerText = themeLabels[theme];
+0098: 
+0099:             localStorage.setItem('theme', theme);
+0100:         }
+
+... [CÓDIGO CONTINUA] ...
+
+========================================
+
+ARQUIVO: templates/dashboard.html
+----------------------------------------
+0001: {% extends "base.html" %}
+0002: 
+0003: {% block content %}
+0004: <div class="topbar-dashboard">
+0005:     <h1 style="display: none;">Dashboard</h1>
+0006:     <span class="date-display" id="dateDisplay"
+0007:         style="color: var(--text-muted); display: block; margin-bottom: 1rem;"></span>
+0008: </div>
+0009: 
+0010: <!-- SECTION 1: FINANCEIRO -->
+0011: <h2
+0012:     style="margin-bottom: 15px; border-left: 5px solid var(--primary-color); padding-left: 10px; color: var(--text-color);">
+0013:     Investimentos</h2>
+0014: 
+0015: <!-- Summary Cards -->
+0016: <div class="summary-cards">
+0017:     <div class="card" style="text-align: center; border-left: 4px solid var(--primary-color);">
+0018:         <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Arrecadação Atual (Jan-Dez)
+0019:         </h3>
+0020:         <p class="display-text" id="totalYTD" style="color: var(--primary-color);">R$ 0,00</p>
+0021:     </div>
+0022:     <div class="card" style="text-align: center; border-left: 4px solid var(--success-color);">
+0023:         <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Folha Mensal Atual</h3>
+0024:         <p class="display-text" id="totalMonthly" style="color: var(--success-color);">R$ 0,00</p>
+0025:     </div>
+0026: </div>
+0027: 
+0028: <div class="finance-layout">
+0029:     <!-- Pie Chart -->
+0030:     <div class="card">
+0031:         <h3>Distribuição por Nível (R$)</h3>
+0032:         <div class="chart-container" style="height: 300px; position: relative;">
+0033:             <canvas id="levelChart"></canvas>
+0034:         </div>
+0035:     </div>
+0036: 
+0037:     <!-- Detailed Lists (Tabbed) -->
+0038:     <div class="card" style="min-height: 300px;">
+0039:         <div class="tabs"
+0040:             style="display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; padding-bottom: 0.5rem;">
+0041:             <button class="tab-btn active" onclick="openTab(event, 'tabEdital')">Por Edital</button>
+0042:             <button class="tab-btn" onclick="openTab(event, 'tabCampus')">Por Campus</button>
+0043:             <button class="tab-btn" onclick="openTab(event, 'tabPrograma')">Por Programa</button>
+0044:         </div>
+0045: 
+0046:         <div id="tabEdital" class="tab-content" style="display: block;">
+0047:             <div id="listEdital" style="max-height: 250px; overflow-y: auto;"></div>
+0048:         </div>
+0049: 
+0050:         <div id="tabCampus" class="tab-content" style="display: none;">
+0051:             <div id="listCampus" style="max-height: 250px; overflow-y: auto;"></div>
+0052:         </div>
+0053: 
+0054:         <div id="tabPrograma" class="tab-content" style="display: none;">
+0055:             <div id="listPrograma" style="max-height: 250px; overflow-y: auto;"></div>
+0056:         </div>
+0057:     </div>
+0058: </div>
+0059: 
+0060: <script>
+0061:     function openTab(evt, tabName) {
+0062:         var i, tabcontent, tablinks;
+0063:         tabcontent = document.getElementsByClassName("tab-content");
+0064:         for (i = 0; i < tabcontent.length; i++) {
+0065:             tabcontent[i].style.display = "none";
+0066:         }
+0067:         tablinks = document.getElementsByClassName("tab-btn");
+0068:         for (i = 0; i < tablinks.length; i++) {
+0069:             tablinks[i].className = tablinks[i].className.replace(" active", "");
+0070:         }
+0071:         document.getElementById(tabName).style.display = "block";
+0072:         evt.currentTarget.className += " active";
+0073:     }
+0074: </script>
+0075: 
+0076: <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+0077: 
+0078: <!-- SECTION 2: OCUPAÇÃO -->
+0079: <h2 style="margin-bottom: 15px; border-left: 5px solid #8b5cf6; padding-left: 10px; color: var(--text-color);">Ocupação
+0080:     de Vagas</h2>
+0081: 
+0082: <div class="vacancy-layout">
+0083:     <div class="card" style="max-height: 500px; overflow-y: auto;">
+0084:         <!-- <h3 style="margin-bottom: 1rem;">Detalhamento de Vagas</h3> -->
+0085:         <div id="listVacancy"></div>
+0086:     </div>
+0087: </div>
+0088: 
+0089: <!-- Chart.js CDN -->
+0090: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+0091: 
+0092: <script>
+0093:     // Utils
+0094:     const formatCurrency = (value) => {
+0095:         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+0096:     };
+0097: 
+0098:     const createListItem = (label, value) => {
+0099:         return `
+0100:             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color);">
+
+... [CÓDIGO CONTINUA] ...
+
+========================================
+

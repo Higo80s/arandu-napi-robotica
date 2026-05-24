@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Integrado de Bolsas (Data Science)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background: #fff;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+
+        .header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            color: #1e3a8a;
+            font-size: 18pt;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header-title small {
+            color: #64748b;
+            font-size: 10pt;
+        }
+
+        .meta-info {
+            text-align: right;
+            font-size: 9pt;
+            color: #64748b;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 8px 12px;
+            font-weight: 600;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 15px;
+            font-size: 12pt;
+        }
+
+        /* Metric Cards Row */
+        .metrics-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background: #fff;
+        }
+
+        .metric-value {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+            margin-bottom: 10px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+
+        .badge-source {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-level {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .insights-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .insights-title {
+            color: #15803d;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .insight-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 9.5pt;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 8pt;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>Relatório Integrado de Bolsas</h1>
+            <small>Análise de Data Science e Indicadores Estratégicos</small>
+        </div>
+        <div class="meta-info">
+            Gerado em: {{ hoje.strftime('%d/%m/%Y') }}<br>
+            Sistema de Gestão de Editais
+        </div>
+    </div>
+
+    <!-- 1. Visão Geral (KPIs) -->
+    <div class="section">
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-value">{{ stats.total_ofertadas }}</div>
+                <div class="metric-label">Bolsas Ofertadas</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #16a34a;">{{ stats.total_ativas }}</div>
+                <div class="metric-label">Bolsas Ativas</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #ea580c;">{{ stats.total_ociosas }}</div>
+                <div class="metric-label">Ociosidade</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #64748b;">{{ stats.taxa_ocupacao }}%</div>
+                <div class="metric-label">Taxa de Ocupação</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Quantitativos por Fonte -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-layer-group"></i> Quantitativos por Fonte de Fomento</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fonte</th>
+                    <th style="text-align: center;">Ofertadas</th>
+                    <th style="text-align: center;">Ativas</th>
+                    <th style="text-align: center;">Ociosas</th>
+                    <th style="text-align: center;">Ocupação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fonte, dados in stats.por_fonte.items() %}
+                <tr>
+                    <td><span class="badge badge-source">{{ fonte }}</span></td>
+                    <td style="text-align: center;">{{ dados.ofertadas }}</td>
+                    <td style="text-align: center;">{{ dados.ativas }}</td>
+                    <td style="text-align: center;">{{ dados.ociosas }}</td>
+                    <td style="text-align: center;">
+                        <div
+                            style="background: #e2e8f0; width: 60px; height: 6px; border-radius: 3px; display: inline-block; margin-right: 5px;">
+                            <div
+                                style="background: #2563eb; width: {{ dados.taxa }}%; height: 100%; border-radius: 3px;">
+                            </div>
+                        </div>
+                        {{ dados.taxa }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. Detalhamento por Edital e Campus -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-university"></i> Abrangência e Ocupação por Edital</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Edital</th>
+                    <th>Abrangência (Campus)</th>
+                    <th style="text-align: center;">Nível</th>
+                    <th style="text-align: center;">Vagas vs Ativos</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edital in stats.editais %}
+                <tr>
+                    <td>
+                        <strong>Edital {{ edital.numero }}</strong><br>
+                        <small style="color: #64748b;">{{ edital.titulo[:50] }}...</small>
+                    </td>
+                    <td>
+                        {% if edital.campi %}
+                        {{ edital.campi | join(', ') }}
+                        {% else %}
+                        <span style="color: #94a3b8;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% for nivel in edital.niveis %}
+                        <span class="badge badge-level">{{ nivel }}</span>
+                        {% endfor %}
+                    </td>
+                    <td style="text-align: center;">
+                        {{ edital.vagas }} <span style="color:#cbd5e1;">|</span> <strong>{{ edital.ativos }}</strong>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if edital.ociosas > 0 %}
+                        <span style="color: #ea580c; font-weight: bold;">{{ edital.ociosas }} vagas ociosas</span>
+                        {% else %}
+                        <span style="color: #16a34a; font-weight: bold;">Lotado</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. Detalhamento CAPES (PPG & IES) [NEW] -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-list-ul"></i> Detalhamento CAPES (PPG & IES)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Programa</th>
+                    <th style="text-align: center;">Nível</th>
+                    <th style="text-align: center;">Cota Aut.</th>
+                    <th style="text-align: center;">Ocupados</th>
+                    <th style="text-align: center;">Saldo</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stats.capes_detalhado %}
+                <tr>
+                    <td><span class="badge" style="background: #e0e7ff; color: #3730a3;">{{ item.tipo }}</span></td>
+                    <td>{{ item.programa }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge badge-level">{{ item.nivel }}</span>
+                    </td>
+                    <td style="text-align: center; font-weight: bold;">{{ item.cota }}</td>
+                    <td style="text-align: center;">{{ item.ocupado }}</td>
+                    <td style="text-align: center; color: {{ '#16a34a' if item.saldo > 0 else '#94a3b8' }};">
+                        {{ item.saldo if item.cota != '-' else '-' }}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if item.status == 'Vagas' %}
+                        <span style="color: #16a34a; font-weight: bold;">Vagas ({{ item.saldo }})</span>
+                        {% elif item.status == 'Lotado' %}
+                        <span style="color: #ea580c; font-weight: bold;">Lotado</span>
+                        {% else %}
+                        <span style="color: #64748b;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. Insights Exploratórios (Data Science) -->
+    <div class="section">
+        <div class="section-title"><i class="fas fa-lightbulb"></i> Insights Exploratórios</div>
+        <div class="insights-box">
+            <div class="insights-title">Análise de Pontos Críticos</div>
+
+            <div class="insight-item">
+                <i class="fas fa-exclamation-circle" style="color: #ea580c; margin-top: 3px;"></i>
+                <div>
+                    <strong>Bolsas Ociosas Detectadas:</strong> Foram identificadas <strong>{{ stats.total_ociosas
+                        }}</strong> cotas de bolsa não utilizadas.
+                    {% if stats.programas_ociosos_capes %}
+                    A maior concentração de ociosidade em editais CAPES está nos programas: <em>{{
+                        stats.programas_ociosos_capes | join(', ') }}</em>.
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="insight-item">
+                <i class="fas fa-chart-pie" style="color: #2563eb; margin-top: 3px;"></i>
+                <div>
+                    <strong>Distribuição por Nível:</strong>
+                    Atualmente suportamos {{ stats.por_nivel.mestrado }} alunos de Mestrado,
+                    {{ stats.por_nivel.doutorado }} de Doutorado e
+                    {{ stats.por_nivel.posdoc }} Residentes Pós-Doc.
+                </div>
+            </div>
+
+            <div class="insight-item">
+                <i class="fas fa-wallet" style="color: #16a34a; margin-top: 3px;"></i>
+                <div>
+                    <strong>Eficiência de Alocação:</strong>
+                    A taxa global de ocupação é de <strong>{{ stats.taxa_ocupacao }}%</strong>.
+                    {% if stats.taxa_ocupacao < 80 %} Recomenda-se revisão dos editais de fluxo contínuo para aumentar a
+                        aderência. {% else %} Alta eficiência na distribuição de recursos. {% endif %} </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Perguntas Chave -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-question-circle"></i> Respostas Chave (FAQ Gestão)</div>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px;">
+                    <strong>1. Quantas bolsas estamos ofertando atualmente?</strong><br>
+                    R: O sistema registra uma oferta total de {{ stats.total_ofertadas }} bolsas (Soma de todas as
+                    modalidades em editais ativos).
+                </li>
+                <li style="margin-bottom: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px;">
+                    <strong>2. Quantas bolsas estão ativas?</strong><br>
+                    R: {{ stats.total_ativas }} bolsas/discentes estão com status "Ativo" ou "Finalizando".
+                </li>
+                <li style="margin-bottom: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px;">
+                    <strong>3. Onde estão as bolsas ociosas (Editais CAPES)?</strong><br>
+                    R:
+                    {% if stats.programas_ociosos_capes %}
+                    Nos programas: {{ stats.programas_ociosos_capes | join(', ') }}.
+                    {% else %}
+                    Não há ociosidade registrada em editais CAPES no momento ou dados pendentes de vínculo.
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            Universidade Tecnológica Federal do Paraná - UTFPR<br>
+            Pró-Reitoria de Pesquisa e Pós-Graduação (PROPPG)
+        </div>
+
+</body>
+
+</html>

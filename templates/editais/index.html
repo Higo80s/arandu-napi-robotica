@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Editais</h1>
+    <a href="{{ url_for('editais.novo') }}" class="btn btn-primary">Novo Edital</a>
+</div>
+
+<div class="card">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 1rem;">Edital / Ano</th>
+                <th style="padding: 1rem;">Empresa / Agência</th>
+                <th style="padding: 1rem;">Descrição</th>
+                <th style="padding: 1rem; text-align: center;">Bolsistas Ativos</th>
+                <th style="padding: 1rem;">Prestação de Contas</th>
+                <th style="padding: 1rem;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for edital, total_ativos in editais %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 1rem;">
+                    <strong>{{ edital.numero_edital or edital.numero }}</strong>
+                    {% if edital.ano_edital %} / {{ edital.ano_edital }}{% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    {% if edital.empresa %}
+                        <span style="font-weight: 500;">{{ edital.empresa }}</span><br>
+                        <small style="color: #666;">({{ edital.agencia }})</small>
+                    {% else %}
+                        {{ edital.agencia }}
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">{{ edital.descricao }}</td>
+                <td style="padding: 1rem; text-align: center;">
+                    {% set total = total_ativos or 0 %}
+                    {% set expirado = edital.data_fim and edital.data_fim < hoje %}
+                    
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        {% if total > 0 %}
+                            <span class="badge" style="background: {{ '#fee2e2' if expirado else '#dcfce7' }}; color: {{ '#991b1b' if expirado else '#166534' }}; padding: 4px 10px; border-radius: 999px; font-weight: bold; font-size: 0.85rem;">
+                                {{ total }} Ativos
+                            </span>
+                            {% if expirado %}
+                                <i class="lucide-alert-triangle" style="color: #dc2626;" title="CRÍTICO: Vigência encerrada com bolsas ativas!"></i>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge" style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem;">
+                                0 Ativos
+                            </span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="padding: 1rem; text-align: center;">
+                    {% if edital.status_prestacao == 'OK' %}
+                    <span style="color: green; font-weight: bold;">Sim</span>
+                    {% elif edital.status_prestacao == 'PENDENTE' %}
+                    <span style="color: #dc2626; font-weight: bold;">Pendente {{ icon('alert-circle', size=20) }}</span>
+                    {% else %}
+                    <span style="color: #9ca3af;">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    <a href="{{ url_for('reports.edital_report_print', id=edital.id) }}" target="_blank"
+                        style="color: #4b5563; text-decoration: none; font-weight: 500; margin-right: 10px;"
+                        title="Relatório Financeiro">
+                        {{ icon('printer', size=18) }}
+                    </a>
+                    <a href="{{ url_for('editais.modalidades_gerenciar', id=edital.id) }}"
+                        style="color: var(--secondary-color); text-decoration: none; font-weight: 500; margin-right: 10px;">Bolsas</a>
+                    <a href="{{ url_for('editais.editar', id=edital.id) }}"
+                        style="color: var(--primary-color); text-decoration: none; font-weight: 500; margin-right: 10px;">Editar</a>
+                    <form action="{{ url_for('editais.excluir', id=edital.id) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" onclick="return confirm('Tem certeza?')"
+                            class="btn-link-danger">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Nenhum edital
+                    cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

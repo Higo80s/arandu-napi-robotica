@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="printable-content" style="padding: 1rem 2rem; max-width: 1200px; margin: 0 auto;">
+    <div class="no-print" style="margin-bottom: 2rem;">
+        <h1 style="color: var(--primary-color);">📊 Relatório Detalhado de Repasses</h1>
+        <p style="color: #666;">Transparência e Rastreabilidade de Recursos PROAP/PROAPINHO</p>
+
+        <form method="GET" class="card"
+            style="margin-top: 1rem; padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label style="font-weight: 500; font-size: 0.9rem;">Ano</label>
+                <select name="ano" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    {% for y in range(2024, 2030) %}
+                    <option value="{{ y }}" {% if y==ano %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label style="font-weight: 500; font-size: 0.9rem;">Programa (Opcional)</label>
+                <select name="programa_id" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Todos</option>
+                    {% for p in todos_programas %}
+                    <option value="{{ p.id }}" {% if programa_id==p.id %}selected{% endif %}>
+                        {{ p.codigo_programa }} - {{ p.nome_programa }} - {{ p.sigla_programa }} - {{
+                        p.campus.sigla_campus }} ({{ p.niveis if p.niveis else '?' }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label style="font-weight: 500; font-size: 0.9rem;">Campus (Opcional)</label>
+                <select name="campus_id" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Todos</option>
+                    {% for c in todos_campuses %}
+                    <option value="{{ c.id }}" {% if campus_id==c.id %}selected{% endif %}>{{ c.sigla_campus }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <div class="header-actions">
+                <button onclick="downloadPDF()" class="btn btn-primary btn-print">
+                    {{ icon('download') }} Baixar PDF
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('printable-content');
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: 'Relatorio_Detalhado_PROAP.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            const btn = document.querySelector('.btn-print');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Gerando...';
+            btn.disabled = true;
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    </script>
+
+    <div id="printable-content">
+        <!-- Resumo dos Dados -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+            <div
+                style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary-color);">
+                <div style="font-size: 0.8rem; color: #666;">Total Distribuído</div>
+                <div style="font-size: 1.5rem; font-weight: bold;">R$ {{ "{:,.2f}".format(total_geral).replace(',',
+                    'X').replace('.', ',').replace('X', '.') }}</div>
+                <div style="font-size: 0.8rem; color: #666;">{{ distribuicoes|length }} repasses registrados</div>
+            </div>
+            <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; border-left: 4px solid #4caf50;">
+                <div style="font-size: 0.8rem; color: #666;">Programas Contemplados</div>
+                <div style="font-size: 1.5rem; font-weight: bold;">{{ programas_contemplados_count }}</div>
+            </div>
+        </div>
+
+        <!-- Tabela Detalhada -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #f0f0f0; border-bottom: 2px solid #ccc;">
+                    <th style="padding: 10px; text-align: left;">Data Solic.</th>
+                    <!-- Data da Solicitação (Distribuicao) -->
+                    <th style="padding: 10px; text-align: left;">Cód.</th>
+                    <th style="padding: 10px; text-align: left;">Programa</th>
+                    <th style="padding: 10px; text-align: center;">Campus</th>
+                    <th style="padding: 10px; text-align: left;">Fonte / SEI</th>
+                    <th style="padding: 10px; text-align: right;">Valor Repassado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in distribuicoes %}
+                <tr
+                    style="border-bottom: 1px solid #eee; background: {% if loop.index is divisibleby 2 %}#fafafa{% else %}white{% endif %};">
+                    <td style="padding: 10px;">{{ d.data_distribuicao.strftime('%d/%m/%Y') }}</td>
+                    <td style="padding: 10px; color: #666;">{{ d.programa.codigo_programa or '-' }}</td>
+                    <td style="padding: 10px; font-weight: 500;">
+                        {{ d.programa.nome_programa }}
+                        <div style="font-size: 0.75rem; color: #999;">{{ d.programa.sigla_programa }}</div>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                        <span style="background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
+                            {{ d.programa.campus.sigla_campus }}
+                        </span>
+                    </td>
+                    <td style="padding: 10px;">
+                        <div>{{ d.repasse.tipo }} {{ d.repasse.ano }}</div>
+                        {% if d.numero_sei %}
+                        <div style="font-size: 0.8rem; color: var(--primary-color);">SEI: {{ d.numero_sei }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold; color: #333;">
+                        R$ {{ "{:,.2f}".format(d.valor_distribuido).replace(',', 'X').replace('.', ',').replace('X',
+                        '.') }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="padding: 2rem; text-align: center; color: #999;">Nenhum registro encontrado
+                        para
+                        este filtro.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background: #f8f9fa; font-weight: bold; border-top: 2px solid #ccc;">
+                    <td colspan="5" style="padding: 10px; text-align: right;">TOTAL GERAL:</td>
+                    <td style="padding: 10px; text-align: right;">
+                        R$ {{ "{:,.2f}".format(total_geral).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer-print"
+            style="display: none; margin-top: 3rem; text-align: center; border-top: 1px solid #eee; padding-top: 1rem;">
+            <p style="font-size: 0.8rem; color: #666;">Sistema Arandu - Relatório de Transparência PROAP</p>
+            <p style="font-size: 0.8rem; color: #999;">Gerado em {{ now }}</p>
+        </div>
+    </div>
+
+    {% endblock %}

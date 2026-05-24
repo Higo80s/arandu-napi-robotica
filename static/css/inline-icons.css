@@ -1,0 +1,7 @@
+/* Inline icons - pequenos e discretos para minimalismo */
+.inline-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}

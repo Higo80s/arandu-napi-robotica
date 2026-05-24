@@ -1,0 +1,78 @@
+AUDITORIA DE PROGRAMAS ACADEMICOS
+====================================================================================================
+
+TOTAL: 117 programas
+  - Com níveis: 76
+  - SEM níveis: 41
+
+PROGRAMAS SEM NIVEIS:
+----------------------------------------------------------------------------------------------------
+
+Apucarana:
+  ID 1, 33004010001P1, PPGEM-AP, Engenharia de Materiais, 1 bolsistas
+  ID 29, 40006018035P0, PPGEM, Engenharia de Materiais, 0 bolsistas
+  ID 2, 33004030001P1, PPGQUIMICA-AP, Quimica, 0 bolsistas
+  ID 30, 40006018033P8, PPGQ, Química, 0 bolsistas
+
+Campo Mourão:
+  ID 31, 40006018055P1, PPGEA, Engenharia Aeroespacial, 0 bolsistas
+  ID 3, 40006000001P1, PPGAERO-CM, Engenharia Aerospacial, 0 bolsistas
+  ID 4, 40006000002P2, PPGIT-CM, Inovações Tecnológicas, 0 bolsistas
+
+Cornélio Procópio:
+  ID 5, 40006018047P9, PPGBIOINFO-CP, Bioinformática, 0 bolsistas
+
+Curitiba:
+  ID 12, 40006018006P6, PPGCA, Computação Aplicada, 0 bolsistas
+  ID 38, 40006018005P0, PPGCA, Computação Aplicada, 0 bolsistas
+  ID 93, , PPGDP, Design Prospectivo, 0 bolsistas
+  ID 33, 40006018009P6, PPGEC, Engenharia Civil, 0 bolsistas
+  ID 8, 40006018002P2, PPGEE-CT, Engenharia Elétrica, 0 bolsistas
+  ID 34, 40006018001P5, PPGEE, Engenharia Elétrica, 0 bolsistas
+  ID 10, 40006018004P4, PPGEM-CT, Engenharia Mecânica, 0 bolsistas
+  ID 9, 40006018003P3, PPGFISICA-CT, Fisica, 0 bolsistas
+  ID 35, 40006018037P3, PPGFA, Física, 0 bolsistas
+  ID 36, 40006018002P1, PPGMET, Metalurgia e Materiais, 1 bolsistas
+  ID 11, 40006018005P5, PPGPGP, Planejamento e Governança, 1 bolsistas
+  ID 37, 40006018012P7, PPGPG, Planejamento e Governança, 0 bolsistas
+
+Dois Vizinhos:
+  ID 13, 40006018021P2, PPGAA-DV, Agroecossistemas, 0 bolsistas
+
+Francisco Beltrão:
+  ID 15, 40006018032P1, PPGEA, Engenharia Ambiental, 1 bolsistas
+
+Guarapuava:
+  ID 16, 40006018046P2, PPGEM-GP, Engenharia Mecânica, 0 bolsistas
+
+Londrina:
+  ID 19, 40006018054P5, PPGFLIGHT-LD, Engenharia de Voo (Flight), 1 bolsistas
+  ID 18, 40006018043P3, PPGEMAT, Ensino da Matemática, 0 bolsistas
+
+Medianeira:
+  ID 20, 40006018029P3, PPGTC-MD, Tecnologias Computacionais, 0 bolsistas
+
+Multi:
+  ID 75, 53045009001P3, PROFIAP, ADMINISTRAÇÃO PÚBLICA EM REDE NACIONAL, 0 bolsistas
+
+Pato Branco:
+  ID 22, 40006018008P9, PPGA, Agronomia, 1 bolsistas
+  ID 21, 40006018044P0, PPGEC, Engenharia Civil, 0 bolsistas
+  ID 23, 40006018009P1, PPGEE-PB, Engenharia Elétrica, 0 bolsistas
+  ID 39, 40006018008P0, PPGEE, Engenharia Elétrica, 0 bolsistas
+  ID 24, 40006018010P2, PPGLETRAS-PB, Letras, 0 bolsistas
+
+Ponta Grossa:
+  ID 97, 0000, EEO, Engenharia Eletrônica (Graduação), 1 bolsistas
+  ID 63, 4006018022P9, PPGEE, Engenharia Elétrica, 0 bolsistas
+  ID 96, EEL(grad), EEL(grad), Engenharia Elétrica (Graduação), 1 bolsistas
+  ID 25, 40006018011P3, PPGEP, Engenharia de Produção, 0 bolsistas
+  ID 41, 40006018007P3, PPGEP, Engenharia de Produção, 1 bolsistas
+
+Santa Helena:
+  ID 27, 40006018050P0, PPGRN-SH, Recursos Naturais, 0 bolsistas
+
+Toledo:
+  ID 94, CC-TD(grad), CC-TD(grad), Ciência da Computação (Graduação), 1 bolsistas
+  ID 98, EEO(grad), EEO(grad), Engenharia Eletrônica, 1 bolsistas
+  ID 95, 00, EE, Engenharia Eletrônica (Graduação), 1 bolsistas

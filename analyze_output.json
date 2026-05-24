@@ -1,0 +1,642 @@
+{
+  "sample_vigencias": [
+    "01/07/2023 - 30/06/2027",
+    "01/09/2019 - 29/02/2020",
+    "01/04/2025 - 30/06/2025",
+    "01/06/2025 - 31/08/2028",
+    "01/04/2023 - 28/02/2027"
+  ],
+  "total_expiring_feb_mar": 126,
+  "expiring_names": [
+    {
+      "name": "058.854.179-62 - ALANA MILCHESKI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "064.112.029-07 - ALINE FERNANDA CAMPAGNARO",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "098.416.999-74 - ANA CLAUDIA LAZAROTO",
+      "vigencia": "01/01/2026 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "690.035.649-49 - ANDRE MACARIO BARROS",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "066.431.959-93 - CARLA TODESCATTO GHELLER",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "026.723.870-36 - CASSIANO MELO DE MOURA",
+      "vigencia": "01/12/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "066.564.759-06 - DAIANA APARECIDA FURLAN ECKER",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "073.550.699-00 - DOUGLAS SILVA DO PRADO",
+      "vigencia": "01/09/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "365.193.188-92 - EDUARDO HENRIQUE SZPAK GAIEVSKI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "037.083.039-38 - FABIANA MARIA GALLI WUTRICH",
+      "vigencia": "01/08/2023 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "010.517.839-09 - FERNANDA REGINA RIOS ASSIS",
+      "vigencia": "01/03/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "047.075.749-39 - GIHAD ABDALLA EL KHOURI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "084.623.439-41 - GUILHERME MOCELIN",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "103.309.459-55 - IASMIN LOURENCO NIZA",
+      "vigencia": "01/03/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "057.236.369-95 - LUCAS VINICIUS DALLACORTE",
+      "vigencia": "01/04/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "009.386.270-90 - LUISA ALCANTARA ROSA",
+      "vigencia": "01/05/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "081.869.859-48 - LUIZA TEODORO LEITE",
+      "vigencia": "01/01/2023 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "045.136.729-43 - MARIANNA DO ROCIO CARDOSO",
+      "vigencia": "01/04/2022 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "097.495.499-37 - MURILO HENRIQUE GARBIN",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "901.851.889-15 - PATRICIA AFFONSO GASPAR",
+      "vigencia": "01/07/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "036.426.269-98 - REJANE BOLZAN LUNKES",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "098.215.951-03 - RICHAR NICOLAS DURAN ANDRADES",
+      "vigencia": "01/04/2022 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "029.830.469-40 - SHANA GONCALVES DE OLIVEIRA",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "807.405.379-20 - VALERIA MARIA NAVARRO",
+      "vigencia": "01/03/2023 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "040.870.201-00 - ADRIANA PAOLA VELASQUEZ TORRICO",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "051.151.189-20 - ALBERTO CESARIO PEREIRA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "045.966.423-97 - AMANDA DE OLIVEIRA SOUSA CARDOSO",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "479.869.068-63 - ANA CAROLINA CANTARIM MARTINS",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "093.215.799-82 - ANA CAROLINE NERES",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "088.962.739-86 - ANA FLAVIA MALDANER TEODORO SANDMANN",
+      "vigencia": "01/04/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "107.280.619-37 - ANDRE LUIS SCHNEIDER",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "125.639.839-08 - ANDRE MARCOS SOUZA SILVA DIAS",
+      "vigencia": "01/07/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "033.978.609-46 - ANDRESSA CRISTINA WAGNITZ NEVES",
+      "vigencia": "01/09/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "473.564.538-19 - ANTONIO AUGUSTO IGNACIO",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "701.124.912-51 - ANTONIO TARCISIO DA SILVA QUEIROZ",
+      "vigencia": "01/11/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "099.928.519-02 - ANUAR MIGUEL ABIB ONOFRE",
+      "vigencia": "01/07/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "229.718.338-01 - BARBARA CAMPOS MACHADO GROSS STECCA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "045.360.039-59 - BEATRIZ MASQUETTI PELZ",
+      "vigencia": "01/07/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "072.014.229-60 - BRUCE DOS SANTOS ALBINO",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.498.319-35 - BRUNA CARLIM DA GAMA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "012.079.789-57 - BRUNA FERREIRA GOMES",
+      "vigencia": "01/04/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "113.675.929-84 - CAMILA MARA SCHAFER DOS SANTOS",
+      "vigencia": "01/06/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "078.149.639-07 - CARLOS FELIPE DE OLIVEIRA SANTOS",
+      "vigencia": "01/07/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "084.862.089-55 - CARMEM LUCIA HENRICH",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "384.549.068-35 - CLARA PORTO DO NASCIMENTO",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "094.080.469-78 - DANIEL SOUZA BATISTA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "080.744.399-92 - DEBORA BOHRER DE LIMA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "002.474.629-00 - DELARA MARYAMO IBRAIMO CASSAMO",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.593.289-42 - DIANA NEDOCHETKO STRUGAL",
+      "vigencia": "01/10/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "059.491.919-35 - DOUGLAS FELIPE GERHARDT",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "086.939.019-82 - EDUARDO DE OLIVEIRA BITENCOURT",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "066.616.151-84 - ELIOENAI MARKSON FERREIRA DINIZ",
+      "vigencia": "01/07/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "047.158.701-00 - ERNEY RICARDO CELY BONILLA",
+      "vigencia": "01/04/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "800.722.869-11 - ESNEYDER ANTONIO RODRIGUEZ TORREALBA",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "122.617.259-81 - ESTER MARIA KLOC DE ASEVEDO",
+      "vigencia": "01/10/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "110.340.589-67 - FABIANA DOS SANTOS BELTRAME",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "060.303.939-10 - FERNANDA MIRANDA BORRASCA",
+      "vigencia": "01/07/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "002.376.069-92 - FLORA GUEYAP TIMNOU",
+      "vigencia": "01/08/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "126.304.417-41 - FRANCIRLEI RIBEIRO BARBOSA",
+      "vigencia": "01/09/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "442.471.538-89 - FRANCYANE ANDRESSA GOMES ENGEE",
+      "vigencia": "01/11/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "068.726.851-66 - GABRIEL FERREIRA VALE",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "075.253.349-51 - GABRIELA WOLHMUTH",
+      "vigencia": "01/05/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "095.530.449-05 - GABRIELLA DE OLIVEIRA MENDES SILVA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "082.682.289-46 - GHAEL HENRIQUE MOURA LEITE",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "070.671.829-13 - GHESSYCA APARECIDA DO BONFIM",
+      "vigencia": "01/07/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "110.513.649-30 - GILBERTO JOSE BACK JUNIOR",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "103.531.629-30 - GIULIA PADILHA FONTANELLA",
+      "vigencia": "01/09/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "091.123.789-50 - GIULIHANO LUIS FELTZ ZENI",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "098.277.969-09 - HELOISA MARIA BELONI INSENHA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "027.347.519-33 - HERNANI AUGUSTO GUNTOWSKI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "087.008.099-77 - HUMBERTO IANCZKOVSKI",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "029.751.322-20 - IAGO FELIPE NATIVIDADE DE LIMA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "076.503.409-37 - ISABEL DAVOGLIO PITT",
+      "vigencia": "01/07/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "126.644.719-96 - ISABELA LUIZA MOLIN DE SIQUEIRA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "094.237.069-40 - ISABELI BARBOSA BANNACH",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "473.169.388-89 - ISABELLE OLIVEIRA SANTOS",
+      "vigencia": "01/09/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "020.828.272-67 - JACQUELINI DA SILVA DE CAMARGO",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.343.499-46 - JAKELINE DA SILVA ANDRADE",
+      "vigencia": "01/04/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "026.685.339-02 - JANAINA DE CASTRO GOMES",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "095.713.799-05 - JEFERSON DE MEDEIROS MATT",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.095.919-09 - JENNIFER VITORIA NOVOSAD NASCIMENTO",
+      "vigencia": "01/08/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "057.822.439-96 - JESSICA GASPAR POMPERMAIER",
+      "vigencia": "01/11/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "363.537.998-02 - JOAO VITOR MORESCHI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "051.832.019-78 - JOSE PEDRO BARBOSA NETO",
+      "vigencia": "01/08/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "172.634.758-39 - JUCINALDO SIMOES DE ARAUJO",
+      "vigencia": "01/07/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "132.159.719-33 - JULIANA PAZINI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "115.101.591-18 - KAREN ODENA VILLALON MONTES DE OCA",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "434.964.918-25 - KELROLLEM FERNANDES",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "120.585.909-88 - LARISSA ABATTI",
+      "vigencia": "01/07/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "093.639.249-55 - LARISSA LEONARDI",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "041.331.039-63 - LARYSSA SMAK LOURENCO",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "052.900.231-00 - LAURA CATALINA PENA RAMIREZ",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.790.079-55 - LAURA FERNANDA VALANDRO SCHIRMANN",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "116.897.449-60 - LUCAS DE LIMA GONCALVES",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "028.059.129-26 - LUCIANE APARECIDA ZATTERA MOLON",
+      "vigencia": "01/06/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "093.336.089-40 - MARCIELI MACHADO FERRAZ",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "101.900.389-85 - MARINA KOLTZ WATTHIER",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "098.730.571-96 - MATEUS MUSSUNDA LANDA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "136.671.296-02 - MATEUS PEDROSA BRAGA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "056.329.941-04 - MICHAEL DIEGO LIZARAZU ROJAS",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "112.788.099-37 - MICHELY APARECIDA JACOBSEN BERTAN",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "086.043.849-01 - MILENA CRISTINA PERARDT GARBOSSA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "105.257.869-10 - MILENA MEIRELES FERNANDES",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "066.472.429-96 - MIRIAN ROSE CARDOSO",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "056.336.301-06 - MOISES ALEJANDRO SANCHEZ MALAGA",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "055.920.993-20 - MONALISA ANDRADE MAIA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "080.875.019-42 - NATALIA DO AMARAL RUTCOSKI",
+      "vigencia": "01/10/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "115.535.369-24 - NICOLLY NETELLY MOHR",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "060.618.023-07 - ORLANDO OLIVEIRA RODRIGUES",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "084.974.979-45 - OSVALDO LUIZ SCHREINER DA CRUZ",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "095.175.359-29 - PALOMA BEATRIZ RODRIGUES",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "076.666.451-12 - PAUL SANTIAGO VINAN CELY",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "036.333.910-88 - PAULA BELLE BLUME",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "093.034.119-86 - RAFAEL MELLO DA LUZ",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "544.813.332-00 - REGIANE DA CONCEICAO VIEIRA",
+      "vigencia": "01/03/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "081.204.949-70 - RENAN CESAR VENAZZI FOSCHIERA",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "504.351.788-30 - RYAN CAMARGO LUNA",
+      "vigencia": "01/05/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "060.306.119-25 - STEFANI DAIPRAI CERUTTI",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "104.206.469-57 - STEFANI PACHECO SKODOWSKI",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "116.072.689-22 - THAIS LOSS DA VEIGA",
+      "vigencia": "01/03/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "068.343.449-77 - THIAGO CARLOS CAMPOS FERREIRA SANTOS",
+      "vigencia": "01/04/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "070.126.469-18 - THIAGO HENRIQUE DA SILVA",
+      "vigencia": "01/10/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "075.795.299-20 - VANDERSON RODRIGO ZANINI",
+      "vigencia": "01/12/2025 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "078.083.419-40 - VICTORIA DE MATOS LOPES",
+      "vigencia": "01/07/2024 - 28/02/2026",
+      "parsed_end": "2026-02-28"
+    },
+    {
+      "name": "097.205.319-08 - VITOR BLANC MILANI",
+      "vigencia": "01/04/2025 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    },
+    {
+      "name": "084.979.599-06 - VITOR EDUARDO PASSOS RIBEIRO",
+      "vigencia": "01/04/2024 - 31/03/2026",
+      "parsed_end": "2026-03-31"
+    }
+  ]
+}

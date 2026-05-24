@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Gestão de Usuários</h1>
+    <a href="{{ url_for('admin_users.new_user') }}" class="btn btn-primary">
+        {{ icon('plus', size=20) }} Novo Usuário
+    </a>
+</div>
+
+<div class="card">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 1rem;">Nome</th>
+                <th style="padding: 1rem;">Email</th>
+                <th style="padding: 1rem;">Perfil</th>
+                <th style="padding: 1rem;">Status</th>
+                <th style="padding: 1rem;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 1rem;">{{ u.nome }}</td>
+                <td style="padding: 1rem;">{{ u.email }}</td>
+                <td style="padding: 1rem;">
+                    {% if u.role == 'master' %}
+                    <span class="badge"
+                        style="background-color: #7c3aed; color: white; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Master</span>
+                    {% elif u.role == 'admin' %}
+                    <span class="badge badge-danger"
+                        style="background-color: #dc2626; color: white; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Administrador</span>
+                    {% elif u.role == 'gestor' %}
+                    <span class="badge badge-warning"
+                        style="background-color: #d97706; color: white; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Gestor</span>
+                    {% else %}
+                    <span class="badge badge-secondary"
+                        style="background-color: #6b7280; color: white; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Visualizador</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    {% if u.ativo %}
+                    <span style="color: green; font-weight: bold;">Ativo</span>
+                    {% else %}
+                    <span style="color: #9ca3af;">Inativo</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    <a href="{{ url_for('admin_users.edit_user', id=u.id) }}"
+                        style="color: var(--primary-color); text-decoration: none; font-weight: 500; margin-right: 10px;">
+                        Editar
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                    Nenhum usuário encontrado.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

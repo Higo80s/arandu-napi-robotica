@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="fas fa-chart-line"></i> Dashboard Estratégico</h2>
+        <button class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i>
+            Imprimir</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-uppercase small" style="opacity: 0.8;">Bolsistas Ativos</h5>
+                    <h2 id="total-ativos" class="display-4 font-weight-bold">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-uppercase small" style="opacity: 0.8;">Editais Cadastrados</h5>
+                    <h2 id="total-editais" class="display-4 font-weight-bold">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-secondary text-white h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-uppercase small" style="opacity: 0.8;">Bolsistas Inativos</h5>
+                    <h2 id="total-inativos" class="display-4 font-weight-bold">...</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row">
+        <!-- CSS Bar Chart: Modalidade -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header font-weight-bold bg-white border-0">
+                    <i class="fas fa-chart-bar mr-2 text-primary"></i>Distribuição por Modalidade
+                </div>
+                <div class="card-body" style="overflow-y: auto; max-height: 400px;">
+                    <style>
+                        .bar-chart {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 1rem;
+                        }
+
+                        .bar-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 1rem;
+                        }
+
+                        .bar-label {
+                            min-width: 120px;
+                            font-weight: 600;
+                            font-size: 0.9rem;
+                            color: #4b5563;
+                        }
+
+                        .bar-track {
+                            flex: 1;
+                            height: 24px;
+                            background: #f3f4f6;
+                            border-radius: 6px;
+                            overflow: hidden;
+                            position: relative;
+                        }
+
+                        .bar-fill {
+                            height: 100%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-end;
+                            padding-right: 0.5rem;
+                            color: white;
+                            font-size: 0.75rem;
+                            font-weight: 700;
+                            transition: width 1s ease-in-out;
+                        }
+
+                        .bar-count {
+                            font-weight: 700;
+                            color: #1f2937;
+                            min-width: 30px;
+                            text-align: right;
+                        }
+                    </style>
+
+                    <div class="bar-chart">
+                        {% for item in stats.modalidade_data %}
+                        <div class="bar-item">
+                            <span class="bar-label">{{ item.label }}</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: {{ item.pct }}%; background: {{ item.color }};">
+                                    {% if item.pct > 10 %}{{ "%.1f"|format(item.pct) }}%{% endif %}
+                                </div>
+                            </div>
+                            <span class="bar-count">{{ item.count }}</span>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center" style="margin-top: 2rem;">Nenhum dado disponível.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Chart: Evolução (Mantido Chart.js) -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header font-weight-bold bg-white border-0">
+                    <i class="fas fa-calendar-alt mr-2 text-primary"></i>Evolução de Início de Bolsas (Últimos 12 meses)
+                </div>
+                <div class="card-body">
+                    <canvas id="chartEvolucao" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Data injected from Backend (Server-Side Rendering)
+        const stats = {{ stats| tojson
+    }};
+
+    // Update KPIs (Static values since we already have them)
+    document.getElementById('total-ativos').innerText = stats.summary.active_scholars;
+    document.getElementById('total-editais').innerText = stats.summary.total_edicts;
+    document.getElementById('total-inativos').innerText = stats.summary.inactive_scholars;
+
+    // --- Chart Evolução (Line) - Kept as requested ---
+    const ctxEvo = document.getElementById('chartEvolucao').getContext('2d');
+    new Chart(ctxEvo, {
+        type: 'line',
+        data: {
+            labels: Object.keys(stats.evolution),
+            datasets: [{
+                label: 'Novas Bolsas',
+                data: Object.values(stats.evolution),
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                pointRadius: 3,
+                pointBackgroundColor: '#4e73df',
+                pointBorderColor: '#4e73df',
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: '#4e73df',
+                pointHoverBorderColor: '#4e73df',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                tension: 0.3, // Curva suave
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    });
+</script>
+{% endblock %}

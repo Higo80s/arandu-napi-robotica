@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-grid">
+ <div class="card">
+ <h3>Editais Cadastrados</h3>
+ <div class="value">{{ active_editais }}</div>
+ </div>
+ <div class="card">
+ <h3>Bolsistas Ativos</h3>
+ <div class="value">{{ active_bolsistas }}</div>
+ </div>
+ <div class="card">
+ <h3>Investimento Mensal</h3>
+ <div class="value">R$ {{ "%.2f"|format(total_investido)|replace('.', ',') }}</div>
+ </div>
+</div>
+
+<div class="card">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+ <h3>Ações Rápidas</h3>
+ </div>
+ <div style="display: flex; gap: 1rem;">
+ <a href="{{ url_for('editais.novo') }}" class="btn btn-primary">Novo Edital</a>
+ <a href="{{ url_for('bolsistas.novo') }}" class="btn btn-primary">Novo Bolsista</a>
+ </div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+ajustes:
+
+em Editar Bolsista, Dados Acadêmicos:
+"Câmpus (Filtro)": substituir por "Campus (Filtro)"
+"Programa de Pós-Graduação": substituir por "curso"
+
+em "Nova Modalidade", o "Valor Mensal (R$)" deve ser mantido conforme cadastrado, em alguns casos o valor está sendo alterado por exemplo foi cadastrado 2800 e depois foi verificado que o sistem alterou automaticamente para R$ 280000.00, sendo que o valor correto é R$ 2800,00, notei que ao salvar, o sistema altera avírgula por ponto, e ao editar a modalidade ocorre o erro e o valor da bolsa é alterado.
+Em "novo programa" definir como opcional o código do programa

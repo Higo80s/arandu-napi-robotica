@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div>
+    <!-- Cabeçalho -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--text-color);">
+                💰 PROAP / PROAPINHO
+            </h1>
+            <p style="margin-top: 0.5rem; color: var(--text-muted);">
+                Gestão de Recursos para Programas de Pós-Graduação
+            </p>
+        </div>
+        <a href="{{ url_for('proap.repasses_novo') }}" class="btn btn-primary">
+            ➕ Novo Repasse
+        </a>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="card-grid">
+        <!-- PROAP -->
+        <div class="card">
+            <h3>Total PROAP (CAPES)</h3>
+            <div class="value" style="font-size: 2rem; font-weight: bold; color: var(--primary-color);">
+                R$ {{ "{:,.2f}".format(stats.total_proap).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+            </div>
+        </div>
+
+        <!-- PROAPINHO -->
+        <div class="card">
+            <h3>Total PROAPINHO (UTFPR)</h3>
+            <div class="value" style="font-size: 2rem; font-weight: bold; color: var(--success-color);">
+                R$ {{ "{:,.2f}".format(stats.total_proapinho).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+            </div>
+        </div>
+
+        <!-- Total Geral -->
+        <div class="card">
+            <h3>Total Geral</h3>
+            <div class="value" style="font-size: 2rem; font-weight: bold; color: var(--text-color);">
+                R$ {{ "{:,.2f}".format(stats.total_geral).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Repasses -->
+    <div class="card">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-color);">
+            📋 Repasses Registrados
+        </h2>
+
+        {% if repasses %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem; color: var(--text-muted);">Ano</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Tipo</th>
+                        <th style="padding: 1rem; text-align: right; color: var(--text-muted);">Valor Total</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Data Repasse</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Programas</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rep in repasses %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1rem; font-weight: 600;">{{ rep.ano }}</td>
+                        <td style="padding: 1rem; text-align: center;">
+                            {% if rep.tipo == 'PROAP' %}
+                            <span
+                                style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; background-color: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                                {{ rep.tipo }}
+                            </span>
+                            {% else %}
+                            <span
+                                style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; background-color: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                                {{ rep.tipo }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem; text-align: right; font-weight: 600;">
+                            R$ {{ "{:,.2f}".format(rep.valor_total).replace(',', 'X').replace('.', ',').replace('X',
+                            '.') }}
+                        </td>
+                        <td style="padding: 1rem; text-align: center; color: var(--text-muted);">
+                            {{ rep.data_repasse.strftime('%d/%m/%Y') if rep.data_repasse else '-' }}
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span
+                                style="background-color: var(--background-color); padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-weight: 600; font-size: 0.875rem;">
+                                {{ rep.distribuicoes|length }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                <a href="{{ url_for('proap.repasses_distribuir', id=rep.id) }}" class="btn"
+                                    style="padding: 0.4rem; color: var(--success-color);" title="Distribuir">
+                                    {{ icon('share-2', size=18) }}
+                                </a>
+                                <a href="{{ url_for('proap.repasses_editar', id=rep.id) }}" class="btn"
+                                    style="padding: 0.4rem; color: var(--primary-color);" title="Editar">
+                                    {{ icon('edit-2', size=18) }}
+                                </a>
+                                <form method="POST" action="{{ url_for('proap.repasses_excluir', id=rep.id) }}"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Excluir este repasse e todas as distribuições?');">
+                                    <button type="submit" class="btn"
+                                        style="padding: 0.4rem; background: none; border: none; color: var(--danger-color); cursor: pointer;"
+                                        title="Excluir">
+                                        {{ icon('trash-2', size=18) }}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <div style="margin-bottom: 1rem; opacity: 0.5;">{{ icon('inbox', size=48) }}</div>
+            <p>Nenhum repasse cadastrado.</p>
+            <p style="font-size: 0.9rem;">Clique em "Novo Repasse" para começar.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Botão Voltar -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{{ url_for('index') }}" class="btn"
+            style="background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color);">
+            ← Voltar ao Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

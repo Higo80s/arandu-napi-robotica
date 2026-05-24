@@ -1,0 +1,29 @@
+Relatório Técnico - Refatoração Modular V7.0
+==============================================
+Data: 04/02/2026
+Versão: 7.0 (Modular Blueprints)
+
+1. Contexto e Diagnóstico
+-------------------------
+O sistema "Gestão de Editais" foi refatorado para resolver problemas de acoplamento e manutenção.
+O arquivo app.py foi reduzido de 4.600 linhas para ~100 linhas.
+
+2. Solução: Flask Blueprints
+----------------------------
+A aplicação foi dividida em módulos independentes:
+- blueprints/auth.py: Autenticação
+- blueprints/editais.py: Gestão de Editais
+- blueprints/bolsistas.py: Gestão de Discentes
+- blueprints/posdoc.py: Pós-Doc (Residentes)
+- blueprints/proap.py: Financeiro
+- blueprints/internacionalizacao.py: Dashboard Internacionl
+
+3. Banco de Dados
+-----------------
+Stack atualizada:
+- Desenvolvimento: SQLite
+- Produção: PostgreSQL
+
+4. Conclusão
+------------
+A arquitetura agora é modular, facilitando testes e expansão.

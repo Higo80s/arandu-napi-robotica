@@ -1,0 +1,127 @@
+<!-- templates/emails/cobranca_cancelamento.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #dc2626;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .footer {
+            background-color: #f9f9f9;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .pill {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th {
+            text-align: left;
+            border-bottom: 2px solid #eee;
+            padding: 10px;
+        }
+
+        .table td {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #dc2626;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 25px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">NOTIFICAÇÃO DE GESTÃO</h1>
+        </div>
+        <div class="content">
+            <h2>Pendências de Cancelamento Pendentes</h2>
+            <p>Prezado(a) Coordenador(a),</p>
+            <p>Identificamos discentes sob sua responsabilidade cujas bolsas já <strong>encerraram a vigência</strong>
+                em meses anteriores, mas o desligamento ainda não foi efetivado no sistema Arandú.</p>
+
+            <p><span class="pill">AÇÃO NECESSÁRIA</span> Por favor, realize o desligamento destes discentes para evitar
+                pagamentos indevidos e liberar saldo para os editais.</p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Bolsista</th>
+                        <th>Edital</th>
+                        <th>Competência Fim</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in lista %}
+                    <tr>
+                        <td><strong>{{ b.nome }}</strong></td>
+                        <td>{{ b.edital.numero if b.edital else '-' }}</td>
+                        <td style="color: #dc2626; font-weight: bold;">{{ b.data_fim_bolsa.strftime('%m/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="text-align: center;">
+                <a href="https://arandu.utfpr.edu.br/alertas" class="btn">Resolver Pendências no Arandú</a>
+            </div>
+
+            <p style="margin-top: 30px; font-size: 0.85rem; color: #666;">
+                <em>Nota: Esta é uma notificação automática seguindo a regra financeira M+1 da PROPPG.</em>
+            </p>
+        </div>
+        <div class="footer">
+            © 2026 Arandú - Gestão de Fomento | UTFPR
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,1797 @@
+{% extends "base.html" %}
+
+{% from 'macros/icons.html' import icon %}
+
+{% block content %}
+<!-- Bootstrap 5 CSS & JS (Required for Modals) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    /* --- PREMIUM DARK MODE SCOPED V12 (Atualizado v21.1) --- */
+    /* NOTA: variáveis de cor são gerenciadas globalmente pelo styles.css.
+       Apenas variáveis específicas desta página são mantidas aqui. */
+    body.dark-mode {
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --soft-bg: #1e293b;
+        --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        /* --primary-color removido: gerenciado pelo styles.css global */
+        --primary-hover: #818cf8;
+        --bg-main: #0f172a;
+        --header-bg: #1e293b;
+        --input-bg: #0f172a;
+        
+        background-color: var(--bg-main) !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Layout & Cards */
+    .split-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .premium-card {
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+    }
+    body.dark-mode .premium-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--card-shadow);
+    }
+
+    .premium-header {
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+    body.dark-mode .premium-header {
+        border-bottom: 1px solid var(--glass-border);
+        background: var(--header-bg);
+    }
+
+    .premium-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    body.dark-mode .premium-title { color: var(--text-color); }
+
+    /* Sidebar Items */
+    .round-item {
+        padding: 14px 18px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 8px;
+        position: relative;
+    }
+    body.dark-mode .round-item { color: var(--text-muted); }
+
+    .round-item:hover {
+        background: rgba(0, 0, 0, 0.05);
+        transform: translateX(4px);
+    }
+    body.dark-mode .round-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-color);
+    }
+
+    .round-item.active {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: var(--primary-color);
+        border-left: 4px solid var(--primary-color);
+        color: var(--primary-color);
+    }
+    body.dark-mode .round-item.active {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        border-left: 4px solid var(--primary-color);
+        color: var(--text-color);
+    }
+
+    .status-badge-dot {
+        height: 8px;
+        width: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-badge-dot.active {
+        background-color: var(--success-color);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    .status-badge-dot.inactive {
+        background-color: #475569;
+    }
+
+    .timeline-modern { position: relative; padding-left: 24px; }
+    .timeline-modern::before {
+        content: '';
+        position: absolute;
+        left: 7px; top: 12px; bottom: 12px;
+        width: 2px;
+        background: #e5e7eb;
+        border-radius: 2px;
+    }
+    body.dark-mode .timeline-modern::before { background: var(--border-color); }
+
+    .timeline-step { position: relative; padding-bottom: 28px; padding-left: 20px; }
+    
+    .timeline-node {
+        position: absolute; left: -24px; top: 0;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #e5e7eb;
+        z-index: 2; margin-left: 20px; margin-top: 4px;
+        transition: all 0.3s;
+    }
+    body.dark-mode .timeline-node {
+        background: var(--card-bg);
+        border: 3px solid var(--border-color);
+    }
+
+    .timeline-step.completed .timeline-node {
+        border-color: var(--success-color);
+        background: var(--success-color);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    /* [V17] Drag-and-Drop Visual Feedback */
+    .timeline-step.drag-over {
+        background: rgba(99, 102, 241, 0.15);
+        border-radius: 8px;
+        border: 2px dashed var(--primary-color);
+        margin-left: -8px;
+        padding-left: 28px;
+    }
+
+    .timeline-step[draggable="true"]:hover {
+        background: rgba(99, 102, 241, 0.05);
+        border-radius: 8px;
+    }
+
+    .timeline-card-content {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 12px 16px;
+        transition: all 0.2s;
+        cursor: default;
+        color: var(--text-color);
+    }
+
+    .timeline-step:hover .timeline-card-content {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-box {
+        background: var(--card-bg);
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+        flex: 1;
+        border: 1px solid var(--border-color);
+    }
+    body.dark-mode .stat-box {
+        background: var(--bg-main);
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-box:hover { background: rgba(0,0,0,0.02); }
+    body.dark-mode .stat-box:hover {
+        background: var(--card-bg);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-num {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--text-color);
+    }
+    body.dark-mode .stat-num { color: var(--text-color); }
+
+    .stat-txt {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    body.dark-mode .stat-txt { color: var(--text-muted); }
+
+    .btn-premium-primary {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 500;
+        border: none;
+    }
+    body.dark-mode .btn-premium-primary {
+        background: var(--primary-color);
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-premium-primary:hover { opacity: 0.9; }
+    body.dark-mode .btn-premium-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-premium-white {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-weight: 500;
+    }
+    body.dark-mode .btn-premium-white {
+        background: var(--bg-main);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+
+    body.dark-mode .modal-header-clean, body.dark-mode .modal-footer {
+        border-color: var(--border-color);
+        background: var(--header-bg);
+        color: var(--text-color);
+    }
+
+    body.dark-mode .modal-content-clean, body.dark-mode .modal-content {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: var(--text-color) !important;
+    }
+
+    body.dark-mode .modal-body-clean, body.dark-mode .modal-body {
+        color: var(--text-color);
+    }
+
+    body.dark-mode .input-premium, body.dark-mode .form-control, body.dark-mode .form-select {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-color) !important;
+    }
+
+    .input-premium:focus, .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+        background: var(--card-bg) !important;
+    }
+
+    .input-group-text-premium, .input-group-text {
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+    }
+
+    /* Table Styles */
+    .table {
+        color: var(--text-color) !important;
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--border-color);
+    }
+
+    .table thead th {
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    /* Generic UI */
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .dropdown-menu {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--card-shadow);
+    }
+
+    .dropdown-item {
+        color: var(--text-color);
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--primary-color);
+    }
+
+    hr {
+        border-color: var(--border-color);
+        opacity: 1;
+    }
+
+    @media (max-width: 992px) {
+        .split-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    body.dark-mode .btn-premium-white:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    body.dark-mode .bg-light {
+        background-color: #0f172a !important;
+    }
+
+    /* Fix: Cor das opções do select de Instituição */
+    #instituicao_napi_cand option {
+        color: #1f2937;
+        background-color: #ffffff;
+    }
+    body.dark-mode #instituicao_napi_cand option {
+        color: #f1f5f9;
+        background-color: #1e293b;
+    }
+</style>
+
+<div class="topbar">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="{{ url_for('editais.index') }}" class="btn-icon" title="Voltar ao Painel">
+            {{ icon('arrow-left', size=20) }}
+        </a>
+        <div>
+            <span
+                style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Módulo
+                de Seleção</span>
+            <h1 style="margin: 0; font-size: 1.5rem;">Gestão de Candidatos</h1>
+        </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="badge" style="background: color-mix(in srgb, var(--primary-color) 15%, transparent); color: var(--primary-color); border: 1px solid var(--primary-color); padding: 6px 12px; font-size: 0.85rem;">
+            Edital {{ edital.numero }}
+        </span>
+        <button class="btn-premium-primary" data-bs-toggle="modal" data-bs-target="#novaRodadaModal">
+            {{ icon('plus-circle', size=18, class='mr-2') }} Nova Chamada
+        </button>
+    </div>
+</div>
+
+<div class="main-content">
+
+    <div class="split-layout">
+
+        <!-- SIDEBAR COLUMN -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+
+            <!-- SIDEBAR: LISTA DE RODADAS -->
+            <div class="premium-card">
+                <div class="premium-header">
+                    <h3 class="premium-title">{{ icon('layers', size=18) }} Ciclos Ativos</h3>
+                    <span class="badge rounded-pill bg-dark border border-secondary">{{ edital.rodadas|length }}</span>
+                </div>
+
+                <div style="padding: 16px;">
+                    {% if edital.rodadas %}
+                    {% for rodada in edital.rodadas %}
+                    <div class="round-item {% if rodada_focada and rodada.id == rodada_focada.id %}active{% endif %}"
+                        data-action="nav-rodada" data-href="{{ url_for('editais.painel_selecao', id=edital.id, rodada_id=rodada.id) }}">
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 600; color: var(--text-color);">{{ rodada.nome }}</span>
+                            <span class="status-badge-dot {% if rodada.ativa %}active{% else %}inactive{% endif %}"
+                                title="{{ 'Ativa' if rodada.ativa else 'Encerrada' }}"></span>
+                        </div>
+
+                        <div
+                            style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            {{ icon('calendar-days', size=14) }}
+                            <span>
+                                {% if rodada.data_inicio %}{{ rodada.data_inicio.strftime('%d/%m') }}{% else %}?{% endif
+                                %}
+                                até
+                                {% if rodada.data_fim %}{{ rodada.data_fim.strftime('%d/%m') }}{% else %}?{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                        <div
+                            style="background: var(--soft-bg); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            {{ icon('inbox', size=24, class='opacity-50') }}
+                        </div>
+                        <p style="font-size: 0.9rem; margin-bottom: 8px;">Nenhuma chamada criada.</p>
+                        <small>Comece criando um ciclo de seleção (ex: Regular, Vagas Remanescentes).</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SIDEBAR: REGRAS DO EDITAL -->
+            <div class="premium-card" data-component="regra">
+                <div class="premium-header">
+                    <h3 class="premium-title" style="color: #059669;">{{ icon('info', size=18) }} Guia Rápido</h3>
+                    <button class="btn-premium-ghost btn-sm" onclick="toggleAddRegra()" title="Nova Regra">
+                        {{ icon('plus', size=14) }}
+                    </button>
+                </div>
+
+                <div id="addRegraForm"
+                    style="display: none; padding: 12px; border-bottom: 1px solid var(--glass-border); background: var(--soft-bg);">
+                    <textarea id="novaRegraTexto" class="form-control input-premium mb-2" rows="2"
+                        placeholder="Ex: Não acumula com Bolsa PROUNI..."></textarea>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleAddRegra()">Cancelar</button>
+                        <button type="button" id="btnSalvarRegra" class="btn btn-sm btn-primary" onclick="OmniEditor.salvarRegra()">Salvar</button>
+                    </div>
+                </div>
+
+                <ul class="list-group list-group-flush bg-transparent" id="regrasList">
+                    {% if edital.regras %}
+                    {% for regra in edital.regras|sort(attribute='ordem') %}
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-start"
+                        id="regra-item-{{ regra.id }}" data-id="{{ regra.id }}" style="font-size: 0.85rem; padding: 12px 16px;">
+                        <div style="color: var(--text-color);">{{ regra.descricao }}</div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-link text-primary p-0" data-action="edit-regra"
+                                data-id="{{ regra.id }}" data-descricao="{{ regra.descricao }}"
+                                title="Editar Regra">
+                                {{ icon('edit-2', size=14) }}
+                            </button>
+                            <button class="btn btn-link text-danger p-0 ms-2" data-action="delete-regra"
+                                data-id="{{ regra.id }}" title="Remover" style="flex-shrink: 0;">
+                                {{ icon('trash-2', size=14) }}
+                            </button>
+                        </div>
+                    </li>
+                    {% endfor %}
+                    {% else %}
+                    <li class="list-group-item bg-transparent text-center text-muted" id="regrasEmpty"
+                        style="font-size: 0.85rem; padding: 20px;">
+                        Nenhuma regra cadastrada.
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+        </div> <!-- FIM SIDEBAR COLUMN -->
+
+        <!-- MAIN AREA -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+
+            {% if rodada_focada %}
+
+            <!-- DASHBOARD SECTION -->
+            <div class="premium-card" data-component="rodada" data-id="{{ rodada_focada.id }}">
+                <div class="card-body" style="padding: 24px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--text-color);">{{
+                                    rodada_focada.nome }}</h2>
+                                {% if rodada_focada.ativa %}
+                                <span
+                                    class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Em
+                                    Andamento</span>
+                                {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">Arquivada</span>
+                                {% endif %}
+                            </div>
+                            <p style="color: var(--text-muted); margin: 0; width: 100%; line-height: 1.6; text-align: justify;">
+                                {{ rodada_focada.descricao or "Sem descrição definida para esta chamada." }}
+                            </p>
+                        </div>
+
+                        <!-- Main Actions -->
+                        <!-- Main Actions (Botões Visíveis V12) -->
+                        <!-- Main Actions (Botões Visíveis V13 Modal) -->
+                        <div class="d-flex gap-2">
+                            <button class="btn-premium-white" data-action="edit-rodada"
+                                data-id="{{ rodada_focada.id }}" 
+                                data-nome="{{ rodada_focada.nome }}"
+                                data-inicio="{{ rodada_focada.data_inicio.strftime('%Y-%m-%d') if rodada_focada.data_inicio else '' }}"
+                                data-fim="{{ rodada_focada.data_fim.strftime('%Y-%m-%d') if rodada_focada.data_fim else '' }}"
+                                data-desc="{{ rodada_focada.descricao or '' }}"
+                                title="Editar Detalhes">
+                                {{ icon('edit', size=16, class='mr-1') }} Editar
+                            </button>
+                            <button class="btn-premium-white text-danger border-danger border-opacity-25"
+                                data-action="delete-rodada" data-id="{{ rodada_focada.id }}" title="Excluir Chamada">
+                                {{ icon('trash', size=16) }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid [STANDARD V11 - Global & Local Stats] -->
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <div class="stat-box" title="Total de Vagas Cadastradas no Edital">
+                            <div class="stat-num" style="color: var(--text-color);">{{ dashboard_stats.total_vagas }}</div>
+                            <div class="stat-txt">Bolsas (total)</div>
+                        </div>
+                        <div class="stat-box" title="Vagas Livres (Total - Bolsistas Ativos - Selecionados em qualquer rodada)">
+                            <div class="stat-num text-primary">{{ dashboard_stats.saldo }}</div>
+                            <div class="stat-txt">Saldo (atual)</div>
+                        </div>
+                        <div class="stat-box" title="Candidatos inscritos nesta rodada">
+                            <div class="stat-num">{{ funnel.inscritos }}</div>
+                            <div class="stat-txt">Inscritos (rodada)</div>
+                        </div>
+                        <div class="stat-box" title="Candidatos com status Selecionado nesta rodada">
+                            <div class="stat-num text-success">{{ funnel.selecionados }}</div>
+                            <div class="stat-txt">Selecionados (rodada)</div>
+                        </div>
+                        <div class="stat-box" title="Candidatos com status Efetivado nesta rodada">
+                            <div class="stat-num text-info">{{ funnel.efetivados }}</div>
+                            <div class="stat-txt">Efetivados (rodada)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
+
+                <!-- TIMELINE SECTION (V10 UPDATED: Ranges) -->
+                <div class="premium-card" data-component="etapa"
+                    style="flex: 1; min-width: 320px; min-height: 600px; display: flex; flex-direction: column;">
+                    <div class="premium-header">
+                        <h3 class="premium-title">{{ icon('calendar-clock', size=18) }} Cronograma</h3>
+                        <button class="btn-premium-ghost btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#novaEtapaModal">
+                            {{ icon('plus', size=14) }} Adicionar
+                        </button>
+                    </div>
+                    <div class="card-body" style="padding: 24px;">
+                        <div class="timeline-modern">
+                            {% for etapa in rodada_focada.etapas|sort(attribute='ordem') %}
+                            <div class="timeline-step {% if etapa.concluida %}completed{% endif %}" draggable="true"
+                                data-id="{{ etapa.id }}" data-etapa-id="{{ etapa.id }}" data-ordem="{{ etapa.ordem }}" style="cursor: grab;">
+                                <div class="timeline-node"></div>
+                                <div class="timeline-card-content border-secondary border-opacity-25">
+                                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                                        <div>
+                                            <div
+                                                style="font-weight: 600; color: var(--text-color); margin-bottom: 2px;">
+                                                {{ etapa.nome }}</div>
+                                            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+                                                {% if etapa.data_inicio and etapa.data_limite %}
+                                                {{ etapa.data_inicio.strftime('%d/%m') }} a {{
+                                                etapa.data_limite.strftime('%d/%m') }}
+                                                {% elif etapa.data_inicio %}
+                                                A partir de {{ etapa.data_inicio.strftime('%d/%m') }}
+                                                {% elif etapa.data_limite %}
+                                                Até {{ etapa.data_limite.strftime('%d/%m') }}
+                                                {% else %}
+                                                Data a definir
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2 align-items-center">
+                                            {% if etapa.link_publicacao %}
+                                            <a href="{{ etapa.link_publicacao }}" target="_blank" class="text-primary"
+                                                title="Ver Edital/Documento">
+                                                {{ icon('file-text', size=16) }}
+                                            </a>
+                                            {% endif %}
+
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"
+                                                    style="width: 20px;">
+                                                    {{ icon('more-vertical', size=16) }}
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+                                                    <li><a class="dropdown-item" href="#" data-action="edit-etapa"
+                                                            data-id="{{ etapa.id }}"
+                                                            data-nome="{{ etapa.nome }}"
+                                                            data-inicio="{{ etapa.data_inicio.strftime('%Y-%m-%d') if etapa.data_inicio else '' }}"
+                                                            data-limite="{{ etapa.data_limite.strftime('%Y-%m-%d') if etapa.data_limite else '' }}"
+                                                            data-link="{{ etapa.link_publicacao or '' }}"
+                                                            data-ordem="{{ etapa.ordem }}">Editar Atividade</a>
+                                                    </li>
+                                                    <li><a class="dropdown-item text-danger" href="#"
+                                                            data-action="delete-etapa" data-id="{{ etapa.id }}">Remover</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4 text-muted small">
+                                Nenhuma etapa cadastrada.<br>
+                                Clique em "Adicionar" para definir o cronograma.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CANDIDATES SECTION -->
+                <div class="premium-card" data-component="candidato"
+                    style="flex: 2; min-width: 400px; min-height: 600px; display: flex; flex-direction: column;">
+                    <div class="premium-header">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <h3 class="premium-title">{{ icon('users', size=18) }} Candidatos</h3>
+                            <span class="badge rounded-pill bg-dark border border-secondary">{{ rodada_focada.candidaturas|length
+                                }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('editais.rodadas_imprimir_lista', id=rodada_focada.id) }}" target="_blank"
+                                class="btn-premium-ghost btn-sm" title="Imprimir Lista">
+                                {{ icon('printer', size=16) }}
+                            </a>
+                            <button class="btn-premium-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#novoCandidatoModal">
+                                {{ icon('user-plus', size=16, class='mr-1') }} Novo Candidato
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0"
+                            style="border-collapse: separate; border-spacing: 0;">
+                            <thead>
+                                <tr>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase fw-bold">Candidato
+                                    </th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase fw-bold">
+                                        Programa/Orientação</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase fw-bold">Status</th>
+                                    <th class="border-0 px-4 py-3 text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if rodada_focada.candidaturas %}
+                                {% for cand in rodada_focada.candidaturas %}
+                                <tr data-id="{{ cand.id }}">
+                                    <td class="px-4 py-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div
+                                                style="width: 36px; height: 36px; background: rgba(99, 102, 241, 0.2); color: var(--primary-hover); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                                {{ cand.nome[:1] }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold" style="color: var(--text-color);">{{ cand.nome }}</div>
+                                                <div class="small text-muted">{{ cand.cpf }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="small text-muted">
+                                            <div class="fw-bold" style="color: var(--text-color);">{{ cand.get_origem }}</div>
+                                            {% if cand.orientador %}
+                                            <div>{{ icon('user', size=10) }} {{ cand.orientador }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {% if cand.status == 'INSCRITO' %}
+                                        <span class="badge bg-dark border text-muted">Inscrito</span>
+                                        {% elif cand.status == 'SELECIONADO' %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Selecionado</span>
+                                        {% elif cand.status == 'EFETIVADO' %}
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Efetivado</span>
+                                        {% elif cand.status == 'EXCEDENTE' %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Excedente</span>
+                                        {% elif cand.status == 'REJEITADO' %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Rejeitado</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ cand.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 text-end">
+                                        <div class="d-flex gap-1 justify-content-end align-items-center">
+                                            <!-- Botão de edição universal: visível para todos os candidatos -->
+                                            <button class="btn btn-sm btn-outline-secondary" data-action="edit-candidato"
+                                                data-id="{{ cand.id }}"
+                                                data-nome="{{ cand.nome }}"
+                                                data-cpf="{{ cand.cpf }}"
+                                                data-email="{{ cand.email }}"
+                                                data-orientador="{{ cand.orientador or '' }}"
+                                                data-email_orientador="{{ cand.email_orientador or '' }}"
+                                                data-projeto="{{ cand.projeto_pesquisa or '' }}"
+                                                data-status="{{ cand.status }}"
+                                                data-campus_id="{{ cand.campus_id or '' }}"
+                                                data-programa_id="{{ cand.programa_id or '' }}"
+                                                data-instituicao="{{ cand.instituicao or '' }}"
+                                                data-cidade="{{ cand.cidade or '' }}"
+                                                title="Editar Candidato">
+                                                {{ icon('edit-2', size=16) }}
+                                            </button>
+
+                                            {% if cand.status == 'INSCRITO' %}
+                                            <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="SELECIONADO">
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Aprovar">
+                                                    {{ icon('check', size=16) }}
+                                                </button>
+                                            </form>
+                                            <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="EXCEDENTE">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Lista de Espera">
+                                                    {{ icon('clock', size=16) }}
+                                                </button>
+                                            </form>
+                                            <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="REJEITADO">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Rejeitar">
+                                                    {{ icon('x', size=16) }}
+                                                </button>
+                                            </form>
+
+                                            {% elif cand.status == 'SELECIONADO' %}
+                                            <form action="{{ url_for('editais.candidatura_promover', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-white shadow-sm" title="Efetivar Matrícula no Sistema">
+                                                    {{ icon('graduation-cap', size=16) }}
+                                                </button>
+                                            </form>
+                                            <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="INSCRITO">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Reverter para Inscrito">
+                                                    {{ icon('rotate-ccw', size=16) }}
+                                                </button>
+                                            </form>
+
+                                            {% elif cand.status == 'EXCEDENTE' or cand.status == 'REJEITADO' %}
+                                            <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="INSCRITO">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Reverter para Inscrito">
+                                                    {{ icon('rotate-ccw', size=16) }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <div class="text-muted opacity-50 mb-2">{{ icon('user-x', size=32) }}</div>
+                                        <p class="text-muted small">Nenhum candidato registrado nesta chamada.</p>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            {% else %}
+            <!-- EMPTY STATE -->
+            <div
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: var(--text-muted); text-align: center;">
+                <div
+                    style="background: #e2e8f0; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; opacity: 0.5;">
+                    {{ icon('mouse-pointer-click', size=40) }}
+                </div>
+                <h3 style="color: var(--text-color);">Selecione um Ciclo</h3>
+                <p style="max-width: 400px;">Clique em uma das chamadas na barra lateral para ver o cronograma e os
+                    candidatos inscritos.</p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Modais Antigos Removidos -->
+<script>
+    function addFaseRow() {
+        const tbody = document.querySelector('#tabelaFases tbody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" name="fase_nome[]" class="form-control form-control-sm"></td>
+            <td><input type="date" name="fase_inicio[]" class="form-control form-control-sm"></td>
+            <td><input type="date" name="fase_fim[]" class="form-control form-control-sm"></td>
+            <td><button type="button" class="btn text-danger p-0" onclick="this.closest('tr').remove()">&times;</button></td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    // JS Logic for Edits (Keep same as before)
+    function openEditarRodada(id, nome, inicio, fim, desc) {
+        document.getElementById('editRodadaNome').value = nome;
+        document.getElementById('editRodadaInicio').value = inicio;
+        document.getElementById('editRodadaFim').value = fim;
+        document.getElementById('editRodadaDesc').value = (desc && desc !== 'None') ? desc : '';
+        document.getElementById('formEditarRodada').action = "/rodadas/" + id + "/editar";
+        new bootstrap.Modal(document.getElementById('editarRodadaModal')).show();
+    }
+
+    // [V17] Funções para Editar e Excluir Etapas do Cronograma
+    function openEditarEtapa(id, nome, dataInicio, dataLimite, linkPublicacao, ordem) {
+        document.getElementById('editEtapaNome').value = nome;
+        document.getElementById('editEtapaDataInicio').value = dataInicio || '';
+        document.getElementById('editEtapaDataLimite').value = dataLimite || '';
+        document.getElementById('editEtapaLink').value = (linkPublicacao && linkPublicacao !== 'None') ? linkPublicacao : '';
+        document.getElementById('editEtapaOrdem').value = ordem || 0;
+        document.getElementById('formEditarEtapa').action = "/etapa/" + id + "/editar";
+        new bootstrap.Modal(document.getElementById('editarEtapaModal')).show();
+    }
+
+    function openExcluirEtapa(id) {
+        document.getElementById('formExcluirEtapa').action = "/etapa/" + id + "/excluir";
+        new bootstrap.Modal(document.getElementById('excluirEtapaModal')).show();
+    }
+</script>
+
+<!-- NOVA RODADA (MODAL) V13 -->
+<div class="modal fade" id="novaRodadaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary">
+                        {{ icon('plus-circle', size=20) }}
+                    </div>
+                    <h5 class="fw-bold mb-0">Nova Chamada de Seleção</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('editais.rodadas_nova', id=edital.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body-clean">
+                    <div class="mb-3">
+                        <label class="form-group-label">Nome da Chamada</label>
+                        <input type="text" name="nome" class="form-control input-premium" required
+                            placeholder="Ex: Processo Regular 2026/1">
+                    </div>
+
+                    <label class="form-group-label">Período Global</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <input type="date" name="data_inicio" class="form-control input-premium" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" name="data_fim" class="form-control input-premium" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-group-label">Descrição</label>
+                        <textarea name="descricao" class="form-control input-premium" rows="2"></textarea>
+                    </div>
+
+                    <h6 class="text-uppercase small fw-bold text-muted mt-4 mb-3 border-bottom pb-2">
+                        {{ icon('calendar', size=14) }} Cronograma Inicial
+                    </h6>
+                    <div class="table-responsive bg-light rounded-3 border p-1">
+                        <table class="table table-sm border-0 mb-0" id="tabelaFases">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>Atividade</th>
+                                    <th style="width: 130px;">Início</th>
+                                    <th style="width: 130px;">Fim</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" name="fase_nome[]"
+                                            class="form-control form-control-sm border-0" value="Inscrições"></td>
+                                    <td><input type="date" name="fase_inicio[]"
+                                            class="form-control form-control-sm border-0"></td>
+                                    <td><input type="date" name="fase_fim[]"
+                                            class="form-control form-control-sm border-0"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" name="fase_nome[]"
+                                            class="form-control form-control-sm border-0" value="Resultado Final"></td>
+                                    <td><input type="date" name="fase_inicio[]"
+                                            class="form-control form-control-sm border-0"></td>
+                                    <td><input type="date" name="fase_fim[]"
+                                            class="form-control form-control-sm border-0"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm text-primary p-0 fw-bold mt-2" onclick="addFaseRow()">
+                            {{ icon('plus', size=14) }} Adicionar Atividade
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-premium-primary">Criar Chamada e Cronograma</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- NOVO CANDIDATO (MODAL) V13 -->
+<div class="modal fade" id="novoCandidatoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary">
+                        {{ icon('user-plus', size=20) }}
+                    </div>
+                    <h5 class="fw-bold mb-0">Cadastrar Candidato</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            {% if rodada_focada %}
+            <form method="POST" action="{{ url_for('editais.candidatura_nova', id=rodada_focada.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body-clean">
+                    <div class="row g-4">
+                        <!-- Coluna 1: Pessoal -->
+                        <div class="col-md-6 border-end">
+                            <h6 class="text-uppercase small fw-bold text-muted mb-3">{{ icon('user', size=14) }} Dados
+                                Pessoais</h6>
+                            <div class="mb-3">
+                                <label class="form-group-label">Nome Completo</label>
+                                <input type="text" name="nome" class="form-control input-premium" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">CPF</label>
+                                <input type="text" name="cpf" class="form-control input-premium" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Email</label>
+                                <input type="email" name="email" class="form-control input-premium" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Nº Processo SEI</label>
+                                <input type="text" name="numero_sei" class="form-control input-premium">
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Acadêmico -->
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase small fw-bold text-muted mb-3">{{ icon('book-open', size=14) }}
+                                Institui&#231;&#227;o Parceira NAPI</h6>
+
+                            <div class="mb-3">
+                                <label class="form-group-label">Institui&#231;&#227;o</label>
+                                <select id="instituicao_napi_cand" name="instituicao" class="form-select input-premium">
+                                    <option value="">Selecione a institui&#231;&#227;o...</option>
+                                    <option value="UTFPR">UTFPR &#8211; Universidade Tecnol&#243;gica Federal do Paran&#225;</option>
+                                    <option value="UFPR">UFPR &#8211; Universidade Federal do Paran&#225;</option>
+                                    <option value="IFPR">IFPR &#8211; Instituto Federal do Paran&#225;</option>
+                                    <option value="UEL">UEL &#8211; Universidade Estadual de Londrina</option>
+                                    <option value="UEM">UEM &#8211; Universidade Estadual de Maring&#225;</option>
+                                    <option value="UNIOESTE">UNIOESTE &#8211; Universidade Estadual do Oeste do Paran&#225;</option>
+                                    <option value="UENP">UENP &#8211; Universidade Estadual do Norte do Paran&#225;</option>
+                                    <option value="IPB">IPB &#8211; Instituto Polit&#233;cnico de Bragan&#231;a (Portugal &#8211; Parceiro Internacional)</option>
+                                </select>
+                                <!-- Campos ocultos para compatibilidade com o backend -->
+                                <input type="hidden" name="campus_id" value="">
+                                <input type="hidden" name="programa_id" value="">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-group-label">T&#237;tulo do Projeto</label>
+                                <input type="text" name="projeto_pesquisa" class="form-control input-premium">
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-group-label">Orientador</label>
+                                    <input type="text" name="orientador" class="form-control input-premium">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-group-label">Email do Orientador</label>
+                                    <input type="email" name="email_orientador" class="form-control input-premium">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-premium-primary px-4">Cadastrar Candidato</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- NOVA ETAPA (MODAL) -->
+<div class="modal fade" id="novaEtapaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean py-3">
+                <h6 class="fw-bold mb-0">Nova Atividade no Cronograma</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            {% if rodada_focada %}
+            <form id="formNovaEtapa">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body-clean pt-0">
+                    <div class="mb-3">
+                        <label class="form-group-label">O que vai acontecer?</label>
+                        <input type="text" id="novaEtapaNome" name="nome" class="form-control input-premium" required
+                            placeholder="Ex: Resultado Preliminar">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-group-label">Início</label>
+                            <input type="date" id="novaEtapaDataInicio" name="data_inicio" class="form-control input-premium">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-group-label">Fim</label>
+                            <input type="date" id="novaEtapaDataLimite" name="data_limite" class="form-control input-premium">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-group-label">Link para Edital/PDF (Opcional)</label>
+                        <input type="url" id="novaEtapaLink" name="link_publicacao" class="form-control input-premium"
+                            placeholder="https://...">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-3">
+                    <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-premium-primary btn-sm">Adicionar Etapa</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- [V17] EDITAR ETAPA (MODAL) -->
+<div class="modal fade" id="editarEtapaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean py-3">
+                <h6 class="fw-bold mb-0">Editar Etapa do Cronograma</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarEtapa" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body-clean pt-0">
+                    <div class="mb-3">
+                        <label class="form-group-label">Nome da Etapa</label>
+                        <input type="text" id="editEtapaNome" name="nome" class="form-control input-premium" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-group-label">Início</label>
+                            <input type="date" id="editEtapaDataInicio" name="data_inicio"
+                                class="form-control input-premium">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-group-label">Fim</label>
+                            <input type="date" id="editEtapaDataLimite" name="data_limite"
+                                class="form-control input-premium">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-group-label">Link para Edital/PDF (Opcional)</label>
+                        <input type="url" id="editEtapaLink" name="link_publicacao" class="form-control input-premium"
+                            placeholder="https://...">
+                    </div>
+                    <input type="hidden" id="editEtapaOrdem" name="ordem" value="0">
+                </div>
+                <div class="modal-footer border-0 px-4 pb-3">
+                    <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-premium-primary btn-sm">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- [V17] EXCLUIR ETAPA (MODAL) -->
+<div class="modal fade" id="excluirEtapaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-body-clean text-center">
+                <div class="mb-3 text-danger opacity-75">{{ icon('alert-triangle', size=32) }}</div>
+                <h6 class="fw-bold mb-2">Excluir Etapa?</h6>
+                <p class="small text-muted mb-4">Esta ação removerá permanentemente a etapa do cronograma.</p>
+                <form id="formExcluirEtapa" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Sim, Excluir</button>
+                        <button type="button" class="btn-premium-white" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EDITAR RODADA (MODAL) -->
+<div class="modal fade" id="editarRodadaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean">
+                <h5 class="fw-bold mb-0">Editar Chamada</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarRodada" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body-clean">
+                    <div class="mb-3">
+                        <label class="form-group-label">Nome da Chamada</label>
+                        <input type="text" id="editRodadaNome" name="nome" class="form-control input-premium" required>
+                    </div>
+                    <label class="form-group-label">Vigência</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text-premium">Abertura</span>
+                                <input type="date" id="editRodadaInicio" name="data_inicio"
+                                    class="form-control input-premium" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text-premium">Fim</span>
+                                <input type="date" id="editRodadaFim" name="data_fim" class="form-control input-premium"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-group-label">Descrição</label>
+                        <textarea id="editRodadaDesc" name="descricao" class="form-control input-premium"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-premium-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EXCLUIR RODADA (MODAL) -->
+<div class="modal fade" id="excluirRodadaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-body-clean text-center">
+                <div class="mb-3 text-danger opacity-75">{{ icon('alert-triangle', size=32) }}</div>
+                <h6 class="fw-bold mb-2">Excluir Chamada?</h6>
+                <p class="small text-muted mb-4">Isso removerá todo o cronograma e os candidatos vinculados. Não pode
+                    ser desfeito.</p>
+                <form id="formExcluirRodada" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Sim, Excluir Tudo</button>
+                        <button type="button" class="btn-premium-white" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // [NEW V11] Auto-Dismiss Flash Messages
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function (alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 4000); // 4 segundos
+    });
+
+    // [V17] Paste Handler para campos de data nos modais
+    // Converte DD/MM/YYYY colado para formato ISO (YYYY-MM-DD)
+    (function () {
+        function convertBrDate(text) {
+            const t = text.trim();
+            const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) {
+                return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+            }
+            return null;
+        }
+
+        // Aplica handler a todos os inputs de data nos modais
+        function setupPasteHandler(input) {
+            input.addEventListener('paste', function (e) {
+                const clipData = e.clipboardData || window.clipboardData;
+                if (clipData) {
+                    const text = clipData.getData('text');
+                    const converted = convertBrDate(text);
+                    if (converted) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.value = converted;
+                        this.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        }
+
+        // Configura quando modal abre
+        document.addEventListener('shown.bs.modal', function (e) {
+            const modal = e.target;
+            const dateInputs = modal.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(setupPasteHandler);
+        });
+
+        // Também configura para inputs que já existem
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.modal input[type="date"]').forEach(setupPasteHandler);
+        });
+    })();
+
+    // [V17] Drag-and-Drop para reordenar etapas do cronograma
+    (function () {
+        let draggedItem = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const timeline = document.querySelector('.timeline-modern');
+            if (!timeline) return;
+
+            const steps = timeline.querySelectorAll('.timeline-step[draggable="true"]');
+
+            steps.forEach(step => {
+                step.addEventListener('dragstart', handleDragStart);
+                step.addEventListener('dragend', handleDragEnd);
+                step.addEventListener('dragover', handleDragOver);
+                step.addEventListener('dragenter', handleDragEnter);
+                step.addEventListener('dragleave', handleDragLeave);
+                step.addEventListener('drop', handleDrop);
+            });
+        });
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.style.opacity = '0.4';
+            this.style.cursor = 'grabbing';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            this.style.cursor = 'grab';
+            document.querySelectorAll('.timeline-step').forEach(s => {
+                s.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (draggedItem !== this) {
+                // Trocar visualmente
+                const timeline = this.parentNode;
+                const allSteps = Array.from(timeline.querySelectorAll('.timeline-step[draggable="true"]'));
+                const draggedIdx = allSteps.indexOf(draggedItem);
+                const targetIdx = allSteps.indexOf(this);
+
+                if (draggedIdx < targetIdx) {
+                    timeline.insertBefore(draggedItem, this.nextSibling);
+                } else {
+                    timeline.insertBefore(draggedItem, this);
+                }
+
+                // Salvar nova ordem no servidor
+                saveNewOrder();
+            }
+
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        function saveNewOrder() {
+            const timeline = document.querySelector('.timeline-modern');
+            const steps = timeline.querySelectorAll('.timeline-step[draggable="true"]');
+            const newOrder = [];
+
+            steps.forEach((step, index) => {
+                newOrder.push({
+                    id: step.getAttribute('data-etapa-id'),
+                    ordem: index
+                });
+            });
+
+            fetch('/api/etapas/reordenar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ etapas: newOrder })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Ordem atualizada com sucesso!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao salvar ordem:', error);
+                });
+        }
+    })();
+
+    // --- REGRAS DO EDITAL (AJAX) ---
+    function toggleAddRegra() {
+        const formDiv = document.getElementById('addRegraForm');
+        const btnSalvar = document.getElementById('btnSalvarRegra');
+        
+        if (formDiv.style.display === 'none') {
+            formDiv.style.display = 'block';
+            document.getElementById('novaRegraTexto').focus();
+        } else {
+            formDiv.style.display = 'none';
+            document.getElementById('novaRegraTexto').value = '';
+            document.getElementById('novaRegraTexto').setAttribute('data-id', '');
+            btnSalvar.innerText = 'Salvar';
+        }
+    }
+
+    function prepararEdicaoRegra(id, texto) {
+        OmniEditor.openEditRegra(id, texto);
+    }
+
+    // --- [V11] OMNI-EDITOR CORE ---
+    const OmniEditor = {
+        init() {
+            console.log('OmniEditor (v11) Inicializado');
+            this.bindEvents();
+        },
+        bindEvents() {
+            // Event Delegation para cliques no documento
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                
+                // Prevenir comportamento padrão apenas se for um link ou botão que disparará ação do OmniEditor
+                if (btn.tagName === 'A') e.preventDefault();
+
+                // Strategy Pattern para as ações de edição
+                switch(action) {
+                    case 'edit-regra':
+                        this.openEditRegra(id, btn.dataset.descricao);
+                        break;
+                    case 'delete-regra':
+                        this.excluirRegra(id);
+                        break;
+                    case 'edit-rodada':
+                        this.openEditRodada(id, btn.dataset);
+                        break;
+                    case 'delete-rodada':
+                        this.excluirRodada(id);
+                        break;
+                    case 'edit-etapa':
+                        this.openEditEtapa(id, btn.dataset);
+                        break;
+                    case 'delete-etapa':
+                        this.excluirEtapa(id);
+                        break;
+                    case 'edit-candidato':
+                        this.openEditCandidato(id, btn.dataset);
+                        break;
+                    case 'nav-rodada':
+                        window.location.href = btn.dataset.href;
+                        break;
+                }
+            });
+
+            // Form Submit para Nova Etapa
+            const formNovaEtapa = document.getElementById('formNovaEtapa');
+            if (formNovaEtapa) {
+                formNovaEtapa.onsubmit = (e) => {
+                    e.preventDefault();
+                    this.adicionarEtapa();
+                };
+            }
+        },
+
+        // --- REGRAS ---
+        openEditRegra(id, texto) {
+            const formDiv = document.getElementById('addRegraForm');
+            const btnSalvar = document.getElementById('btnSalvarRegra');
+            const input = document.getElementById('novaRegraTexto');
+            
+            formDiv.style.display = 'block';
+            input.value = texto;
+            input.setAttribute('data-id', id);
+            btnSalvar.innerText = 'Atualizar';
+            formDiv.scrollIntoView({ behavior: 'smooth' });
+        },
+
+        async salvarRegra() {
+            const input = document.getElementById('novaRegraTexto');
+            const id = input.getAttribute('data-id');
+            const btn = document.getElementById('btnSalvarRegra');
+            const desc = input.value.trim();
+            const editalId = '{{ edital.id }}';
+
+            if (!desc) {
+                alert('A descrição não pode estar vazia.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+
+            const payload = { descricao: desc };
+            let res;
+            
+            if (id) {
+                // UPDATE
+                res = await this.sync('regra', id, payload, 'PATCH');
+            } else {
+                // CREATE
+                payload.edital_id = editalId;
+                res = await this.sync('regra', null, payload, 'POST');
+            }
+
+            if (res.success) {
+                window.location.reload();
+            } else {
+                alert('Erro: ' + res.error);
+                btn.disabled = false;
+                btn.innerText = id ? 'Atualizar' : 'Salvar';
+            }
+        },
+
+        async excluirRegra(regraId) {
+            if (!confirm('Deseja realmente excluir esta regra?')) return;
+            const res = await this.sync('regra', regraId, null, 'DELETE');
+            if (res.success) {
+                window.location.reload();
+            } else {
+                alert('Erro: ' + res.error);
+            }
+        },
+
+        async adicionarEtapa() {
+            const btn = document.querySelector('#formNovaEtapa button[type="submit"]');
+            const payload = {
+                rodada_id: "{{ rodada_focada.id if rodada_focada else '' }}",
+                nome: document.getElementById('novaEtapaNome').value,
+                data_inicio: document.getElementById('novaEtapaDataInicio').value,
+                data_limite: document.getElementById('novaEtapaDataLimite').value,
+                link_publicacao: document.getElementById('novaEtapaLink').value,
+                ordem: 99 // Default to end
+            };
+
+            btn.disabled = true;
+            btn.innerText = 'Sincronizando...';
+
+            const res = await this.sync('etapa', null, payload, 'POST');
+            if (res.success) {
+                window.location.reload();
+            } else {
+                alert('Erro ao adicionar: ' + res.error);
+                btn.disabled = false;
+                btn.innerText = 'Adicionar Etapa';
+            }
+        },
+
+        async excluirEtapa(id) {
+            if (!confirm('Excluir esta etapa permanentemente?')) return;
+            const res = await this.sync('etapa', id, null, 'DELETE');
+            if (res.success) window.location.reload();
+            else alert('Erro: ' + res.error);
+        },
+
+        // --- RODADA ---
+        async excluirRodada(id) {
+            if (!confirm('Deseja realmente excluir esta chamada, seu cronograma e candidatos?')) return;
+            const res = await this.sync('rodada', id, null, 'DELETE');
+            if (res.success) {
+                // Se excluiu a rodada focada, redireciona para o painel limpo
+                window.location.href = "{{ url_for('editais.painel_selecao', id=edital.id) }}";
+            } else {
+                alert('Erro: ' + res.error);
+            }
+        },
+
+        // --- RODADA ---
+        openEditEtapa(id, data) {
+            document.getElementById('editEtapaNome').value = data.nome || '';
+            document.getElementById('editEtapaDataInicio').value = data.inicio || '';
+            document.getElementById('editEtapaDataLimite').value = data.limite || '';
+            document.getElementById('editEtapaLink').value = data.link || '';
+            document.getElementById('editEtapaOrdem').value = data.ordem || '0';
+            
+            const form = document.getElementById('formEditarEtapa');
+            form.setAttribute('data-id', id);
+            
+            const modal = new bootstrap.Modal(document.getElementById('editarEtapaModal'));
+            modal.show();
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = form.querySelector('button[type="submit"]');
+                const payload = {
+                    nome: document.getElementById('editEtapaNome').value,
+                    data_inicio: document.getElementById('editEtapaDataInicio').value,
+                    data_limite: document.getElementById('editEtapaDataLimite').value,
+                    link_publicacao: document.getElementById('editEtapaLink').value,
+                    ordem: document.getElementById('editEtapaOrdem').value
+                };
+
+                btn.disabled = true;
+                btn.innerText = 'Sincronizando...';
+
+                const res = await this.sync('etapa', id, payload);
+                if (res.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao salvar etapa: ' + res.error);
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar Alterações';
+                }
+            };
+        },
+
+        openEditRodada(id, data) {
+            document.getElementById('editRodadaNome').value = data.nome || '';
+            document.getElementById('editRodadaInicio').value = data.inicio || '';
+            document.getElementById('editRodadaFim').value = data.fim || '';
+            document.getElementById('editRodadaDesc').value = data.desc || '';
+            
+            const form = document.getElementById('formEditarRodada');
+            form.setAttribute('data-id', id);
+            
+            const modal = new bootstrap.Modal(document.getElementById('editarRodadaModal'));
+            modal.show();
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = form.querySelector('button[type="submit"]');
+                const payload = {
+                    nome: document.getElementById('editRodadaNome').value,
+                    data_inicio: document.getElementById('editRodadaInicio').value,
+                    data_fim: document.getElementById('editRodadaFim').value,
+                    descricao: document.getElementById('editRodadaDesc').value
+                };
+
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+
+                const res = await this.sync('rodada', id, payload);
+                if (res.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao salvar chamada: ' + res.error);
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar Alterações';
+                }
+            };
+        },
+
+        // --- CANDIDATOS ---
+        openEditCandidato(id, data) {
+            document.getElementById('editCandId').value = id;
+            document.getElementById('editCandNome').value = data.nome || '';
+            document.getElementById('editCandCpf').value = data.cpf || '';
+            document.getElementById('editCandEmail').value = data.email || '';
+            document.getElementById('editCandNsei').value = data.numero_sei || '';
+            document.getElementById('editCandInstituicao').value = data.instituicao || '';
+            document.getElementById('editCandProjeto').value = data.projeto || '';
+            document.getElementById('editCandOrientador').value = data.orientador || '';
+            document.getElementById('editCandEmailOrientador').value = data.email_orientador || '';
+            document.getElementById('editCandStatus').value = data.status || 'INSCRITO';
+
+            const modal = new bootstrap.Modal(document.getElementById('editarCandidatoModal'));
+            modal.show();
+        },
+
+        async salvarCandidato() {
+            const id = document.getElementById('editCandId').value;
+            const btn = document.getElementById('btnSalvarCandidato');
+
+            const data = {
+                nome: document.getElementById('editCandNome').value,
+                cpf: document.getElementById('editCandCpf').value,
+                email: document.getElementById('editCandEmail').value,
+                numero_sei: document.getElementById('editCandNsei').value,
+                orientador: document.getElementById('editCandOrientador').value,
+                email_orientador: document.getElementById('editCandEmailOrientador').value,
+                projeto_pesquisa: document.getElementById('editCandProjeto').value,
+                status: document.getElementById('editCandStatus').value,
+                instituicao: document.getElementById('editCandInstituicao').value,
+                campus_id: null,
+                programa_id: null,
+                cidade: ''
+            };
+
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+
+            const res = await this.sync('candidato', id, data);
+            if (res.success) {
+                window.location.reload();
+            } else {
+                alert('Erro ao salvar: ' + res.error);
+                btn.disabled = false;
+                btn.innerText = 'Salvar Alterações';
+            }
+        },
+
+        // --- BACKEND SYNC ---
+        async sync(component, id, data, method = 'PATCH') {
+            try {
+                let url = '/api/v1/update-component';
+                if (method === 'DELETE') {
+                    url += `?component=${component}&id=${id}`;
+                }
+
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                };
+
+                if (method !== 'DELETE') {
+                    options.body = JSON.stringify({ component, id, data });
+                }
+
+                const response = await fetch(url, options);
+                return await response.json();
+            } catch (err) {
+                console.error(`Erro ao sincronizar ${component}:`, err);
+                return { success: false, error: 'Erro de conexão' };
+            }
+        }
+    };
+
+    // Inicializar o OmniEditor
+    OmniEditor.init();
+</script>
+
+<!-- Modal de Edição de Candidato - mesmo layout do modal Novo Candidato -->
+<div class="modal fade" id="editarCandidatoModal" tabindex="-1" aria-labelledby="editarCandidatoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-content-clean">
+            <div class="modal-header-clean">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning bg-opacity-10 p-2 rounded-circle text-warning">
+                        {{ icon('edit-2', size=20) }}
+                    </div>
+                    <h5 class="fw-bold mb-0" id="editarCandidatoModalLabel">Editar Candidato</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body-clean">
+                <form id="formEditarCandidato">
+                    <input type="hidden" id="editCandId">
+                    <div class="row g-4">
+                        <!-- Coluna 1: Pessoal -->
+                        <div class="col-md-6 border-end">
+                            <h6 class="text-uppercase small fw-bold text-muted mb-3">{{ icon('user', size=14) }} Dados Pessoais</h6>
+                            <div class="mb-3">
+                                <label class="form-group-label">Nome Completo</label>
+                                <input type="text" id="editCandNome" class="form-control input-premium" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">CPF</label>
+                                <input type="text" id="editCandCpf" class="form-control input-premium" placeholder="000.000.000-00">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Email</label>
+                                <input type="email" id="editCandEmail" class="form-control input-premium">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Nº Processo SEI</label>
+                                <input type="text" id="editCandNsei" class="form-control input-premium">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Status</label>
+                                <select id="editCandStatus" class="form-select input-premium">
+                                    <option value="INSCRITO">Inscrito</option>
+                                    <option value="SELECIONADO">Selecionado</option>
+                                    <option value="EXCEDENTE">Excedente</option>
+                                    <option value="REJEITADO">Rejeitado</option>
+                                    <option value="EFETIVADO">Efetivado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Acadêmico -->
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase small fw-bold text-muted mb-3">{{ icon('book-open', size=14) }} Institui&#231;&#227;o Parceira NAPI</h6>
+
+                            <div class="mb-3">
+                                <label class="form-group-label">Institui&#231;&#227;o</label>
+                                <select id="editCandInstituicao" name="instituicao" class="form-select input-premium">
+                                    <option value="">Selecione a institui&#231;&#227;o...</option>
+                                    <option value="UTFPR">UTFPR &#8211; Universidade Tecnol&#243;gica Federal do Paran&#225;</option>
+                                    <option value="UFPR">UFPR &#8211; Universidade Federal do Paran&#225;</option>
+                                    <option value="IFPR">IFPR &#8211; Instituto Federal do Paran&#225;</option>
+                                    <option value="UEL">UEL &#8211; Universidade Estadual de Londrina</option>
+                                    <option value="UEM">UEM &#8211; Universidade Estadual de Maring&#225;</option>
+                                    <option value="UNIOESTE">UNIOESTE &#8211; Universidade Estadual do Oeste do Paran&#225;</option>
+                                    <option value="UENP">UENP &#8211; Universidade Estadual do Norte do Paran&#225;</option>
+                                    <option value="IPB">IPB &#8211; Instituto Polit&#233;cnico de Bragan&#231;a (Portugal &#8211; Parceiro Internacional)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-group-label">T&#237;tulo do Projeto</label>
+                                <input type="text" id="editCandProjeto" class="form-control input-premium">
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-group-label">Orientador</label>
+                                    <input type="text" id="editCandOrientador" class="form-control input-premium">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-group-label">Email do Orientador</label>
+                                    <input type="email" id="editCandEmailOrientador" class="form-control input-premium">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-premium-primary px-4" id="btnSalvarCandidato" onclick="OmniEditor.salvarCandidato()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UI Toggle Script para Instituições Externas -->
+<script src="{{ url_for('static', filename='js/ui-toggle.js') }}"></script>
+
+{% endblock %}

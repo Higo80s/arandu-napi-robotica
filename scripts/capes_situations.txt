@@ -1,0 +1,4 @@
+Vinculos: ['Discente PPG (Plataforma Sucupira)' 'Cota Empréstimo'
+ 'Discente IES Participante (Plataforma Sucupira)']
+Situacoes: ['Acompanhamento - Em acompanhamento' 'Acompanhamento - Finalizado'
+ 'Acompanhamento - Processo suspenso' 'Acompanhamento - Arquivado']

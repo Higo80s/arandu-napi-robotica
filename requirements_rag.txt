@@ -1,0 +1,6 @@
+# Bibliotecas requeridas para a implementação RAG local de custo zero
+# Estas dependências são mantidas separadas do requirements.txt principal 
+# para não impactar o servidor web principal durante a fase de pesquisa/estudos.
+
+sentence-transformers==3.0.1
+chromadb==0.5.3

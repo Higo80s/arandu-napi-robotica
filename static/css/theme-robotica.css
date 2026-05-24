@@ -1,0 +1,118 @@
+/* theme-robotica.css - Cyberpunk / Tech Theme */
+:root.robotica-theme {
+    /* Backgrounds */
+    --bg-color: #0d0d16;
+    --sidebar-bg: #090910;
+    --card-bg: #141424;
+    --input-bg: #1a1a2e;
+    
+    /* Neon Accents */
+    --primary-color: #00f0ff;
+    --primary-hover: #00c3cf;
+    --secondary-color: #ff003c;
+    --accent-color: #bc13fe;
+    
+    /* Text */
+    --text-color: #e0e0fd;
+    --text-muted: #8b8baf;
+    --border-color: rgba(0, 240, 255, 0.2);
+    --hover-bg: rgba(0, 240, 255, 0.1);
+    
+    /* Shadows/Glows */
+    --box-shadow: 0 0 10px rgba(0, 240, 255, 0.1), 0 0 20px rgba(0, 240, 255, 0.05);
+}
+
+.robotica-theme body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', Courier, monospace; /* Traz um leve toque tech na tipografia de fallback */
+}
+
+/* Sidebar & Brand Glow */
+.robotica-theme .sidebar {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 15px rgba(0, 240, 255, 0.05);
+}
+.robotica-theme .sidebar .nav-link {
+    color: var(--text-muted);
+}
+.robotica-theme .sidebar .brand h2 {
+    color: var(--primary-color);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+/* Nav Links Glow */
+.robotica-theme .nav-link:hover,
+.robotica-theme .nav-link.active {
+    background-color: var(--hover-bg);
+    border-left: 3px solid var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: inset 5px 0 15px rgba(0, 240, 255, 0.05);
+}
+
+/* Cards & Inputs */
+.robotica-theme .card, 
+.robotica-theme .stat-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.robotica-theme .card:hover, 
+.robotica-theme .stat-card:hover {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2), 0 0 30px rgba(0, 240, 255, 0.1);
+    border-color: rgba(0, 240, 255, 0.5);
+}
+
+.robotica-theme .form-control, 
+.robotica-theme .filter-input {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+.robotica-theme .form-control:focus, 
+.robotica-theme .filter-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+/* Buttons */
+.robotica-theme .btn {
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 4px;
+    text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+    box-shadow: inset 0 0 5px rgba(0, 240, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+.robotica-theme .btn:hover {
+    background: var(--primary-color);
+    color: #000;
+    box-shadow: 0 0 15px var(--primary-color);
+}
+.robotica-theme .btn-primary {
+    background: var(--primary-color);
+    color: #000;
+}
+.robotica-theme .btn-primary:hover {
+    background: #00c3cf;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+}
+
+/* Modals */
+.robotica-theme .modal-content {
+    background-color: var(--card-bg);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+/* Headers */
+.robotica-theme .topbar, .robotica-theme .page-header {
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
+}

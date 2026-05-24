@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Aviso de Vencimento</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #002e6d;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 30px;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+            border-radius: 4px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #002e6d;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: #001f4d;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            padding: 10px 5px;
+            text-align: left;
+        }
+
+        th {
+            color: #555;
+            width: 35%;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>⚠️ Bolsa Próxima do Vencimento</h2>
+        </div>
+        <div class="content">
+            <p>Olá,</p>
+            <p>O Sistema de Gestão de Editais identificou que uma bolsa sob sua responsabilidade (ou do sistema) vencerá
+                em breve.</p>
+
+            <div class="alert-box">
+                Faltam apenas <strong>{{ dias_restantes }} dias</strong> para o término da vigência.
+            </div>
+
+            <h3>📋 Dados do Bolsista</h3>
+            <table>
+                <tr>
+                    <th>Nome:</th>
+                    <td>{{ nome_bolsista }}</td>
+                </tr>
+                <tr>
+                    <th>CPF:</th>
+                    <td>{{ cpf }}</td>
+                </tr>
+                <tr>
+                    <th>Modalidade:</th>
+                    <td>{{ modalidade }}</td>
+                </tr>
+                <tr>
+                    <th>Edital:</th>
+                    <td>{{ edital }}</td>
+                </tr>
+                <tr>
+                    <th>Vigência Final:</th>
+                    <td style="color: #d9534f; font-weight: bold;">{{ data_fim }}</td>
+                </tr>
+            </table>
+
+            <p>Acesse o sistema para tomar as providências necessárias (renovação ou desligamento).</p>
+
+            <div style="text-align: center;">
+                <a href="{{ link_sistema }}" class="btn">Visualizar no Sistema</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p><strong>UTFPR - Diretoria de Pesquisa e Pós-Graduação</strong><br>
+                Este é um e-mail automático. Por favor, não responda.</p>
+        </div>
+    </div>
+</body>
+
+</html>

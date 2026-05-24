@@ -1,0 +1,159 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cobertura e diagnóstico
+.coverage
+audit/
+artifacts/
+checkpoints/
+debug_*.json
+*_debug.txt
+*_dump.txt
+*_output.txt
+fix_*.py
+carga_*.py
+diag.py
+dump_*.py
+map_*.py
+migrate_*.py
+final_*.py
+cross_check_*.py
+smoke_test_*.py
+scratch/
+
+# Snapshot duplicado
+arandu_source_hash/
+arandu_source_hash.zip
+
+# Environment variables
+.env
+.env.local
+
+# Backups
+backups/
+*.bak
+
+# Temporary files
+verify_*.py
+migrate_instance.py
+verify_output.txt
+
+# Excel/PDF outputs (gerados pelo sistema)
+*.xlsx
+*.pdf
+acompanhamento_*.xlsx
+
+# Debug and test files
+debug_*.py
+debug_*.txt
+debug_*.log
+test_*.txt
+diag_*.txt
+diag_*.py
+hit_*.py
+hit_*.txt
+out.txt
+err.txt
+crash*.log
+startup*.log
+verify_*.txt
+reproduce_*.txt
+*_out.txt
+DEBUG_*.txt
+RELATORIO_ERROR.txt
+unbuffered_*.txt
+current_log.txt
+
+# Scripts temporários
+capture_error.py
+inspect_*.py
+read_*.py
+list_*.py
+audit_*.py
+create_*.py
+populate_*.py
+rename_*.py
+repair_*.py
+restore_*.py
+setup_*.py
+system_test_*.py
+apply_*.py
+implement_*.py
+link_*.py
+run_*.py
+seed_*.py
+atualizar_*.py
+criar_*.py
+exportar_*.py
+generate_*.py
+prefill_*.py
+dry_run_*.py
+kill_zombie_*.py
+
+# Ambientes de teste
+*_test/
+*_env/
+staging_*/
+test_import_*/
+validation_*/
+gestao_editais_certificate_test/
+
+# Arquivos de especificação
+*.spec
+
+# Backups de requirements
+requirements_backup.txt
+
+# Exceções - Scripts importantes
+!verify_johan_case.py
+
+# RAG & IA (Isolamento)
+_archive/
+.venv_rag/
+vector_db/

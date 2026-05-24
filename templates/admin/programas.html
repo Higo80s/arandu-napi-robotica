@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Instituições Parceiras do Projeto NAPI</h1>
+    <div style="font-size: 0.9em; color: var(--text-muted); text-align: right;">
+        Painel Administrativo &gt; Programas
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="card fade-in-up" style="padding: 2rem;">
+
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; max-width: 680px;">
+            Lista das instituições habilitadas para vínculo de bolsistas no sistema. Estas opções aparecem nos formulários de cadastro de bolsistas e no modal de cadastro de candidatos nas seleções.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem;">
+
+            <!-- UTFPR -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.06); border: 1px solid var(--border-color); border-left: 4px solid var(--primary-color); border-radius: 8px;">
+                <span style="font-weight: 800; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UTFPR</span>
+                <span style="color: var(--text-color); font-size: 0.92rem; line-height: 1.4;">
+                    Universidade Tecnológica Federal do Paraná
+                    <br><small style="color: var(--text-muted);">Instituição sede do projeto NAPI</small>
+                </span>
+            </div>
+
+            <!-- UFPR -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UFPR</span>
+                <span style="color: var(--text-color); font-size: 0.92rem;">Universidade Federal do Paraná</span>
+            </div>
+
+            <!-- IFPR -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">IFPR</span>
+                <span style="color: var(--text-color); font-size: 0.92rem; line-height: 1.4;">
+                    Instituto Federal do Paraná
+                    <br><small style="color: var(--text-muted);">Pinhais, Jacarezinho e outros campi</small>
+                </span>
+            </div>
+
+            <!-- UEL -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UEL</span>
+                <span style="color: var(--text-color); font-size: 0.92rem;">Universidade Estadual de Londrina</span>
+            </div>
+
+            <!-- UEM -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UEM</span>
+                <span style="color: var(--text-color); font-size: 0.92rem;">Universidade Estadual de Maringá</span>
+            </div>
+
+            <!-- UNIOESTE -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UNIOESTE</span>
+                <span style="color: var(--text-color); font-size: 0.92rem;">Universidade Estadual do Oeste do Paraná</span>
+            </div>
+
+            <!-- UENP -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(var(--primary-rgb), 0.04); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-weight: 700; color: var(--primary-color); min-width: 80px; font-size: 1rem;">UENP</span>
+                <span style="color: var(--text-color); font-size: 0.92rem;">Universidade Estadual do Norte do Paraná</span>
+            </div>
+
+            <!-- IPB -->
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: rgba(0, 102, 204, 0.05); border: 1px solid var(--border-color); border-left: 4px solid #0066cc; border-radius: 8px;">
+                <span style="font-weight: 700; color: #0066cc; min-width: 80px; font-size: 1rem;">IPB</span>
+                <span style="color: var(--text-color); font-size: 0.92rem; line-height: 1.4;">
+                    Instituto Politécnico de Bragança
+                    <br><small style="color: var(--text-muted);">Portugal – Parceiro Internacional</small>
+                </span>
+            </div>
+
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(var(--primary-rgb), 0.03); border: 1px dashed var(--border-color); border-radius: 8px; font-size: 0.85rem; color: var(--text-muted);">
+            {{ icon('info', size=14) }}
+            <strong>Nota:</strong> Esta lista é definida no sistema e corresponde exatamente às opções disponíveis nos formulários de cadastro. Para alterar as instituições parceiras, entre em contato com o administrador do sistema.
+        </div>
+    </div>
+</div>
+
+{% endblock %}

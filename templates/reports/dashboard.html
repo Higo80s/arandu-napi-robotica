@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Relatórios Isolado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #0056b3;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #444;
+            margin-top: 30px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #555;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 13px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-pdf {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-pdf:hover {
+            background-color: #c82333;
+        }
+
+        .btn-excel {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-excel:hover {
+            background-color: #218838;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 7px;
+            font-size: 11px;
+            border-radius: 10px;
+            background: #eee;
+            color: #555;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Ambiente Isolado de Relatórios</h1>
+        <p>Use este painel para gerar os relatórios sem precisar digitar as URLs manualmente.</p>
+
+        <!-- EDITAIS -->
+        <h2>1. Relatórios de Edital (Consolidado)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Edital</th>
+                    <th>Agência</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in editais %}
+                <tr>
+                    <td><strong>{{ e.numero }}</strong> - {{ e.descricao }}</td>
+                    <td>{{ e.agencia }}</td>
+                    <td>
+                        <a href="/reports/edital/{{ e.id }}/excel" class="btn btn-excel" target="_blank">Baixar
+                            Excel</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">Nenhum edital encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- DISCENTES -->
+        <h2>2. Relatórios Individuais - Discentes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Programa</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bolsistas %}
+                <tr>
+                    <td>{{ b.nome }}</td>
+                    <td>{{ b.programa_link.sigla_programa if b.programa_link else b.programa }}</td>
+                    <td>
+                        {% if b.ativo %}
+                        <span class="badge badge-active">Ativo</span>
+                        {% else %}
+                        <span class="badge">Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/reports/student/{{ b.id }}/pdf" class="btn btn-pdf" target="_blank">Gerar PDF</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">Nenhum discente encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- RESIDENTES -->
+        <h2>3. Relatórios Individuais - Residentes (Pós-Doc)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Supervisor</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in residentes %}
+                <tr>
+                    <td>{{ r.nome }}</td>
+                    <td>{{ r.supervisor }}</td>
+                    <td>
+                        <a href="/reports/resident/{{ r.id }}/pdf" class="btn btn-pdf" target="_blank">Gerar PDF</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">Nenhum residente encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>

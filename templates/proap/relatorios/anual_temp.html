@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="printable-content" style="padding: 2rem; max-width: 1000px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="margin: 0; color: var(--primary-color);">📅 Relatório Anual - {{ ano }}</h1>
+            <p style="margin: 0.5rem 0 0 0; color: #666;">Balanço Geral de Execução PROAP/PROAPINHO</p>
+        </div>
+        <div class="header-actions">
+            <!-- [MOD] Changed from print to download -->
+            <button onclick="downloadPDF()" class="btn btn-primary btn-print">
+                {{ icon('download') }} Baixar PDF
+            </button>
+            <a href="{{ url_for('proap.relatorios_index') }}" class="btn btn-outline">Voltar</a>
+        </div>
+    </div>
+
+    <!-- 1. Balanço Financeiro -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">1. Balanço Financeiro
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase;">Total Recebido</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: #2196f3;">
+                    R$ {{ "{:,.2f}".format(financeiro.recebido).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </div>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase;">Total Distribuído</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: #9c27b0;">
+                    R$ {{ "{:,.2f}".format(financeiro.distribuido).replace(',', 'X').replace('.', ',').replace('X', '.')
+                    }}
+                </div>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase;">Total Aplicado</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: #4caf50;">
+                    R$ {{ "{:,.2f}".format(financeiro.aplicado).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </div>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase;">Saldo Geral</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: #ff9800;">
+                    R$ {{ "{:,.2f}".format(financeiro.saldo).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Execução Mensal -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">2. Evolução Mensal da
+            Despesa</h3>
+        <div
+            style="display: flex; align-items: flex-end; height: 150px; gap: 5px; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+            {% set max_val = 0 %}
+            {% for m in mensal %}{% if m.total > max_val %}{% set max_val = m.total %}{% endif %}{% endfor %}
+
+            {% for i in range(1, 13) %}
+            {% set val = 0 %}
+            {% for m in mensal %}{% if m.mes == i %}{% set val = m.total %}{% endif %}{% endfor %}
+            {% set height = (val / max_val * 100) if max_val > 0 else 0 %}
+
+            <div
+                style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;">
+                {% if val > 0 %}
+                <span style="font-size: 0.7rem; margin-bottom: 2px;">{{ "{:.0f}k".format(val/1000) }}</span>
+                {% endif %}
+                <div
+                    style="width: 80%; background: var(--primary-color); height: {{ height }}%; border-radius: 3px 3px 0 0; min-height: 2px;">
+                </div>
+                <span style="font-size: 0.8rem; margin-top: 5px;">{{ i }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 3. Top Categorias -->
+    <div class="page-break-before" style="margin-bottom: 2rem;">
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">3. Aplicação por
+            Categoria</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #eee;">
+                    <th style="padding: 0.5rem; text-align: left;">Ranking</th>
+                    <th style="padding: 0.5rem; text-align: left;">Categoria</th>
+                    <th style="padding: 0.5rem; text-align: right;">Total Aplicado</th>
+                    <th style="padding: 0.5rem; text-align: right;">%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categorias %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.5rem; width: 50px;">#{{ loop.index }}</td>
+                    <td style="padding: 0.5rem;">{{ cat.categoria }}</td>
+                    <td style="padding: 0.5rem; text-align: right;">
+                        R$ {{ "{:,.2f}".format(cat.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    </td>
+                    <td style="padding: 0.5rem; text-align: right;">
+                        {{ "{:.1f}".format((cat.total / financeiro.aplicado * 100) if financeiro.aplicado > 0 else 0)
+                        }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. Programas que mais utilizaram -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">4. Execução por Programa
+            (Top 10)</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #eee;">
+                    <th style="padding: 0.5rem; text-align: left;">Ranking</th>
+                    <th style="padding: 0.5rem; text-align: left;">Programa</th>
+                    <th style="padding: 0.5rem; text-align: right;">Total Executado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prog in programas %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.5rem; width: 50px;">#{{ loop.index }}</td>
+                    <td style="padding: 0.5rem;">{{ prog.sigla_programa }}</td>
+                    <td style="padding: 0.5rem; text-align: right;">
+                        R$ {{ "{:,.2f}".format(prog.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer-print"
+        style="display: none; margin-top: 3rem; text-align: center; border-top: 1px solid #eee; padding-top: 1rem;">
+        <p style="font-size: 0.8rem; color: #666;">Sistema Arandu - Relatório de Governança PROAP/PROAPINHO</p>
+        <p style="font-size: 0.8rem; color: #999;">Gerado em {{ now }}</p>
+    </div>
+</div>
+
+<style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            background: white !important;
+            color: black !important;
+            font-family: 'Times New Roman', Times, serif;
+            /* Padrão mais formal */
+        }
+
+        /* Hide UI elements */
+        .sidebar,
+        .topbar,
+        .btn,
+        .no-print {
+            display: none !important;
+        }
+
+        /* Reset main content visibility/layout */
+        body * {
+            visibility: hidden;
+        }
+
+        /* Specific content to print */
+        #printable-content,
+        #printable-content * {
+            visibility: visible;
+        }
+
+        #printable-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Links */
+        a {
+            text-decoration: none;
+            color: black !important;
+        }
+
+        /* Tables */
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd !important;
+            padding: 8px !important;
+        }
+
+        th {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* Graphs/Visuals optimization */
+        .graph-bar {
+            -webkit-print-color-adjust: exact;
+            background-color: #666 !important;
+            /* Force simpler color for print */
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3 {
+            color: black !important;
+            page-break-after: avoid;
+        }
+
+        .page-break-before {
+            page-break-before: always;
+        }
+
+        .footer-print {
+            display: block !important;
+        }
+    }
+</style>
+{% endblock %}

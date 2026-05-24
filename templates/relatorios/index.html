@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Painel de Relatórios</h1>
+    <div style="font-size: 0.9em; color: var(--text-muted); text-align: right;">
+        Exportação de Dados e Indicadores Estratégicos NAPI-Robótica
+    </div>
+</div>
+
+<style>
+    /* Dashboard Grid Layout */
+    .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Responsive: Mobile first, stack cards */
+    @media (max-width: 768px) {
+        .reports-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    .report-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-header {
+        margin-bottom: 1rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+    }
+
+    .section-title {
+        grid-column: 1 / -1;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .btn-download {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+</style>
+
+<div class="main-content">
+    <div style="margin-top: 1rem;">
+        <h2 style="font-size: 1.5rem; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="file-bar-chart-2"></i> Relatórios de Governança NAPI-Robótica
+        </h2>
+
+        <!-- Section 1: Operacional Financeiro -->
+        <div class="reports-grid">
+            <div class="section-title"> Gestão de Pagamentos (PI 33/2025)</div>
+
+            <!-- Card: Folha de Pagamento -->
+            <div class="report-card" style="border-left: 4px solid #00ff87; box-shadow: 0 4px 15px rgba(0, 255, 135, 0.1);">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="banknote"></i> Pagamento de Bolsas</div>
+                    <div class="card-desc">
+                        Gera a "Ordem de Pagamento" completa com CPF, Dados Bancários e contador de parcelas **X de Y**. 
+                        Indispensável para conferência FUNTEF/CONVENIAR.
+                    </div>
+                </div>
+
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST" data-no-spinner="true">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-color);">Mês de Competência</label>
+                        <input type="date" name="mes" required 
+                            value="{{ now.strftime('%Y-%m-01') if now else '2026-03-01' }}"
+                            onfocus="this.showPicker()"
+                            style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-color); font-weight: bold;">
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit" name="tipo" value="pdf" class="btn btn-primary" style="flex: 1; background: #00ff87; color: #064e3b; border: none; font-weight: 700;">
+                            <i data-lucide="file-text"></i> PDF
+                        </button>
+                        <button type="submit" name="tipo" value="excel" class="btn btn-secondary" style="flex: 0.4;">
+                            <i data-lucide="file-spreadsheet"></i> Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Card: Relatório por Eixo NAPI -->
+            <div class="report-card" style="border-left: 4px solid #00d2ff; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.1);">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="layers"></i> Execução por Eixo NAPI</div>
+                    <div class="card-desc">
+                        Consolidado de investimentos segmentado por **Difusão, Educação e Inovação**. 
+                        Essencial para o relatório de atividades da Fundação Araucária.
+                    </div>
+                </div>
+
+                <form action="{{ url_for('reports.gerar_relatorio_eixo') }}" method="POST" data-no-spinner="true">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-color);">Selecione o Eixo</label>
+                        <select name="eixo" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-color);">
+                            <option value="ALL">Todos os Eixos</option>
+                            <option value="Difusão">Difusão</option>
+                            <option value="Educação">Educação</option>
+                            <option value="Inovação">Inovação</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; background: #00d2ff; color: #083344; border: none; font-weight: 700;">
+                        <i data-lucide="download"></i> Gerar Relatório de Eixo
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section 2: Auditoria e Integridade -->
+        <div class="reports-grid">
+            <div class="section-title"> Auditoria e Compliance</div>
+
+            <!-- Card: Scanner de Integridade (PDF) -->
+            <div class="report-card" style="border-left: 4px solid #ff0055;">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="search"></i> Auditoria de Inconsistências</div>
+                    <div class="card-desc">
+                        Lista detalhada de bolsistas sem orientadores, vigências expiradas ou pendências de checkout.
+                    </div>
+                </div>
+                <form action="{{ url_for('reports.relatorios_gerar') }}" method="POST" data-no-spinner="true">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="mes" value="current">
+                    <button type="submit" name="tipo" value="acoes_pendentes_pdf" class="btn btn-primary" style="width: 100%; background: #ff0055; color: white; border: none; font-weight: 700;">
+                        <i data-lucide="alert-triangle"></i> Baixar Relatório de Alertas
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Card: Devolução de Valores -->
+            <div class="report-card" style="border-left: 4px solid #6b7280;">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="refresh-ccw"></i> Devolução de Valores</div>
+                    <div class="card-desc">
+                        Relatório de discentes desligados com pendência de devolução de bolsas à FUNTEF.
+                    </div>
+                </div>
+                <div class="btn-download">
+                    <a href="{{ url_for('reports.devolucao_valores_pdf') }}" target="_blank" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                        <i data-lucide="file-text"></i> Visualizar PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

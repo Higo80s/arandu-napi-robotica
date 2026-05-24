@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <h1 style="margin-bottom: 2rem; color: var(--primary-color);">
+        {% if repasse %}✏️ Editar Repasse{% else %}➕ Novo Repasse{% endif %}
+    </h1>
+
+    <form method="POST"
+        style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <!-- Ano -->
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Ano <span style="color: red;">*</span>
+            </label>
+            <input type="number" name="ano" min="2020" max="2030" value="{{ repasse.ano if repasse else '' }}"
+                placeholder="2024" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+        </div>
+
+        <!-- Tipo -->
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Tipo de Repasse <span style="color: red;">*</span>
+            </label>
+            <select name="tipo" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">Selecione...</option>
+                <option value="PROAP" {% if repasse and repasse.tipo=='PROAP' %}selected{% endif %}>
+                    PROAP (CAPES)
+                </option>
+                <option value="PROAPINHO" {% if repasse and repasse.tipo=='PROAPINHO' %}selected{% endif %}>
+                    PROAPINHO (UTFPR)
+                </option>
+            </select>
+        </div>
+
+        <!-- Valor Total -->
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Valor Total (R$) <span style="color: red;">*</span>
+            </label>
+            <input type="text" name="valor_total"
+                value="{% if repasse %}{{ '{:,.2f}'.format(repasse.valor_total).replace(',', 'X').replace('.', ',').replace('X', '.') }}{% endif %}"
+                placeholder="10.000,00" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;"
+                onkeyup="formatarMoeda(this)">
+            <small style="color: #666;">Formato: 10.000,00</small>
+        </div>
+
+        <!-- Data do Repasse -->
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Data do Repasse <span style="color: red;">*</span>
+            </label>
+            <input type="date" name="data_repasse"
+                value="{% if repasse and repasse.data_repasse %}{{ repasse.data_repasse.strftime('%Y-%m-%d') }}{% endif %}"
+                required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+        </div>
+
+        <!-- Observações -->
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Observações
+            </label>
+            <textarea name="observacoes" rows="4"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;"
+                placeholder="Informações adicionais sobre este repasse...">{% if repasse %}{{ repasse.observacoes }}{% endif %}</textarea>
+        </div>
+
+        <!-- Botões -->
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="{{ url_for('proap.repasses_index') }}" class="btn btn-secondary">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                {% if repasse %}💾 Salvar Alterações{% else %}✅ Cadastrar Repasse{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function formatarMoeda(input) {
+        let valor = input.value;
+
+        // Remove tudo exceto números
+        valor = valor.replace(/\D/g, '');
+
+        // Adiciona zeros à esquerda se necessário
+        while (valor.length < 3) {
+            valor = '0' + valor;
+        }
+
+        // Formata com separadores
+        let inteiro = valor.slice(0, -2);
+        let decimal = valor.slice(-2);
+
+        // Adiciona pontos de milhar
+        inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        input.value = inteiro + ',' + decimal;
+    }
+</script>
+{% endblock %}

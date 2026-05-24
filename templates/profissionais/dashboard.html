@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Dark Mode Compatible Styles - Replicated from Internacionalizacao */
+    .card-stat {
+        text-align: center;
+        border-right: 4px solid var(--border-color, #ddd);
+        padding: 1rem;
+        background: var(--card-bg, #ffffff);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        color: var(--text-color, #374151);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100px;
+    }
+
+    .card-stat p {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    .card-stat h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .section-title {
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--border-color, #f3f4f6);
+        padding-bottom: 0.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Custom Chart Styles */
+    .chart-container {
+        background: var(--card-bg, #ffffff);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        height: 100%;
+        color: var(--text-color, #374151);
+    }
+
+    .bar-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .bar-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .bar-label {
+        min-width: 150px;
+        font-size: 0.9rem;
+        color: var(--text-color, #374151);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bar-track {
+        flex: 1;
+        height: 24px;
+        background: var(--bg-secondary, #f3f4f6);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding-left: 8px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: width 0.5s ease;
+    }
+
+    .bar-count {
+        min-width: 40px;
+        text-align: right;
+        font-size: 0.9rem;
+        color: var(--text-muted, #6b7280);
+    }
+
+    .text-muted {
+        color: var(--text-muted, #6b7280) !important;
+    }
+
+    .card {
+        background: var(--card-bg, #ffffff);
+        color: var(--text-color, #374151);
+        border: none;
+    }
+</style>
+
+<div class="container" style="padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="color: var(--primary-color);">Destaques de Fomento: Programas Profissionais (MP/DP)</h1>
+            <p class="text-muted">Monitoramento de captação de recursos junto à Iniciativa Privada, Fundações de Apoio e
+                recursos próprios.</p>
+        </div>
+        <div>
+            <!-- Placeholder for Future Print Route -->
+            <button class="btn btn-secondary btn-sm" disabled
+                style="color: var(--text-color, #374151); border: 1px solid var(--border-color);">
+                Relatório PDF (Em Breve)</button>
+        </div>
+    </div>
+
+    <!-- MAIN CARDS (KPIs) -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card-stat" style="border-right-color: #10b981;">
+            <p>Total Geral Captado (Orçamento)</p>
+            <h2 style="color: #10b981;">{{ stats.total_captado }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #3b82f6;">
+            <p>Bolsistas Vinculados</p>
+            <h2 style="color: #3b82f6;">{{ stats.bolsistas_ativos }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #f59e0b;">
+            <p>Acordos / Ext. Ativos</p>
+            <h2 style="color: #f59e0b;">{{ stats.parcerias_ativas }}</h2>
+        </div>
+    </div>
+
+    <!-- GRAPHS SECTION -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 3rem;">
+        <div class="chart-container">
+            <h3 class="section-title" style="color: #8b5cf6;">Principais Agências Financiadoras / Parceiros (Por Volume
+                de Bolsas)</h3>
+            {% if top_agencias %}
+            <div class="bar-chart">
+                {% for item in top_agencias %}
+                <div class="bar-item">
+                    <span class="bar-label" title="{{ item.label }}">{{ item.label }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill"
+                            style="width: {{ item.pct }}%; background: {{ item.color }}; min-width: 5%;">
+                            {% if item.pct > 5 %}
+                            {{ "%.1f"|format(item.pct) }}%
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="bar-count">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center" style="padding: 2rem;">Nenhuma parceria ativa associada aos programas
+                profissionais.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- DETAILED LIST -->
+    <div class="card"
+        style="padding: 1.5rem; background: var(--card-bg); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h3 class="section-title">Bolsistas Vinculados a Programas Profissionais</h3>
+        <table class="table" style="width: 100%; margin-top: 1rem;">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Bolsista</th>
+                    <th style="width: 15%;">Programa</th>
+                    <th style="width: 25%;">Projeto / Acordo</th>
+                    <th style="width: 15%;">Agência P&D</th>
+                    <th style="width: 15%;">Vigência</th>
+                    <th style="width: 10%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bolsistas %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('bolsistas.editar', id=b.id) }}"
+                            style="text-decoration: none; color: inherit;">
+                            <strong>{{ b.nome }}</strong>
+                        </a>
+                    </td>
+                    <td>
+                        {% if b.programa_link %}
+                        <span title="{{ b.programa_link.codigo_programa }} - {{ b.programa_link.nome_programa }}"
+                            style="cursor: help; border-bottom: 1px dotted #999;">
+                            {{ b.programa_link.sigla_programa }}
+                        </span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b.edital and b.edital.numero %}
+                        <span style="font-weight: 500; color: var(--text-color);">{{ b.edital.numero }}</span><br>
+                        {% endif %}
+
+                        {% set raw_agencia = b.agencia_fomento or (b.edital.agencia_link.nome if b.edital and
+                        b.edital.agencia_link else (b.edital.agencia if b.edital else 'ND')) %}
+                        {% set sigla_final = ag_sigla(raw_agencia) %}
+
+                        {% if b.projeto_pesquisa and b.projeto_pesquisa != raw_agencia and b.projeto_pesquisa !=
+                        sigla_final %}
+                        <small class="text-muted">{{ b.projeto_pesquisa }}</small>
+                        {% elif not b.edital or not b.edital.numero %}
+                        <small class="text-muted">-</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sigla_final == 'CAPES' %}
+                        <span class="badge bg-primary" style="font-size: 0.85rem;"
+                            title="{{ raw_agencia }}">CAPES</span>
+                        {% elif sigla_final == 'CNPq' %}
+                        <span class="badge bg-success" style="font-size: 0.85rem;" title="{{ raw_agencia }}">CNPq</span>
+                        {% elif sigla_final == 'FA' %}
+                        <span class="badge bg-warning text-dark" style="font-size: 0.85rem;"
+                            title="{{ raw_agencia }}">FA</span>
+                        {% elif sigla_final == 'RP' %}
+                        <span class="badge bg-secondary" style="font-size: 0.85rem;" title="{{ raw_agencia }}">RP</span>
+                        {% else %}
+                        <span style="font-size: 0.85rem; font-weight: 500;">{{ sigla_final }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small>
+                            {{ b.data_inicio_bolsa|date_br if b.data_inicio_bolsa else '-' }} a<br>
+                            {{ b.data_fim_bolsa|date_br if b.data_fim_bolsa else '-' }}
+                        </small>
+                    </td>
+                    <td>
+                        {% if b.ativo %}
+                        <span
+                            style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 99px; font-size: 0.8rem;">Ativo</span>
+                        {% else %}
+                        <span
+                            style="background: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 99px; font-size: 0.8rem;">Inativo</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">Nenhum registro encontrado associado a este módulo.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

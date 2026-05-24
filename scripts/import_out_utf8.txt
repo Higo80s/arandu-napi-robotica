@@ -1,0 +1,29 @@
+python : C:\Users\higosantos\AppData\
+Roaming\Python\Python313\site-package
+s\flask_limiter\_extension.py:364: 
+UserWarning: Using the in-memory 
+storage for tracking rate limits as 
+no storage was explicitly specified. 
+This is not recommended for 
+production use. See: https://flask-li
+miter.readthedocs.io#configuring-a-st
+orage-backend for documentation 
+about configuring the storage 
+backend.
+No linha:1 caractere:1
++ python 
+scripts\import_capes_bolsistas.py > 
+scripts\import_out.txt 2>& ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe 
+   cified: (C:\Users\higosa...torag  
+  e backend.:String) [], RemoteExc   
+ eption
+    + FullyQualifiedErrorId : Native 
+   CommandError
+ 
+  warnings.warn(
+ * Banco de Dados: PostgreSQL [OK]
+Lendo base de dados CAPES: planilnhas_externas\capes\capes_ppg_todos_bolsistas.xlsx
+ConcluÝdo! Inseridos: 1573 | Atualizados: 4 | Ignorados: 0

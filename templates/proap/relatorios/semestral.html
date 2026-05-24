@@ -1,0 +1,83 @@
+{% extends "base_pdf.html" %}
+
+{% block title %}Relatório Semestral PROAP{% endblock %}
+{% block report_title %}
+RELATÓRIO SEMESTRAL - {{ semestre }}º SEMESTRE/{{ ano }}<br>
+<span style="font-size: 10px; font-weight: normal; text-transform: none;">Consolidado de Execução Orçamentária por
+    Semestre</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- Resumo Executivo -->
+<div class="section-title">Resumo Geral</div>
+<table>
+    <tr>
+        <th width="70%">Descrição</th>
+        <th width="30%">Valor Total (R$)</th>
+    </tr>
+    <tr>
+        <td>Total Aplicado no Semestre</td>
+        <td class="font-bold">R$ {{ "{:,.2f}".format(total_aplicado).replace(',', 'X').replace('.', ',').replace('X',
+            '.') }}</td>
+    </tr>
+    <tr>
+        <td>Número de Lançamentos</td>
+        <td>{{ aplicacoes|length }}</td>
+    </tr>
+</table>
+
+<!-- Execução por Categoria -->
+<div class="section-title">Execução por Categoria</div>
+<table>
+    <thead>
+        <tr>
+            <th width="60%">Categoria</th>
+            <th width="20%">Total (R$)</th>
+            <th width="20%">Participação (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cat in por_categoria %}
+        {% set percent = (cat.total / total_aplicado * 100) if total_aplicado > 0 else 0 %}
+        <tr>
+            <td>{{ cat.categoria }}</td>
+            <td>R$ {{ "{:,.2f}".format(cat.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+            <td>{{ "{:.1f}".format(percent) }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Detalhamento de Despesas -->
+<div class="section-title">Registros de Despesa</div>
+<table>
+    <thead>
+        <tr>
+            <th width="12%">Data</th>
+            <th width="15%">Programa</th>
+            <th width="23%">Categoria</th>
+            <th width="30%">Descrição</th>
+            <th width="20%">Valor (R$)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for apl in aplicacoes %}
+        <tr>
+            <td>{{ apl.data_aplicacao.strftime('%d/%m/%Y') }}</td>
+            <td><strong>{{ apl.distribuicao.programa.sigla_programa }}</strong></td>
+            <td>{{ apl.categoria }}</td>
+            <td>{{ apl.descricao }}</td>
+            <td>R$ {{ "{:,.2f}".format(apl.valor).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="4" class="text-right">Total do Semestre:</td>
+            <td>R$ {{ "{:,.2f}".format(total_aplicado).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+        </tr>
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block report_date %}{{ now }}{% endblock %}

@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}View de Conflitos — Governança v10.9{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --academic-blue: #1d4ed8;
+    --capes-green: #059669;
+    --danger-red: #dc2626;
+    --amber: #d97706;
+    --card-radius: 12px;
+  }
+  .conflitos-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .conflitos-hero h2 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+  .conflitos-hero p { margin: 0.3rem 0 0; opacity: 0.85; }
+  .alerta-banner {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border: 1px solid #fca5a5;
+    border-radius: var(--card-radius);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .conflict-group {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--card-radius);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .conflict-group-header {
+    background: #f8fafc;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .conflict-group-header .cpf-badge {
+    font-family: monospace;
+    font-weight: 700;
+    color: #334155;
+    font-size: 1rem;
+  }
+  .conflict-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1.5fr 1.5fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+  }
+  .conflict-row:hover { background: #fafafa; }
+  .conflict-row:last-child { border-bottom: none; }
+  .source-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .tag-academic { background: #dbeafe; color: #1d4ed8; }
+  .tag-capes { background: #dcfce7; color: #166534; }
+  .tag-unknown { background: #f1f5f9; color: #64748b; }
+  .titulacao-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .action-btn {
+    padding: 0.35rem 0.75rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-keep { background: #dbeafe; color: #1d4ed8; }
+  .btn-keep:hover { background: #1d4ed8; color: white; }
+  .btn-merge { background: #d1fae5; color: #065f46; }
+  .btn-merge:hover { background: #059669; color: white; }
+  .btn-inativar { background: #fef3c7; color: #92400e; }
+  .btn-inativar:hover { background: #d97706; color: white; }
+  .no-conflitos {
+    text-align: center;
+    padding: 4rem;
+    color: #64748b;
+  }
+  .no-conflitos .icon { font-size: 4rem; margin-bottom: 1rem; }
+</style>
+
+<div class="container-fluid" style="max-width: 1100px; padding: 2rem;">
+
+  <div class="conflitos-hero">
+    <span style="font-size: 3rem;">⚖️</span>
+    <div>
+      <h2>Quartel-General de Governança</h2>
+      <p>v10.9 — Resolução de Conflitos de Identidade | CPFs com múltiplos registros</p>
+    </div>
+    <div style="margin-left: auto;">
+      <a href="{{ url_for('bolsistas.sincronizar') }}" class="action-btn btn-keep" style="padding: 0.6rem 1.2rem;">
+        🔄 Nova Sincronização
+      </a>
+    </div>
+  </div>
+
+  {% if alertas_titulacao %}
+  <div class="alerta-banner">
+    <h6 style="color: #b91c1c; margin: 0 0 0.5rem;">🔴 Alertas de Titulação Antecipada ({{ alertas_titulacao|length }})</h6>
+    <p style="color: #7f1d1d; margin: 0; font-size: 0.9rem;">
+      Os bolsistas abaixo possuem <strong>data de defesa anterior ao fim da bolsa</strong>.
+      Verifique no SCBA se o cancelamento foi realizado para evitar pagamentos indevidos.
+    </p>
+    <ul style="margin: 0.75rem 0 0; padding-left: 1.2rem; color: #991b1b; font-size: 0.9rem;">
+      {% for b in alertas_titulacao %}
+      <li>
+        <strong>{{ b.nome }}</strong>
+        — Defesa prevista: <strong>{{ b.previsao_defesa.strftime('%d/%m/%Y') }}</strong>
+        | Fim da bolsa: <strong>{{ b.data_fim_bolsa.strftime('%d/%m/%Y') }}</strong>
+        <a href="{{ url_for('bolsistas.editar', id=b.id) }}" style="color: #dc2626; font-size: 0.8rem; margin-left: 0.5rem;">[Ver]</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'success' if cat == 'success' else 'warning' if cat == 'warning' else 'danger' }}" style="border-radius: 8px; margin-bottom: 1rem;">
+        {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not grupos and not alertas_titulacao %}
+  <div class="no-conflitos">
+    <div class="icon">✅</div>
+    <h4 style="color: #1e3a5f;">Nenhum conflito encontrado!</h4>
+    <p>Não existem CPFs duplicados ou alertas de titulação pendentes na base de dados. A integridade está garantida.</p>
+    <a href="{{ url_for('bolsistas.index') }}" class="action-btn btn-keep" style="padding: 0.6rem 1.5rem; font-size: 0.95rem;">
+      ← Voltar aos Bolsistas
+    </a>
+  </div>
+
+  {% elif not grupos and alertas_titulacao %}
+  <div class="no-conflitos">
+    <div class="icon">⚠️</div>
+    <h4 style="color: #b91c1c;">Conflitos de Identidade: OK</h4>
+    <p>Não existem CPFs duplicados, mas existem alertas de titulação antecipada (SCBA) acima que requerem sua atenção.</p>
+  </div>
+
+  {% else %}
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h5 style="color: #1e3a5f; margin: 0;">{{ grupos|length }} grupo(s) de conflito identificado(s)</h5>
+    <span style="color: #64748b; font-size: 0.85rem;">Clique nas ações para resolver cada conflito individualmente.</span>
+  </div>
+
+  {% for grupo in grupos %}
+  {% set outer_index = loop.index %}
+  <div class="conflict-group" id="grupo-{{ outer_index }}">
+    <div class="conflict-group-header">
+      <div>
+        <span class="cpf-badge">CPF: {{ grupo.cpf }}</span>
+        <span style="font-size: 0.8rem; color: #94a3b8; margin-left: 1rem;">{{ grupo.total }} registros</span>
+        {% if grupo.conflito_titulacao %}
+          <span class="titulacao-alert" style="margin-left: 0.5rem;">🔴 Alerta Titulação</span>
+        {% endif %}
+      </div>
+      <span style="font-size: 0.8rem; color: #94a3b8;">Resolva para limpar o conflito</span>
+    </div>
+
+    <!-- Cabeçalho da tabela -->
+    <div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1.5fr auto; gap: 0.75rem; padding: 0.5rem 1.25rem; background: #f8fafc; font-size: 0.78rem; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+      <span>ORIGEM</span>
+      <span>NOME</span>
+      <span>EDITAL / RA</span>
+      <span>VIGÊNCIA</span>
+      <span>AÇÕES</span>
+    </div>
+
+    {% for b in grupo.registros %}
+    <div class="conflict-row" id="row-{{ b.id }}">
+      <!-- Origem -->
+      <div>
+        {% if b.matricula %}
+          <span class="source-tag tag-academic">🎓 Acadêmico</span>
+        {% elif b.edital_id %}
+          <span class="source-tag tag-capes">🏛️ CAPES</span>
+        {% else %}
+          <span class="source-tag tag-unknown">❓ Outro</span>
+        {% endif %}
+        {% if not b.ativo %}
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Inativo</div>
+        {% endif %}
+      </div>
+      <!-- Nome -->
+      <div>
+        <div style="font-weight: 600; color: #1e293b;">{{ b.nome }}</div>
+        <div style="font-size: 0.78rem; color: #94a3b8;">
+          RA: {{ b.matricula or '—' }}
+          {% if b.email %} | {{ b.email }}{% endif %}
+        </div>
+      </div>
+      <!-- Edital/Programa -->
+      <div style="font-size: 0.85rem; color: #334155;">
+        {% if b.edital %}<strong>{{ b.edital.numero }}</strong><br>{% endif %}
+        {% if b.programa_link %}<span style="color: #64748b;">{{ b.programa_link.nome }}</span>{% endif %}
+      </div>
+      <!-- Vigência -->
+      <div style="font-size: 0.85rem; color: #334155;">
+        {% if b.data_inicio_bolsa %}
+          {{ b.data_inicio_bolsa.strftime('%d/%m/%Y') }} →<br>
+          <strong {% if b.data_fim_bolsa and b.previsao_defesa and b.previsao_defesa < b.data_fim_bolsa %}style="color: #dc2626;"{% endif %}>
+            {{ b.data_fim_bolsa.strftime('%d/%m/%Y') if b.data_fim_bolsa else '—' }}
+          </strong>
+        {% else %}—{% endif %}
+        {% if b.previsao_defesa %}
+          <div style="font-size: 0.75rem; color: #64748b;">Def: {{ b.previsao_defesa.strftime('%d/%m/%Y') }}</div>
+        {% endif %}
+      </div>
+      <!-- Ações -->
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <!-- Manter Este -->
+        {% for outro in grupo.registros if outro.id != b.id %}
+        <button class="action-btn btn-keep"
+          onclick="resolver('keep', {{ b.id }}, {{ outro.id }}, 'grupo-{{ outer_index }}')"
+          title="Manter ID={{ b.id }}, inativar ID={{ outro.id }}">
+          ✅ Manter
+        </button>
+        {% if b.matricula and not outro.matricula %}
+        <button class="action-btn btn-merge"
+          onclick="resolver('merge', {{ b.id }}, {{ outro.id }}, 'grupo-{{ outer_index }}')"
+          title="Mesclar RA do Acadêmico no registro CAPES">
+          🔗 Mesclar→CAPES
+        </button>
+        {% endif %}
+        {% endfor %}
+        <button class="action-btn btn-inativar"
+          onclick="resolver('inativar', null, {{ b.id }}, 'grupo-{{ outer_index }}')"
+          title="Inativar este registro">
+          🚫 Inativar
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+<div id="toast-container" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+<script>
+const CSRF = "{{ csrf_token() }}";
+
+async function resolver(tipo, id1, id2, grupoId) {
+    let url = '';
+    let text = '';
+    if (tipo === 'merge') {
+        url = `/api/conflito/merge/${id1}/${id2}`;
+        text = 'Mesclando...';
+    } else if (tipo === 'keep') {
+        url = `/api/conflito/keep/${id1}/${id2}`;
+        text = 'Mantendo registro...';
+    } else if (tipo === 'inativar') {
+        url = `/api/conflito/keep/0/${id2}`;
+        // Usamos o mesmo endpoint mas com keep_id=0 (logica de inativação pura)
+        // Alternativa: chamar o endpoint de keep com ID inexistente
+        // Revisão: usar um endpoint dedicado ou adaptar o keep
+        text = 'Inativando...';
+    }
+
+    showToast(text, 'info');
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+            // Colapsa o grupo após 1.5s
+            setTimeout(() => {
+                const grupo = document.getElementById(grupoId);
+                if (grupo) {
+                    grupo.style.opacity = '0';
+                    grupo.style.transition = 'opacity 0.4s';
+                    setTimeout(() => grupo.remove(), 400);
+                }
+            }, 1500);
+        } else {
+            showToast('❌ ' + data.message, 'error');
+        }
+    } catch(e) {
+        showToast('❌ Erro de conexão: ' + e.message, 'error');
+    }
+}
+
+function showToast(msg, tipo) {
+    const colors = { success: '#dcfce7', error: '#fef2f2', info: '#dbeafe' };
+    const text = { success: '#166534', error: '#b91c1c', info: '#1d4ed8' };
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.innerHTML = msg;
+    t.style.cssText = `background:${colors[tipo]};color:${text[tipo]};padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.12);max-width:360px;`;
+    container.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+}
+</script>
+{% endblock %}

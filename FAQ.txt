@@ -1,0 +1,164 @@
+❓ FAQ - PERGUNTAS FREQUENTES
+═════════════════════════════════════════════════════════════════════
+
+P: Por onde começo?
+R: Clique duplo em: INICIO_RAPIDO.bat
+   → Tudo automático, sem configuração manual
+
+P: Quanto tempo leva?
+R: Primeira vez: ~3 minutos (com restauração)
+   Próximas vezes: ~30 segundos (apenas inicia)
+
+P: O que a app faz?
+R: Gerencia Editais, Bolsistas, Relatórios, Dashboards
+   Tudo com dados do backup restaurado
+
+P: Preciso instalar algo?
+R: Apenas:
+   • Python 3.8+ (se não tiver)
+   • PostgreSQL 16+ (se não tiver)
+   Tudo mais é automático!
+
+P: E se der erro?
+R: Execute: verificar_setup.bat
+   → Mostra exatamente o que está faltando
+
+P: Posso editar as credenciais?
+R: Sim, edite .env ANTES de iniciar
+   DATABASE_URL com suas credenciais
+
+P: Como faço para parar?
+R: Feche a janela do PowerShell/CMD
+   (Ou use Ctrl+C se quiser mais elegante)
+
+P: Como faço login?
+R: Use credenciais que estavam no backup
+   (Email e senha restaurados do banco)
+
+P: Onde está a aplicação?
+R: http://localhost:5000 (navegador)
+
+P: Posso usar em produção?
+R: Sim, mas:
+   1. Mude a SECRET_KEY em .env
+   2. Configure HTTPS (SSL)
+   3. Use Waitress ou Nginx como proxy
+   4. Setup backups automáticos
+
+P: Como faço backups?
+R: Execute: python scripts/backup_postgres.py
+   (Script já existe no projeto)
+
+P: Posso restaurar outro backup?
+R: Sim, coloque na pasta e execute:
+   python restore_backup_postgres.py
+
+P: Qual versão do PostgreSQL?
+R: 16+ recomendado (testado)
+   (Funciona em 13+, mas 16+ é melhor)
+
+P: Preciso do Docker?
+R: Não, mas pode usar:
+   docker-compose up
+   (Dockerfile já existe)
+
+P: Onde estão os dados?
+R: Banco de dados PostgreSQL
+   (Em C:\Program Files\PostgreSQL\... no Windows)
+
+P: Como conecto diretamente ao banco?
+R: psql -h localhost -U gestao_user -d gestao_editais_db
+   (Depois digite a senha)
+
+P: Posso mudar porta 5000?
+R: Sim, edite em app.py linha final
+   app.run(port=5000) → app.run(port=8000)
+
+P: Como vejo os logs?
+R: Consulte console onde app está rodando
+   (Ou procure arquivos em logs/)
+
+P: Posso ter múltiplas instâncias?
+R: Sim, use portas diferentes
+   Exemplo: 5000, 5001, 5002, etc
+
+P: Como compartilho com outros?
+R: Crie um atalho no Desktop:
+   criar_atalho.bat
+
+P: Funciona em Mac/Linux?
+R: Flask sim, scripts .bat não
+   Use: python launch_with_postgres.py (adaptar)
+
+P: Há interface gráfica?
+R: Sim, o próprio navegador (web)
+   http://localhost:5000
+
+P: Como exporto dados?
+R: Use menu Relatórios na app
+   (Gera PDF/Excel)
+
+═════════════════════════════════════════════════════════════════════
+
+🚀 ATALHO RÁPIDO:
+
+❌ NÃO FAÇA ISSO:
+  • Clique manual em app.py
+  • Use SQLite diretamente
+  • Configure PostgreSQL na mão
+
+✅ FAÇA ASSIM:
+  • Clique duplo em INICIO_RAPIDO.bat
+  • Espera terminar
+  • Acessa http://localhost:5000
+
+═════════════════════════════════════════════════════════════════════
+
+📞 PROBLEMA? SOLUÇÃO:
+
+"psycopg2.OperationalError"
+  → PostgreSQL não rodando
+  → Ou credenciais erradas em .env
+
+"Module not found: flask"
+  → pip install -r requirements.txt
+
+"pg_restore not found"
+  → Instale PostgreSQL (com ferramentas)
+
+"Connection refused"
+  → PostgreSQL não está iniciado
+  → Execute: net start postgresql-x64-17
+
+"Permission denied"
+  → Execute como Administrador
+  → Clique direito > Run as admin
+
+═════════════════════════════════════════════════════════════════════
+
+⚡ DICAS:
+
+1. Deixe PostgreSQL rodando no background
+   (Services > postgresql > Automatic)
+
+2. Use o menu.bat para controle fácil
+   (7 opções diferentes)
+
+3. Crie atalho no Desktop
+   (criar_atalho.bat)
+
+4. Leia RESTAURACAO_POSTGRES.md
+   (Responde 90% das dúvidas)
+
+5. Configure backup automático
+   (scripts/backup_postgres.py)
+
+═════════════════════════════════════════════════════════════════════
+
+✅ PRONTO PARA COMEÇAR? 
+
+Clique duplo em: INICIO_RAPIDO.bat
+
+Boa sorte! 🚀
+
+═════════════════════════════════════════════════════════════════════

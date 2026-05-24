@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ESTUDO_MIGRACAO_DB</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h1 id="estudo-migração-de-banco-de-dados-sqlite---postgresqlmysql">Estudo: Migração de Banco de Dados (SQLite -&gt; PostgreSQL/MySQL)</h1>
+<p><strong>Data:</strong> 13/01/2026 <strong>Contexto:</strong> Planejamento de evolução da infraestrutura do “Gestão de Editais”.</p>
+<hr />
+<h2 id="respondendo-às-suas-dúvidas">1. Respondendo às Suas Dúvidas</h2>
+<h3 id="o-postgresql-é-gratuito">1.1 O PostgreSQL é gratuito?</h3>
+<p><strong>SIM.</strong> O PostgreSQL é um software <strong>Open Source</strong> (licença PostgreSQL, similar à MIT/BSD), ou seja, é totalmente gratuito para uso pessoal, acadêmico e <strong>comercial</strong>. Você não paga licença, independente do tamanho do banco ou número de usuários. O mesmo vale para o MySQL (versão Community).</p>
+<h3 id="posso-trabalhar-com-ele-localmente">1.2 Posso trabalhar com ele localmente?</h3>
+<p><strong>SIM.</strong> Você pode instalar o PostgreSQL no seu Windows de duas formas: 1. <strong>Instalador Direto (EnterpriseDB):</strong> Instala o servidor como um “Serviço do Windows”. Ele fica rodando em segundo plano na porta 5432. 2. <strong>Docker (Recomendado):</strong> Você roda o banco em um container isolado (<code>docker run --name gestao-db -p 5432:5432 -e POSTGRES_PASSWORD=senha postgres</code>). Isso evita “sujar” o seu Windows com instalações pesadas e é idêntico ao ambiente de produção.</p>
+<h3 id="qual-a-vantagem-de-migrar-vs-sqlite">1.3 Qual a vantagem de migrar (vs SQLite)?</h3>
+<p>O SQLite é um <em>arquivo</em>. O PostgreSQL é um <em>servidor</em>.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Característica</th>
+<th style="text-align: left;">SQLite (Atual)</th>
+<th style="text-align: left;">PostgreSQL/MySQL (Meta)</th>
+<th style="text-align: left;">Por que migrar?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Concorrência</strong></td>
+<td style="text-align: left;">Bloqueia o arquivo inteiro na escrita. Se 2 usuários salvarem juntos, um dá erro.</td>
+<td style="text-align: left;">Suporta milhares de escritas simultâneas (MVCC).</td>
+<td style="text-align: left;">Essencial se o sistema for ter vários usuários logados.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Tipagem</strong></td>
+<td style="text-align: left;">Fraca. Aceita texto em campo de número se forçar.</td>
+<td style="text-align: left;">Forte e Rigorosa. Garante a integridade dos dados.</td>
+<td style="text-align: left;">Evita erros “silenciosos” (ex: datas inválidas).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Recursos</strong></td>
+<td style="text-align: left;">Básico (SQL padrão).</td>
+<td style="text-align: left;">Avançado (JSON, Arrays, Geoespacial).</td>
+<td style="text-align: left;">O Postgres tem suporte nativo a JSONB (ótimo para logs/históricos).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Backup</strong></td>
+<td style="text-align: left;">Copiar arquivo <code>.db</code>.</td>
+<td style="text-align: left;">Dump SQL (<code>pg_dump</code>).</td>
+<td style="text-align: left;">Permite backups “quentes” (sem parar o sistema).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mysql-vs-postgresql">1.4 MySQL vs PostgreSQL?</h3>
+<p>Você mencionou conhecer MySQL. Ambos são excelentes, mas para <strong>Python/Flask</strong>, o <strong>PostgreSQL</strong> é geralmente o favorito por: 1. Melhor integração com o SQLAlchemy. 2. Suporte a tipos de dados avançados (Array, JSON). 3. Licenciamento mais permissivo (MySQL pertence à Oracle).</p>
+<hr />
+<h2 id="como-seria-feita-a-migração">2. Como seria feita a migração?</h2>
+<p>Como você usa <strong>SQLAlchemy</strong>, seu código Python está 90% pronto. Você não escreveu SQL puro (<code>SELECT * FROM...</code>), você usou objetos (<code>Bolsista.query...</code>). O ORM cuida da tradução.</p>
+<h3 id="passo-1-preparar-o-ambiente-local">Passo 1: Preparar o Ambiente (Local)</h3>
+<ol type="1">
+<li>Instalar o PostgreSQL (ex: via Docker).</li>
+<li>Criar um banco vazio: <code>CREATE DATABASE gestao_editais;</code></li>
+<li>Instalar o driver Python: <code>pip install psycopg2-binary</code></li>
+</ol>
+<h3 id="passo-2-alterar-a-conexão">Passo 2: Alterar a Conexão</h3>
+<p>No arquivo <code>app.py</code> (ou <code>.env</code>):</p>
+<p><strong>De (SQLite):</strong></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>app.config[<span class="st">&#39;SQLALCHEMY_DATABASE_URI&#39;</span>] <span class="op">=</span> <span class="st">&#39;sqlite:///gestao_editais_new.db&#39;</span></span></code></pre></div>
+<p><strong>Para (PostgreSQL):</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Formato: postgresql://usuario:senha@host:porta/nome_banco</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>app.config[<span class="st">&#39;SQLALCHEMY_DATABASE_URI&#39;</span>] <span class="op">=</span> <span class="st">&#39;postgresql://postgres:senha123@localhost:5432/gestao_editais&#39;</span></span></code></pre></div>
+<h3 id="passo-3-criar-as-tabelas">Passo 3: Criar as Tabelas</h3>
+<p>Ao rodar o sistema pela primeira vez conectado ao Postgres, o comando <code>db.create_all()</code> (que já está no seu código) vai criar todas as tabelas vazias automaticamente no novo banco.</p>
+<h3 id="passo-4-migrar-os-dados-o-desafio">Passo 4: Migrar os Dados (O Desafio)</h3>
+<p>Aqui está o trabalho real. As tabelas estão lá, mas vazias. Como mover os dados do <code>sqlite</code> para o <code>postgres</code>?</p>
+<ol type="1">
+<li><p><strong>Opção A (Script Python - ETL):</strong> Criar um script que conecta nos <strong>dois</strong> bancos ao mesmo tempo, lê do SQLite e grava no Postgres.</p>
+<ul>
+<li><em>Vantagem:</em> Controle total.</li>
+<li><em>Desvantagem:</em> Trabalhoso.</li>
+</ul></li>
+<li><p><strong>Opção B (Exportação CSV):</strong> Exportar cada tabela do SQLite para CSV e importar no Postgres (<code>COPY bolsistas FROM 'arquivo.csv'</code>).</p></li>
+<li><p><strong>Opção C (Ferramentas Automáticas):</strong> Usar ferramentas como <strong>pgloader</strong>. Ele lê o arquivo <code>.db</code> e joga tudo para o Postgres magicamente. <code>bash     pgloader ./gestao_editais_new.db postgresql://user:pass@localhost/db</code></p></li>
+</ol>
+<hr />
+<h2 id="resumo-da-mudança-o-que-muda">3. Resumo da Mudança (“O que muda?”)</h2>
+<ol type="1">
+<li><strong>Código Python:</strong> Quase nada muda. Apenas a string de conexão.</li>
+<li><strong>Infraestrutura:</strong> Você precisa ter o serviço do Postgres rodando (não é mais só um arquivo na pasta).</li>
+<li><strong>Performance:</strong> O sistema ficará mais robusto para múltiplos acessos.</li>
+</ol>
+<p>Minha recomendação: Mantenha o SQLite para desenvolvimento rápido agora. Quando o sistema for para produção real (com múltiplos usuários), fazemos a migração usando um script de ETL simples.</p>
+</body>
+</html>

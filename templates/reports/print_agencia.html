@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Consolidado - {{ macro }}</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+
+        .edital-section {
+            margin-bottom: 30px;
+        }
+
+        .edital-header {
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .edital-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #002e6d;
+            margin: 0 0 4px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        th,
+        td {
+            border: 1px solid #999;
+            padding: 4px 5px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eee;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 10px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .money {
+            font-family: "Courier New", monospace;
+        }
+
+        .subtotal-row {
+            background: #f0f0f0;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .grand-total {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #002e6d;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            gap: 30px;
+            justify-content: flex-end;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #002e6d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+
+            body {
+                padding: 0;
+                font-size: 10px;
+            }
+
+            .print-btn {
+                display: none;
+            }
+
+            th {
+                background-color: #ddd !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+
+            .grand-total {
+                background: #002e6d !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+
+    <div class="header">
+        <h1>Universidade Tecnológica Federal do Paraná</h1>
+        <p>Diretoria de Pesquisa e Pós-Graduação - PROPPG</p>
+        <p>Relatório Consolidado de Bolsistas — <strong>{{ macro }}</strong></p>
+        <p>Mês de Referência: <strong>{{ ref_mes_str }}</strong> &nbsp;|&nbsp; Data: {{ hoje.strftime('%d/%m/%Y') }}</p>
+    </div>
+
+    {% if not grupos %}
+    <p style="text-align: center; color: #888; font-size: 13px; margin-top: 40px;">
+        Nenhum bolsista ativo encontrado para os editais de <strong>{{ macro }}</strong>.
+    </p>
+    {% endif %}
+
+    {% for grupo in grupos %}
+    <div class="edital-section {% if not loop.first %}page-break{% endif %}">
+        <div class="edital-header">
+            <div>
+                <p class="edital-title">Edital: {{ grupo.edital.numero }}</p>
+                <p style="margin: 2px 0; color: #555;">{{ grupo.edital.descricao or '' }}</p>
+                {% if grupo.edital.codigo_projeto %}
+                <p style="margin: 2px 0; color: #555; font-size: 9px;">Projeto: {{ grupo.edital.codigo_projeto }}</p>
+                {% endif %}
+            </div>
+            <div style="text-align: right; font-size: 10px; color: #444;">
+                <p>Total de Bolsistas: <strong>{{ grupo.items | length }}</strong></p>
+                <p>Total Pago: R$ {{ "%.2f"|format(grupo.total_pago) }}</p>
+                <p>Total Previsto: R$ {{ "%.2f"|format(grupo.total_previsto) }}</p>
+                <p>Saldo: R$ {{ "%.2f"|format(grupo.saldo) }}</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 18%;">Bolsista / Beneficiário</th>
+                    <th style="width: 8%;">CPF</th>
+                    <th style="width: 5%;">Campus</th>
+                    <th style="width: 6%;">Cód.</th>
+                    <th style="width: 15%;">Programa</th>
+                    <th style="width: 8%;">Modalidade</th>
+                    <th style="width: 10%;">Vigência</th>
+                    <th style="width: 6%;">Vlr Mês</th>
+                    <th class="text-center" style="width: 4%;">P.</th>
+                    <th class="text-right" style="width: 6%;">Pago</th>
+                    <th class="text-right" style="width: 7%;">Prev.</th>
+                    <th class="text-right" style="width: 7%;">Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in grupo.items %}
+                <tr>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.cpf }}</td>
+                    <td>{{ item.campus }}</td>
+                    <td>{{ item.codigo }}</td>
+                    <td>{{ item.programa }}</td>
+                    <td>{{ item.tipo }}</td>
+                    <td>{{ item.inicio.strftime('%d/%m/%Y') if item.inicio else '-' }} a
+                        {{ item.fim.strftime('%d/%m/%Y') if item.fim else '-' }}</td>
+                    <td>R$ {{ "%.2f"|format(item.valor) }}</td>
+                    <td class="text-center">
+                        {{ item.pagos }}
+                        {% if item.is_estimado %}
+                        <span style="font-size:8px; color:#d9534f;">(Est)</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(item.total_pago) }}</td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(item.total_prev) }}</td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(item.saldo) }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="subtotal-row">
+                    <td colspan="9" class="text-right">SUBTOTAL EDITAL {{ grupo.edital.numero }}</td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(grupo.total_pago) }}</td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(grupo.total_previsto) }}</td>
+                    <td class="text-right money">R$ {{ "%.2f"|format(grupo.saldo) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    {% if grupos %}
+    <div class="grand-total">
+        <span>TOTAL GERAL PAGO: R$ {{ "%.2f"|format(total_global_pago) }}</span>
+        <span>|</span>
+        <span>TOTAL GERAL PREVISTO: R$ {{ "%.2f"|format(total_global_previsto) }}</span>
+        <span>|</span>
+        <span>SALDO GLOBAL: R$ {{ "%.2f"|format(saldo_global) }}</span>
+    </div>
+
+    <div style="margin-top: 40px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
+        <div>
+            <p>_______________________________________________________</p>
+            <p>Responsável pela Emissão</p>
+        </div>
+        <div>
+            <p>_______________________________________________________</p>
+            <p>Diretoria de Pesquisa e Pós-Graduação</p>
+        </div>
+    </div>
+    {% endif %}
+
+</body>
+
+</html>

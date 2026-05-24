@@ -1,0 +1,6 @@
+# Referência ao arquivo de produção
+-r requirements.txt
+
+# Ferramentas de Teste e Qualidade
+pytest==8.0.2
+pytest-flask==1.3.0

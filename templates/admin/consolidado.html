@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Painel de Dados Consolidados</h1>
+    <div style="font-size: 0.9em; color: var(--text-muted); text-align: right;">
+        Painel Administrativo > Consolidado
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Card 1: Total Geral -->
+    <div class="stat-card fade-in-up" style="animation-delay: 0.1s;">
+        <div class="stat-icon" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary-color);">
+            {{ icon('book', size=24) }}
+        </div>
+        <div class="stat-info">
+            <span class="stat-value counter" data-target="{{ total_geral }}">0</span>
+            <span class="stat-label">Total Programas</span>
+            <div style="font-size: 0.8em; margin-top: 5px; color: var(--text-muted);">
+                <b>{{ total_mestrado }}</b> Mestrados | <b>{{ total_doutorado }}</b> Doutorados
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Ativos vs Ofertados (Taxa de Ocupação) -->
+    <div class="stat-card fade-in-up" style="animation-delay: 0.2s;">
+        <div class="stat-icon" style="background: rgba(var(--success-rgb), 0.1); color: var(--success-color);">
+            {{ icon('users', size=24) }}
+        </div>
+        <div class="stat-info">
+            <span class="stat-value counter" data-target="{{ taxa_ocupacao }}" data-decimal="1"
+                data-suffix="%">0%</span>
+            <span class="stat-label">Taxa de Ocupação</span>
+            <small style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                {{ discentes_ativos }} Ocupadas / {{ total_bolsas_ofertadas }} Ofertadas
+            </small>
+        </div>
+    </div>
+
+    <!-- Card 3: Multicampi -->
+    <div class="stat-card fade-in-up" style="animation-delay: 0.3s;">
+        <div class="stat-icon" style="background: rgba(var(--warning-rgb), 0.1); color: var(--warning-color);">
+            {{ icon('share-2', size=24) }}
+        </div>
+        <div class="stat-info">
+            <span class="stat-value counter" data-target="{{ programas_multicampi|length }}">0</span>
+            <span class="stat-label">Programas Multicampi</span>
+        </div>
+    </div>
+</div>
+
+<div class="main-content" style="margin-top: 2rem;">
+    <!-- Seção 1: Distribuição por Campus -->
+    <div class="card fade-in-up" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <div class="card-title">{{ icon('map-pin', size=20) }} Distribuição por Campus</div>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Sigla</th>
+                        <th style="text-align: center;">Qtd. Programas</th>
+                        <th style="text-align: center; background: #f0fdf4; color: #166534;">Discentes Ativos</th>
+                        <!-- Nova Coluna -->
+                        <th style="width: 200px;">Visualização</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in distribuicao_campus %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ c.nome }}</td>
+                        <td><span class="badge">{{ c.sigla }}</span></td>
+                        <td style="text-align: center; font-weight: bold;">{{ c.num_programas }}</td>
+                        <td
+                            style="text-align: center; font-weight: bold; color: var(--success-color); background: #f0fdf4;">
+                            {{ c.num_ativos }}</td>
+                        <td style="vertical-align: middle;">
+                            <div
+                                style="height: 24px; background: #f3f4f6; border-radius: 6px; overflow: hidden; position: relative; width: 100%;">
+                                <div
+                                    style="width: {{ c.pct }}%; background: {{ c.color }}; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem; font-weight: 700; min-width: 2px;">
+                                    {% if c.pct > 15 %}{{ "%.1f"|format(c.pct) }}%{% endif %}
+                                </div>
+                            </div>
+                            {% if c.pct <= 15 %} <div
+                                style="font-size: 0.75rem; text-align: right; color: #6b7280; margin-top: 2px; font-weight: 600;">
+                                {{ "%.1f"|format(c.pct) }}%
+        </div>
+        {% endif %}
+        </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Seção 2: Programas Multicampi Detalhados -->
+{% if programas_multicampi %}
+<div class="card fade-in-up">
+    <div class="card-header">
+        <div class="card-title">{{ icon('share-2', size=20) }} Detalhamento Multicampi</div>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Programa</th>
+                    <th>Campi Envolvidos</th>
+                    <th style="text-align: center;">Qtd. Campus</th>
+                    <th style="text-align: center; background: #f0fdf4; color: #166534;">Total Ativos</th>
+                    <!-- Nova Coluna -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in programas_multicampi %}
+                <tr>
+                    <td style="color: var(--text-muted); font-family: monospace;">{{ m.codigo }}</td>
+                    <td style="font-weight: 500;">{{ m.nome }}</td>
+                    <td>
+                        <!-- Siglas dos Campi -->
+                        {% for sigla in m.siglas.split(', ') %}
+                        <span class="badge" style="margin-right: 4px; background: #e0f2fe; color: #0284c7;">{{ sigla
+                            }}</span>
+                        {% endfor %}
+                    </td>
+                    <td style="text-align: center;">{{ m.qtd_campus }}</td>
+                    <td
+                        style="text-align: center; font-weight: bold; color: var(--success-color); background: #f0fdf4;">
+                        {{ m.total_ativos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+</div>
+{% endblock %}

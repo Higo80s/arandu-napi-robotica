@@ -1,0 +1,131 @@
+/* theme-msdos.css - Retro Terminal Theme */
+:root.msdos-theme {
+    /* Backgrounds */
+    --bg-color: #000000;
+    --sidebar-bg: #000000;
+    --card-bg: #000000;
+    --input-bg: #000000;
+    
+    /* Text & Accents (Green Phosphor) */
+    --primary-color: #00ff00;
+    --primary-hover: #00cc00;
+    --secondary-color: #00ff00;
+    --text-color: #00ff00;
+    --text-muted: #00aa00;
+    
+    /* Borders */
+    --border-color: #00ff00;
+    --hover-bg: #003300;
+    
+    /* Flat Design */
+    --box-shadow: none;
+    --border-radius: 0px;
+}
+
+/* Global Font Override */
+.msdos-theme body,
+.msdos-theme input,
+.msdos-theme select,
+.msdos-theme textarea,
+.msdos-theme button {
+    font-family: 'Courier New', Courier, monospace !important;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    letter-spacing: 0.5px;
+}
+
+/* Layout overrides */
+.msdos-theme .sidebar {
+    border-right: 2px solid var(--border-color);
+    background-color: var(--sidebar-bg);
+}
+.msdos-theme .sidebar .nav-link {
+    color: var(--text-color);
+}
+.msdos-theme .topbar {
+    border-bottom: 2px solid var(--border-color);
+    background: transparent;
+}
+.msdos-theme .brand h2 {
+    text-transform: uppercase;
+    font-weight: bold;
+}
+.msdos-theme .brand h2::before {
+    content: "C:\\> ";
+}
+
+/* Elements - Hard square borders */
+.msdos-theme .card,
+.msdos-theme .stat-card,
+.msdos-theme .modal-content {
+    border: 2px solid var(--border-color) !important;
+    border-radius: 0 !important;
+    background-color: #000;
+    box-shadow: none !important;
+}
+
+.msdos-theme .form-control,
+.msdos-theme .filter-input {
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    background: #000;
+    color: var(--text-color);
+}
+.msdos-theme .form-control:focus,
+.msdos-theme .filter-input:focus {
+    outline: 2px solid var(--border-color);
+    background: #001a00;
+}
+
+/* Buttons */
+.msdos-theme .btn {
+    border: 2px solid var(--primary-color);
+    border-radius: 0;
+    background: transparent;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+}
+.msdos-theme .btn:hover {
+    background: var(--primary-color);
+    color: #000;
+}
+
+/* Tables */
+.msdos-theme table {
+    border: 1px solid var(--border-color);
+}
+.msdos-theme th, .msdos-theme td {
+    border-color: var(--border-color);
+    background: #000;
+    color: var(--text-color);
+}
+.msdos-theme thead th {
+    border-bottom: 2px solid var(--border-color) !important;
+    text-transform: uppercase;
+}
+
+/* Nav Links */
+.msdos-theme .nav-link {
+    border-radius: 0;
+}
+.msdos-theme .nav-link:hover,
+.msdos-theme .nav-link.active {
+    background-color: var(--primary-color);
+    color: #000;
+}
+.msdos-theme .nav-link:hover *,
+.msdos-theme .nav-link.active * {
+    color: #000 !important;
+}
+
+/* Custom Selection */
+::selection {
+    background: var(--primary-color);
+    color: #000;
+}
+.msdos-theme ::selection {
+    background: #00ff00;
+    color: #000;
+}

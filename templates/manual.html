@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="top bar">
+    <h1>📖 Manual do Sistema - Arandu</h1>
+    <p style="color: var(--text-muted);">Guia completo de uso do sistema de gestão de editais</p>
+</div>
+
+<style>
+    .manual-content {
+        max-width: 900px;
+        margin: 2rem auto;
+        font-size: 1rem;
+        line-height: 1.7;
+    }
+
+    .manual-nav {
+        position: sticky;
+        top: 20px;
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .manual-nav h3 {
+        margin-top: 0;
+        font-size: 1.1rem;
+    }
+
+    .manual-nav ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .manual-nav li {
+        margin: 0.5rem 0;
+    }
+
+    .manual-nav a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .manual-nav a:hover {
+        text-decoration: underline;
+    }
+
+    .section {
+        background: var(--card-bg);
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .section h2 {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section h3 {
+        margin-top: 1.5rem;
+        color: var(--text-color);
+    }
+
+    .section code {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+        color: #c7254e;
+    }
+
+    .section kbd {
+        background: #333;
+        color: #fff;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9em;
+    }
+
+    .alert-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="manual-content">
+
+    <!-- Navegação Rápida -->
+    <div class="manual-nav">
+        <h3>📑 Índice</h3>
+        <ul>
+            <li><a href="#intro">1. Introdução</a></li>
+            <li><a href="#login">2. Login e Primeiro Acesso</a></li>
+            <li><a href="#cadastro">3. Cadastro de Bolsistas</a></li>
+            <li><a href="#dados-sociais">4. Módulo de Dados Sociais (Novo)</a></li>
+            <li><a href="#relatorios">5. Geração de Relatórios</a></li>
+            <li><a href="#proap">6. Gestão Financeira (PROAP)</a></li>
+            <li><a href="#dashboard">7. Dashboard Analytics</a></li>
+            <li><a href="#faq">8. FAQ (Perguntas Frequentes)</a></li>
+        </ul>
+    </div>
+
+    <!-- Seção 1: Introdução -->
+    <div class="section" id="intro">
+        <h2>1. Introdução ao Sistema Arandu</h2>
+        <p><strong>Arandu</strong> é o sistema de gestão de editais de fomento da UTFPR/PROPPG. Ele permite:</p>
+        <ul>
+            <li>📝 Gerenciar editais de bolsas (Mestrado, Doutorado, Pós-Doc)</li>
+            <li>👥 Cadastrar e acompanhar discentes e residentes</li>
+            <li>📊 Gerar relatórios estratégicos e exportações</li>
+            <li>🔐 Controle de acesso por perfis (Admin, Coordenador, Visualizador)</li>
+        </ul>
+    </div>
+
+    <!-- Seção 2: Login -->
+    <div class="section" id="login">
+        <h2>2. Login e Primeiro Acesso</h2>
+
+        <h3>Acessando pela primeira vez</h3>
+        <p>Se você é um novo usuário criado pelo administrador:</p>
+        <ol>
+            <li>Acesse <code>http://[endereço-do-sistema]/auth/login</code></li>
+            <li>Digite seu <strong>e-mail institucional</strong> e a <strong>senha temporária</strong></li>
+            <li>Você será redirecionado para <strong>trocar a senha</strong> obrigatoriamente</li>
+            <li>Escolha uma senha forte (mínimo 8 caracteres, com letras e números)</li>
+        </ol>
+
+        <div class="alert-box">
+            <strong>⚠️ Importante:</strong> A senha temporária deve ser trocada no primeiro login por questões de
+            segurança.
+        </div>
+
+        <h3>Esqueceu a senha?</h3>
+        <p>Entre em contato com o administrador do sistema para resetar sua senha.</p>
+    </div>
+
+    <!-- Seção 3: Cadastro de Bolsistas -->
+    <div class="section" id="cadastro">
+        <h2>3. Como Cadastrar um Bolsista</h2>
+
+        <h3>Passo a Passo</h3>
+        <ol>
+            <li>No menu lateral, clique em <strong>Discentes</strong> (ou <strong>Pós-Doutorado</strong> para
+                residentes)</li>
+            <li>Clique no botão <strong>+ Novo Bolsista</strong></li>
+            <li>Preencha os campos obrigatórios:
+                <ul>
+                    <li><strong>Nome Completo</strong></li>
+                    <li><strong>CPF</strong> (apenas números)</li>
+                    <li><strong>Edital</strong> (selecione da lista)</li>
+                    <li><strong>Modalidade</strong> (Mestrado/Doutorado/Pós-Doc)</li>
+                    <li><strong>Data Início da Bolsa</strong></li>
+                    <li><strong>Duração (em meses)</strong></li>
+                </ul>
+            </li>
+            <li>Preencha dados bancários (Banco, Agência, Conta)</li>
+            <li>Clique em <strong>Salvar</strong></li>
+        </ol>
+
+        <h3>Campos Opcionais Importantes</h3>
+        <ul>
+            <li><strong>Orientador:</strong> Nome do professor orientador</li>
+            <li><strong>Processo SEI:</strong> Número do processo administrativo</li>
+            <li><strong>Comentários:</strong> Observações gerais</li>
+        </ul>
+
+        <div class="alert-box">
+            <strong>💡 Dica:</strong> O campo "Data Fim" é calculado automaticamente baseado na data de início e
+            duração.
+        </div>
+    </div>
+
+    <!-- Seção: Dados Sociais (NOVO) -->
+    <div class="section" id="dados-sociais">
+        <h2>4. Módulo de Dados Sociais (Novo)</h2>
+        <p>Desenvolvido para atender às necessidades de coleta de dados visando políticas de ações afirmativas.</p>
+
+        <h3>Como Preencher</h3>
+        <ol>
+            <li>Na tela de <strong>Edição do Bolsista</strong>, localize o botão azul <strong>📊 Dados Sociais</strong>.
+            </li>
+            <li>Um formulário modal será aberto com 4 blocos:
+                <ul>
+                    <li><strong>Identidade:</strong> Raça, cor, gênero e PcD.</li>
+                    <li><strong>Indígenas/Comunidades:</strong> Dados de etnia e línguas maternas.</li>
+                    <li><strong>Trajetória:</strong> Histórico escolar e cotas anteriores.</li>
+                    <li><strong>Permanência:</strong> Indicadores socioeconômicos e dependentes.</li>
+                </ul>
+            </li>
+            <li>Preencha e clique em <strong>Salvar</strong>. Os dados são salvos via AJAX sem recarregar a página.</li>
+        </ol>
+
+        <div class="alert-box" style="background: #e0f2fe; border-left-color: #0284c7;">
+            <strong>ℹ️ Informação:</strong> Estes dados são sensíveis e usados apenas para fins estatísticos e de
+            planejamento institucional.
+        </div>
+    </div>
+
+    <!-- Seção 4: Relatórios -->
+    <div class="section" id="relatorios">
+        <h2>4. Geração de Relatórios</h2>
+
+        <h3>Tipos de Relatórios Disponíveis</h3>
+
+        <h4>📄 Relatório Individual (Por Bolsista)</h4>
+        <p>Para gerar o relatório de um bolsista específico:</p>
+        <ol>
+            <li>Vá em <strong>Discentes</strong> ou <strong>Pós-Doutorado</strong></li>
+            <li>Na lista, clique no ícone <strong>🖨️ Imprimir</strong> ao lado do nome</li>
+            <li>O relatório abrirá em nova aba (pronto para impressão ou PDF)</li>
+        </ol>
+
+        <h4>📊 Relatório de Pagamento Mensal</h4>
+        <ol>
+            <li>Acesse <strong>Relatórios</strong> no menu</li>
+            <li>Escolha o mês de referência</li>
+            <li>Selecione o formato: <strong>Excel</strong> ou <strong>PDF</strong></li>
+            <li>Clique em <strong>Gerar</strong></li>
+        </ol>
+
+        <h4>📑 Relatório Analítico de Dados Sociais</h4>
+        <p>Gera um PDF completo com gráficos e estatísticas demográficas.</p>
+        <ol>
+            <li>Vá em <strong>Relatórios</strong>.</li>
+            <li>Localize o card "Dados Socioeconômicos".</li>
+            <li>Clique em <strong>Baixar PDF Analítico</strong>.</li>
+        </ol>
+
+        <h4>📈 Dashboard Analytics (Novo)</h4>
+        <p>Para visualizar gráficos e KPIs em tempo real:</p>
+        <ol>
+            <li>No menu <strong>Administração</strong>, clique em <strong>Analytics (Novo)</strong></li>
+            <li>Visualize:
+                <ul>
+                    <li>Total de Bolsas Ativas</li>
+                    <li>Distribuição por Modalidade (Gráfico Pizza)</li>
+                    <li>Evolução Temporal (Gráfico Linha)</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <!-- Seção 5: Dashboard -->
+    <div class="section" id="dashboard">
+        <h2>5. Dashboard Analytics</h2>
+
+        <p>O Dashboard Analytics fornece uma visão estratégica do programa de bolsas em tempo real.</p>
+
+        <h3>Funcionalidades</h3>
+        <ul>
+            <li><strong>KPIs Principais:</strong> Total de bolsistas ativos, inativos e editais cadastrados</li>
+            <li><strong>Gráfico de Distribuição:</strong> Visualize a quantidade de bolsas por modalidade (M/D/Pós-Doc)
+            </li>
+            <li><strong>Gráfico de Evolução:</strong> Acompanhe o crescimento de concessões ao longo do tempo</li>
+        </ul>
+
+        <h3>Imprimindo o Dashboard</h3>
+        <p>Use o botão <kbd>Ctrl + P</kbd> ou o ícone de impressão no navegador para salvar uma versão PDF.</p>
+    </div>
+
+    <!-- Seção 6: FAQ -->
+    <div class="section" id="faq">
+        <h2>6. Perguntas Frequentes (FAQ)</h2>
+
+        <h3>❓ Como desativar um bolsista?</h3>
+        <p>Na tela de edição do bolsista, desmarque o checkbox <strong>"Ativo"</strong>, preencha o motivo do
+            desligamento e a data.</p>
+
+        <h3>❓ Posso cadastrar um CPF mais de uma vez?</h3>
+        <p>Sim, mas apenas <strong>um registro por CPF pode estar ativo</strong>. Isso permite histórico de mudanças de
+            nível (ex: Mestrado → Doutorado).</p>
+
+        <h3>❓ Como alterar minha senha?</h3>
+        <p>Clique no seu nome no canto superior direito e depois em <strong>"Alterar Senha"</strong>.</p>
+
+        <h3>❓ O que fazer se o sistema está lento?</h3>
+        <p>A partir da Fase 4, o sistema conta com índices de performance. Se ainda assim notar lentidão, contate o
+            administrador.</p>
+
+        <h3>❓ Como exportar dados para Excel?</h3>
+        <p>Vá em <strong>Relatórios</strong> e escolha a opção desejada (Pagamento, Histórico, etc.). Todos têm opção de
+            download em <code>.xlsx</code>.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: var(--card-bg); border-radius: 8px;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">
+            📧 <strong>Suporte:</strong> Em caso de dúvidas, entre em contato com a PROPPG.
+        </p>
+    </div>
+
+</div>
+{% endblock %}

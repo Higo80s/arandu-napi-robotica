@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Fluid Responsiveness for both PC and Mobile */
+    .topbar {
+        flex-wrap: wrap;
+        gap: 1.5rem !important;
+        align-items: center !important;
+    }
+    
+    .topbar h1 {
+        margin-right: auto;
+    }
+
+    .topbar form {
+        flex-grow: 1;
+        max-width: 400px;
+    }
+
+    @media (max-width: 768px) {
+        .topbar {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 15px !important;
+        }
+        .topbar h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        .actions-div {
+            flex-direction: column;
+            width: 100%;
+        }
+        .actions-div .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="topbar">
+    <h1>Bolsistas</h1>
+
+    <form method="GET" action="{{ url_for('bolsistas.index') }}" style="display: flex; align-items: center; gap: 10px;">
+        <!-- Preserve Search when changing Edital -->
+        <input type="hidden" name="q" value="{{ search_q or '' }}">
+
+        <select name="edital_id" onchange="this.form.submit()"
+            style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
+            <option value="">Todos os Editais</option>
+            {% for edital in editais %}
+            <option value="{{ edital.id }}" {% if selected_edital==edital.id %}selected{% endif %}>
+                Edital {{ edital.numero }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <!-- Search Form -->
+    <form method="GET" action="{{ url_for('bolsistas.index') }}" style="display: flex; align-items: center; gap: 5px;">
+        {% if selected_edital %}
+        <input type="hidden" name="edital_id" value="{{ selected_edital }}">
+        {% endif %}
+        <input type="text" name="q" placeholder="Buscar Nome, CPF, Prog..." value="{{ search_q or '' }}"
+            style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color); width: 220px;">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if search_q %}
+        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital) }}" class="btn btn-danger"
+            style="text-decoration: none;">×</a>
+        {% endif %}
+    </form>
+
+    {% if selected_edital %}
+    <form method="POST" action="{{ url_for('bolsistas.limpar_edital', edital_id=selected_edital) }}"
+        style="display: inline-block;"
+        onsubmit="return confirm('ATENÇÃO: Você está prestes a EXCLUIR TODOS os bolsistas deste edital. \n\nIsso é irreversível.\n\nTem certeza absoluta?');">
+        <button type="submit" class="btn btn-danger">
+            Limpar Edital
+        </button>
+    </form>
+    {% endif %}
+
+    <div class="actions-div" style="display: flex; gap: 10px; align-items: center;">
+        <a href="{{ url_for('bolsistas.sincronizar') }}" class="btn btn-primary btn-sm"
+            style="text-decoration: none; padding: 0.4rem 0.9rem; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+            🔄 Sincronizar Acadêmico
+        </a>
+        <a href="{{ url_for('bolsistas.conflitos') }}" class="btn btn-primary btn-sm"
+            style="text-decoration: none; padding: 0.4rem 0.9rem; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+            ⚖️ Conflitos
+        </a>
+        <a href="{{ url_for('bolsistas.importar') }}" class="btn btn-primary btn-sm">Importar (Excel/CSV)</a>
+        <a href="{{ url_for('bolsistas.novo') }}" class="btn btn-primary btn-sm">
+            <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Novo(a) Bolsista
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 1rem;">
+                        {% set next_order_nome = 'desc' if current_sort == 'nome' and current_order == 'asc' else 'asc' %}
+                        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='nome', order=next_order_nome) }}"
+                            style="color: var(--text-color); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                            Nome
+                            {% if current_sort == 'nome' %}
+                            <span style="font-size: 0.8rem;">{{ '↓' if current_order == 'asc' else '↑' }}</span>
+                            {% else %}
+                            <span style="font-size: 0.8rem; opacity: 0.3;">⇅</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding: 1rem;">
+                        {% set next_order_matricula = 'desc' if current_sort == 'matricula' and current_order == 'asc' else 'asc' %}
+                        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='matricula', order=next_order_matricula) }}"
+                            style="color: var(--text-color); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                            Matrícula
+                            {% if current_sort == 'matricula' %}
+                            <span style="font-size: 0.8rem;">{{ '↓' if current_order == 'asc' else '↑' }}</span>
+                            {% else %}
+                            <span style="font-size: 0.8rem; opacity: 0.3;">⇅</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding: 1rem;">
+                        {% set next_order_nivel = 'desc' if current_sort == 'nivel' and current_order == 'asc' else
+                        'asc' %}
+                        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='nivel', order=next_order_nivel) }}"
+                            style="color: var(--text-color); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                            Nível
+                            {% if current_sort == 'nivel' %}
+                            <span style="font-size: 0.8rem;">{{ '↓' if current_order == 'asc' else '↑' }}</span>
+                            {% else %}
+                            <span style="font-size: 0.8rem; opacity: 0.3;">⇅</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding: 1rem;">Instituição</th>
+                    <th style="padding: 1rem;">Nº Formulário</th>
+                    <th style="padding: 1rem;">
+                        {% set next_order_edital = 'desc' if current_sort == 'edital' and current_order == 'asc' else 'asc' %}
+                        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='edital', order=next_order_edital) }}"
+                            style="color: var(--text-color); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                            Edital
+                            {% if current_sort == 'edital' %}
+                            <span style="font-size: 0.8rem;">{{ '↓' if current_order == 'asc' else '↑' }}</span>
+                            {% else %}
+                            <span style="font-size: 0.8rem; opacity: 0.3;">⇅</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding: 1rem;">Vigência</th>
+                    <th style="padding: 1rem;">
+                        <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='status', order=next_order_status) }}"
+                            class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                            Status
+                            {% if current_sort == 'status' and current_order in ['ativo', 'inativo', 'finalizando', 'suspenso', 'pendente'] %}
+                            {% if current_order == 'ativo' %} <span
+                                style="color: var(--success-color); font-weight: bold;">✓ Ativos</span>{% endif %}
+                            {% if current_order == 'inativo' %} <span style="color: white; font-weight: bold;">✓
+                                Inativos</span>{% endif %}
+                            {% if current_order == 'finalizando' %} <span style="color: #fbbf24; font-weight: bold;">✓
+                                Finalizando</span>{% endif %}
+                            {% if current_order == 'suspenso' %} <span style="color: #0ea5e9; font-weight: bold;">✓
+                                Suspenso</span>{% endif %}
+                            {% if current_order == 'pendente' %} <span style="color: #f59e0b; font-weight: bold;">✓
+                                PENDENTE</span>{% endif %}
+                            {% else %}
+                            <span style="opacity: 0.5;">⇅</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding: 1rem;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bolsista in bolsistas %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 1rem;">{{ bolsista.nome }}</td>
+                    <td style="padding: 1rem; font-family: monospace; font-size: 0.85rem;">
+                        {% if bolsista.matricula %}
+                        <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                            {{ bolsista.matricula }}
+                        </span>
+                        {% else %}
+                        <span style="color: #9ca3af;">---</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem;">{{ bolsista.modalidade.nivel }}</td>
+                    <td style="padding: 1rem;">
+                        <span class="small fw-bold">{{ bolsista.get_instituicao }}</span>
+                        {% if bolsista.programa_link %}
+                        <div class="text-muted small">{{ bolsista.programa_link.sigla_programa }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem;">
+                        {% if bolsista.numero_formulario %}
+                        {{ bolsista.numero_formulario }}
+                        {% else %}
+                        <span style="opacity: 0.5;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem;">{{ bolsista.edital.numero }}</td>
+                    <td style="padding: 1rem;">{{ bolsista.data_inicio_bolsa|date_br }} a {{
+                        bolsista.data_fim_bolsa|date_br }}</td>
+                    <td style="padding: 1rem;">
+                        {% set display = bolsista.get_status_display() %}
+                        <span style="padding: 0.35rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; background: {{ display.bg }}; color: {{ display.color }}; border: 1px solid rgba(0,0,0,0.05);">
+                            {% if display.icon %}
+                            <i data-lucide="{{ display.icon }}" style="width: 14px; height: 14px;"></i>
+                            {% endif %}
+                            {{ display.label }}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem; display: flex; gap: 10px;">
+                        <a href="{{ url_for('bolsistas.editar', id=bolsista.id) }}"
+                            style="color: var(--primary-color);">Editar</a>
+                        <form action="{{ url_for('bolsistas.excluir', id=bolsista.id) }}" method="POST"
+                            onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                            <button type="submit" class="btn-link-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="padding: 2rem; text-align: center; color: var(--text-muted);">Nenhum
+                        bolsista
+                        cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3 style="margin-bottom: 1.5rem; color: var(--text-color); font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="bar-chart-3" style="width: 18px; height: 18px; color: var(--primary-color);"></i>
+            Resumo Geral
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Status Breakdown -->
+            <div>
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; font-weight: 600;">Status dos Bolsistas</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; text-align: center; background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total</span>
+                        <strong style="font-size: 1.25rem; color: var(--text-color);">{{ total_registros }}</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: var(--success-color); text-transform: uppercase;">Ativos</span>
+                        <strong style="font-size: 1.25rem; color: var(--success-color);">{{ total_ativos }}</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: var(--danger-color); text-transform: uppercase;">Inativos</span>
+                        <strong style="font-size: 1.25rem; color: var(--danger-color);">{{ total_inativos }}</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: #d97706; text-transform: uppercase;">Finalizando</span>
+                        <strong style="font-size: 1.25rem; color: #d97706;">{{ total_finalizando }}</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: #0ea5e9; text-transform: uppercase;">Suspenso</span>
+                        <strong style="font-size: 1.25rem; color: #0ea5e9;">{{ total_suspenso }}</strong>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: #f59e0b; text-transform: uppercase;">Pendente</span>
+                        <strong style="font-size: 1.25rem; color: #f59e0b;">{{ total_pendente }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Academic Level Breakdown -->
+            <div>
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; font-weight: 600;">Níveis Acadêmicos</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; text-align: center; background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    {% for nivel, total in resumo_niveis.items() | sort %}
+                    <div>
+                        <span style="display: block; font-size: 0.75rem; color: var(--primary-color); text-transform: uppercase; font-weight: 500;">{{ nivel }}</span>
+                        <strong style="font-size: 1.25rem; color: var(--text-color);">{{ total }}</strong>
+                    </div>
+                    {% else %}
+                    <div style="grid-column: 1 / -1; color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">Nenhum nível cadastrado.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}

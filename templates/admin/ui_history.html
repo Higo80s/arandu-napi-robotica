@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1">🕒 Histórico da Interface (Memento)</h2>
+            <p class="text-muted small">Gerencie pontos de restauração e desfaça alterações visuais.</p>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+            {{ icon('arrow-left', size=16, class='mr-1') }} Voltar ao Painel
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Data/Hora</th>
+                            <th>Autor</th>
+                            <th>Descrição</th>
+                            <th>Alterações Salvas</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if mementos %}
+                            {% for memento in mementos %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ memento.timestamp.strftime('%d/%m/%Y') }}</div>
+                                    <div class="text-muted small">{{ memento.timestamp.strftime('%H:%M:%S') }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ memento.user.nome if memento.user else 'Sistema' }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 250px;">
+                                        {{ memento.description or 'Sem descrição' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary rounded-pill">
+                                        {{ memento.ui_snapshot.keys() | list | length }} chaves
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="{{ url_for('ui_editor.restore', memento_id=memento.id) }}" method="POST" 
+                                          onsubmit="return confirm('Tem certeza que deseja restaurar a interface para este estado? Um backup do estado atual será criado automaticamente.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-warning btn-sm">
+                                            {{ icon('rotate-ccw', size=14, class='mr-1') }} Restaurar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="text-muted">
+                                        {{ icon('clock', size=48, class='mb-3 opacity-25') }}
+                                        <p>Nenhum ponto de restauração encontrado.</p>
+                                        <small>As entradas aparecerão aqui assim que você salvar alterações no Editor Visual.</small>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4 alert alert-info border-0 shadow-sm d-flex align-items-center">
+        {{ icon('info', size=24, class='me-3 text-info') }}
+        <div>
+            <strong>Dica de Segurança:</strong> 
+            Sempre que você clica em "Restaurar", o sistema cria automaticamente um novo snapshot do estado atual ("Backup antes de restaurar"). 
+            Isso permite que você desfaça a própria restauração se algo der errado.
+        </div>
+    </div>
+</div>
+{% endblock %}

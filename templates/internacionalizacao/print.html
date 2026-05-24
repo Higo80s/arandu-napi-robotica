@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Internacionalização - Gestão de Editais</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+            color: #111;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #111827;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 0.5rem;
+        }
+
+        h2,
+        h3 {
+            color: #374151;
+            margin-top: 1.5rem;
+        }
+
+        .card-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            flex: 1;
+            text-align: center;
+            border-radius: 4px;
+            background: #f9fafb;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2563eb;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .table th {
+            background: #f3f4f6;
+        }
+
+        .table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .stat-box {
+                border: 1px solid #000;
+            }
+
+            /* Force background colors print */
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Break pages if needed */
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', { 'packages': ['geochart', 'bar', 'corechart'] });
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+            // Map
+            var mapData = google.visualization.arrayToDataTable({{ map_data| tojson }});
+        var mapOptions = { colorAxis: { colors: ['#bfdbfe', '#1d4ed8'] }, datalessRegionColor: '#f3f4f6' };
+        var chartMap = new google.visualization.GeoChart(document.getElementById('regions_div'));
+        chartMap.draw(mapData, mapOptions);
+
+        // Outbound
+        var outRaw = {{ top_destinos| tojson }};
+        if (outRaw.length > 0) {
+            var outData = [['País', 'Bolsistas']];
+            outRaw.forEach(i => outData.push(i));
+            var chartOut = new google.visualization.BarChart(document.getElementById('bar_outbound'));
+            chartOut.draw(google.visualization.arrayToDataTable(outData), { title: 'Top Destinos (Saídas)', legend: { position: 'none' } });
+        }
+
+        // Inbound
+        var inRaw = {{ top_origens| tojson }};
+        if (inRaw.length > 0) {
+            var inData = [['País', 'Bolsistas']];
+            inRaw.forEach(i => inData.push(i));
+            var chartIn = new google.visualization.BarChart(document.getElementById('bar_inbound'));
+            chartIn.draw(google.visualization.arrayToDataTable(inData), { title: 'Top Origens (Entradas)', legend: { position: 'none' }, colors: ['#10b981'] });
+        }
+        }
+    </script>
+</head>
+
+<body>
+    <div class="no-print"
+        style="margin-bottom: 2rem; padding: 1rem; background: #e5e7eb; border-radius: 8px; display: flex; justify-content: space-between;">
+        <div>
+            <button onclick="window.print()"
+                style="padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">🖨️
+                Imprimir / Salvar PDF</button>
+            <span style="margin-left: 1rem; color: #555;">(Use a opção "Salvar como PDF" do navegador)</span>
+        </div>
+        <a href="{{ url_for('inter.index') }}" style="text-decoration: none; color: #2563eb;">&larr;
+            Voltar ao Dashboard</a>
+    </div>
+
+    <h1>Relatório de Internacionalização</h1>
+    <p style="margin-bottom: 2rem;">
+        <strong>Gerado em:</strong>
+        <script>document.write(new Date().toLocaleDateString())</script> <br>
+        <strong>Gestão de Editais - PROPPG/UTFPR</strong>
+    </p>
+
+    <!-- KPI Cards -->
+    <div class="card-row">
+        <div class="stat-box">
+            <span class="stat-val">{{ stats.total_ativos }}</span>
+            <span class="stat-label">Total Ativos</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val">{{ stats.saida_ativos }}</span>
+            <span class="stat-label">Saídas (BR)</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val">{{ stats.entrada_ativos }}</span>
+            <span class="stat-label">Entradas (Ext)</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val">{{ stats.total_paises }}</span>
+            <span class="stat-label">Países</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val">{{ stats.total_inst }}</span>
+            <span class="stat-label">Inst. Parceiras</span>
+        </div>
+    </div>
+
+    <!-- Charts Visualization -->
+    <div style="margin-bottom: 2rem; border: 1px solid #ddd; padding: 1rem;">
+        <h3>Distribuição Global</h3>
+        <div id="regions_div" style="width: 100%; height: 400px;"></div>
+    </div>
+
+    <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
+        <div style="flex: 1; border: 1px solid #ddd; padding: 1rem;">
+            <div id="bar_outbound" style="height: 300px;"></div>
+        </div>
+        <div style="flex: 1; border: 1px solid #ddd; padding: 1rem;">
+            <div id="bar_inbound" style="height: 300px;"></div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Tables -->
+    <h3>Ranking de Interesse (Entradas - Cursos e Locais)</h3>
+    <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
+        <div style="flex: 1;">
+            <h4>Cursos Mais Procurados</h4>
+            <ul style="list-style: none; padding: 0;">
+                {% for c, n in top_cursos %}
+                <li style="border-bottom: 1px solid #eee; padding: 4px 0;"><strong>{{ c }}</strong>: {{ n }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div style="flex: 1;">
+            <h4>Campuses Mais Procurados</h4>
+            <ul style="list-style: none; padding: 0;">
+                {% for c, n in top_campus %}
+                <li style="border-bottom: 1px solid #eee; padding: 4px 0;"><strong>{{ c }}</strong>: {{ n }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <h3>Detalhamento de Mobilidade</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Bolsista</th>
+                <th>Programa</th>
+                <th>Fluxo</th>
+                <th>País</th>
+                <th>Instituição</th>
+                <th>Período</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in mobilidades %}
+            <tr>
+                <td>{{ m.bolsista.nome }}</td>
+                <td>{{ m.bolsista.programa_link.sigla_programa if m.bolsista.programa_link else '-' }}</td>
+                <td>{{ m.tipo_fluxo|upper }}</td>
+                <td>{{ m.pais_destino }}</td>
+                <td>{{ m.instituicao_destino }}</td>
+                <td>{{ m.data_inicio|date_br }} - {{ m.data_fim|date_br }}</td>
+                <td>{{ 'Ativo' if m.ativo_hoje else 'Encerrado' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="no-print" style="text-align: center; margin-top: 3rem; color: #777;">
+        <p>Fim do Relatório</p>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+Lendo universal_dump_20260129_0148.json...
+Conectado ao Postgres. Recriando Tabelas...
+Inserindo 2 usuarios...
+Inserindo 14 campus...
+Inserindo 109 programas...
+Inserindo 24 editais...
+Traceback (most recent call last):
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 2125, in _exec_insertmany_context
+    dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~^
+        cursor,
+        ^^^^^^^
+    ...<2 lines>...
+        context,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.StringDataRightTruncation: ERRO:  valor é muito longo para tipo character varying(50)
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\higosantos\Documents\gestao_editais\gestao_editais_novo\restore_minimal.py", line 71, in <module>
+    restore_data()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\Documents\gestao_editais\gestao_editais_novo\restore_minimal.py", line 66, in restore_data
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\scoping.py", line 597, in commit
+    return self._proxied.commit()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<string>", line 2, in commit
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 1311, in commit
+    self._prepare_impl()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "<string>", line 2, in _prepare_impl
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 1286, in _prepare_impl
+    self.session.flush()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 4331, in flush
+    self._flush(objects)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 4466, in _flush
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py", line 4427, in _flush
+    flush_context.execute()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+    ~~~~~~~~~~~^^^^^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.mapper,
+        ^^^^^^^^^^^^
+        uow.states_for_mapper_hierarchy(self.mapper, False, False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        uow,
+        ^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        base_mapper,
+        ^^^^^^^^^^^^
+    ...<3 lines>...
+        insert,
+        ^^^^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\persistence.py", line 1048, in _emit_insert_statements
+    result = connection.execute(
+        statement, multiparams, execution_options=execution_options
+    )
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 1844, in _execute_context
+    return self._exec_insertmany_context(dialect, context)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 2133, in _exec_insertmany_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e,
+        ^^
+    ...<4 lines>...
+        is_sub_exec=True,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py", line 2125, in _exec_insertmany_context
+    dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~^
+        cursor,
+        ^^^^^^^
+    ...<2 lines>...
+        context,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\higosantos\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.DataError: (psycopg2.errors.StringDataRightTruncation) ERRO:  valor é muito longo para tipo character varying(50)
+
+[SQL: INSERT INTO editais (id, numero, descricao, agencia, codigo_projeto, descricao_projeto, processo_sei, comentarios, data_inicio, data_fim, prestacao_contas, orcamento_total) VALUES (%(id__0)s, %(numero__0)s, %(descricao__0)s, %(agencia__0)s, %(codigo_ ... 5708 characters truncated ... ios__23)s, %(data_inicio__23)s, %(data_fim__23)s, %(prestacao_contas__23)s, %(orcamento_total__23)s)]
+[parameters: {'descricao__0': 'Bolsa institucional', 'numero__0': 'Recursos Próprios', 'comentarios__0': 'Requisições mensais via SIORG - https://sistemas2.utfpr.edu.br/url/1866. \r\n\r\nIN 32/23 - https://sei.utfpr.edu.br/sei/publicacoes/controlador_publicacoes.php?acao=publicacao_visualizar&id_documento=4009551&id_orgao_publicacao=0', 'prestacao_contas__0': False, 'id__0': 1, 'codigo_projeto__0': 'RP001', 'data_fim__0': None, 'processo_sei__0': '23064.054223/2022-61', 'orcamento_total__0': 2218944.0, 'data_inicio__0': None, 'agencia__0': 'UTFPR', 'descricao_projeto__0': 'Programas não financiáveis diretamente pela CAPES', 'descricao__1': 'Mestrado e doutorado internacional', 'numero__1': '14/25 (Mestrado e doutorado internacional)', 'comentarios__1': 'parcela de 3500 - mestrado\r\n---\r\nLISTA DE ESPERA DOUTORADO:\r\nFormulário de candidatura_Anexo I_Gabrielly (5238116)\r\nFormulário de candidatura ... (55 characters truncated) ... e Severo Andrade Aquino\r\n---\r\nProcesso para pagamentos avulsos do mestrado 23064.001454/2026-04, Processos do Bloco Interno 255247\r\n---\r\n\r\n', 'prestacao_contas__1': False, 'id__1': 2, 'codigo_projeto__1': '', 'data_fim__1': None, 'processo_sei__1': '23064.027066/2025-64', 'orcamento_total__1': 2218944.0, 'data_inicio__1': None, 'agencia__1': 'CNPq ', 'descricao_projeto__1': 'A Pró-Reitoria de Pesquisa e Pós-Graduação (PROPPG) da UTFPR lançou o Edital n.º 14/2025 para selecionar 20 discentes (10 de Mestrado e 10 de Doutora ... (529 characters truncated) ... ia SEI, com análise de mérito do Plano de Trabalho e produção, com o prazo de inscrição para a primeira rodada se encerrando em 05 de agosto de 2025.', 'descricao__2': 'Sênior', 'numero__2': '21/23 - 1357 - RT-FA - CONV 337.2023 - BOLSA SÊNIOR', 'comentarios__2': '', 'prestacao_contas__2': False, 'id__2': 3, 'codigo_projeto__2': '1357 - RT-FA - CONV 337.2023 - BOLSA SÊNIOR - 3793-1 14341-3', 'data_fim__2': datetime.date(2027, 12, 18), 'processo_sei__2': '23064.043078/2023-74', 'orcamento_total__2': 0.0, 'data_inicio__2': datetime.date(2023, 12, 18), 'agencia__2': 'Fundação araucária', 'descricao_projeto__2': 'PROGRAMA DE PERMANÊNCIA DE DOCENTES E PESQUISADORES SÊNIORES DA UTFPR', 'descricao__3': 'Doutorado Sanduíche no Exterior', 'numero__3': '23/2025 (PDSE)', 'comentarios__3': '', 'prestacao_contas__3': False, 'id__3': 4, 'codigo_projeto__3': '', 'data_fim__3': None, 'processo_sei__3': '23064.042834/2025-18', 'orcamento_total__3': 0.0, 'data_inicio__3': None, 'agencia__3': 'CAPES', 'descricao_projeto__3': 'seleção interna dos(as) candidatos(as) ao Programa de Doutorado Sanduíche no Exterior - PDSE da CAPES – Edital 17/2025, conforme Edital Nº 23/2025 -  ... (42 characters truncated) ... humanos de alto nível por meio da concessão de uma bolsa de Doutorado Sanduíche para realizar estágio doutoral no exterior com início no ano de 2026.', 'descricao__4': 'Edital Heavy Metal', 'numero__4': '666/2025' ... 188 parameters truncated ... 'agencia__19': 'Fundação Araucária', 'descricao_projeto__19': '', 'descricao__20': 'RENAULT ', 'numero__20': '258\tRT-FA - TC 73/2019 RENAULT - 3793-1 12401-X', 'comentarios__20': '', 'prestacao_contas__20': True, 'id__20': 29, 'codigo_projeto__20': '', 'data_fim__20': datetime.date(2023, 8, 25), 'processo_sei__20': '', 'orcamento_total__20': 0.0, 'data_inicio__20': datetime.date(2019, 10, 25), 'agencia__20': 'Fundação Araucária', 'descricao_projeto__20': '', 'descricao__21': 'MESTRADO E DOUTORADO INTERNACIONAL', 'numero__21': '17/2024 - M/D INTERNACIONAL', 'comentarios__21': 'Cadastrar bolsistas', 'prestacao_contas__21': False, 'id__21': 30, 'codigo_projeto__21': '', 'data_fim__21': None, 'processo_sei__21': '23064.019287/2024-88', 'orcamento_total__21': 0.0, 'data_inicio__21': datetime.date(2024, 5, 9), 'agencia__21': 'CNPq', 'descricao_projeto__21': 'edital para a seleção de bolsistas de mestrado e doutorado para a realização de atividades em colaboração com instituições estrangeiras.\r\n\r\nDO OB ... (973 characters truncated) ... a e Pós-Graduação poderão suplementar o edital com novas bolsas de mestrado e doutorado e/ou apoios, condicionada a sua disponibilidade orçamentária.', 'descricao__22': 'Edital de Teste Doutorado', 'numero__22': '14/2025', 'comentarios__22': '', 'prestacao_contas__22': False, 'id__22': 31, 'codigo_projeto__22': 'None', 'data_fim__22': None, 'processo_sei__22': '23064.027066/2025-64', 'orcamento_total__22': 0.0, 'data_inicio__22': None, 'agencia__22': 'CNPq', 'descricao_projeto__22': 'None', 'descricao__23': 'Renault', 'numero__23': '01/2026', 'comentarios__23': '', 'prestacao_contas__23': False, 'id__23': 32, 'codigo_projeto__23': '', 'data_fim__23': None, 'processo_sei__23': '23064.001608/2026-50', 'orcamento_total__23': 691200.0, 'data_inicio__23': None, 'agencia__23': 'Fundação Araucária', 'descricao_projeto__23': 'Pré-selecionar projetos de pesquisa aderentes à Chamada Pública nº 19/2025 Fundação Araucária e Renault para construir a proposta institucional da UT ... (2805 characters truncated) ... \r\nii. 12 (doze) bolsas-empresa de mestrado (período até 12 meses);\r\n\r\niii. 01 (uma) bolsa-empresa de doutorado (período até 24 meses).\r\n\r\n '}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)

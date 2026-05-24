@@ -1,0 +1,22 @@
+=== VERIFICANDO PPGECT ===
+
+Programas encontrados: 3
+
+
+ID: 42
+Nome: Ensino de Ciência e Tecnologia
+Sigla: PPGECT
+Campus: Ponta Grossa
+Campus ID: 11
+
+ID: 67
+Nome: ENSINO DE CIÊNCIA E TECNOLOGIA
+Sigla: PPGECT
+Campus: Ponta Grossa
+Campus ID: 11
+
+ID: 126
+Nome: ENSINO DE CIÊNCIA E TECNOLOGIA
+Sigla: PPGECT
+Campus: Ponta Grossa
+Campus ID: 11

@@ -1,0 +1,1182 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Bootstrap 5 CDN Removido v23.5 para não quebrar Sidebar -->
+
+<style>
+    /* --- PREMIUM THEME AWARE v23.5 --- */
+    /* Variáveis locais removidas para obedecer ao styles.css global */
+
+    .card-stat {
+        text-align: center;
+        padding: 1.25rem;
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 110px;
+        transition: transform 0.2s;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        border-right: 2px solid var(--border-color);
+    }
+
+    body.dark-mode .card-stat {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-stat:hover {
+        transform: translateY(-4px);
+        border-color: var(--primary-color);
+    }
+
+    .card-stat p {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    .card-stat h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    body.dark-mode .table {
+        color: var(--text-color) !important;
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--border-color);
+    }
+
+    .table td {
+        white-space: normal !important;
+        word-wrap: break-word;
+        vertical-align: middle;
+        color: var(--text-color);
+        border-color: var(--border-color);
+    }
+
+    .table th {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        border-color: var(--border-color);
+    }
+
+    .section-title {
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-color);
+    }
+
+    /* Custom Chart Styles */
+    .chart-container {
+        border-radius: 12px;
+        padding: 1.5rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        height: 100%;
+        color: var(--text-color);
+    }
+    body.dark-mode .chart-container {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .bar-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .bar-item {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .bar-label {
+        min-width: 140px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .bar-track {
+        flex: 1;
+        height: 28px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+    }
+    body.dark-mode .bar-track {
+        background: var(--bg-main);
+        border: 1px solid var(--border-color);
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding-left: 10px;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+        transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .bar-count {
+        min-width: 45px;
+        text-align: right;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    /* Input/Select Premium Dark */
+    body.dark-mode .form-select, body.dark-mode .form-control {
+        background-color: var(--input-bg) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    body.dark-mode .card {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--glass-border);
+    }
+
+    /* Modal Transformations */
+    body.dark-mode .modal-content-clean, body.dark-mode .modal-content {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: var(--text-color) !important;
+    }
+
+    .modal-header-clean {
+        border-bottom: 1px solid var(--border-color);
+        background: var(--header-bg);
+        padding: 24px 32px;
+    }
+
+    .modal-body-clean {
+        padding: 32px;
+    }
+
+    .form-group-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .input-premium {
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-color) !important;
+    }
+
+    .btn-premium-primary {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 700;
+        border: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-premium-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+        color: white;
+    }
+
+    .dropdown-menu {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--card-shadow);
+    }
+
+    .dropdown-item {
+        color: var(--text-color);
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--primary-color);
+    }
+
+    /* Fix for Map Borders in Dark Mode (Google GeoCharts SVG) */
+    body.dark-mode #regions_div svg path {
+        stroke: #475569 !important; /* Steel-600 for contrast */
+        stroke-width: 0.8px;
+    }
+
+    /* Google Visualization Tooltip Dark Mode Fix */
+    body.dark-mode .google-visualization-tooltip {
+        background-color: #1e293b !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5) !important;
+        border-radius: 8px !important;
+        padding: 8px !important;
+    }
+    body.dark-mode .google-visualization-tooltip * {
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+    body.dark-mode .google-visualization-tooltip-item-list {
+        background-color: transparent !important;
+    }
+</style>
+
+<div class="content-container" style="padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="color: var(--primary-color);">Internacionalização</h1>
+            <p class="text-muted">Monitoramento de mobilidade acadêmica (Entradas e Saídas).</p>
+        </div>
+        <div>
+            <a href="{{ url_for('inter.print_view') }}" target="_blank" class="btn btn-primary btn-sm">
+                Relatório PDF</a>
+        </div>
+    </div>
+
+    <!-- MAIN CARDS (ACTIVE) -->
+    <h4
+        style="margin-bottom: 0.5rem; color: var(--text-color, #374151); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        Atualmente (Vigentes)</h4>
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card-stat" style="border-right-color: #3b82f6;">
+            <p>Total Ativos</p>
+            <h2 style="color: #3b82f6;">{{ stats.total_ativos }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #ef4444;">
+            <p>Saídas (BR)</p>
+            <h2 style="color: #ef4444;">{{ stats.saida_ativos }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #10b981;">
+            <p>Entradas (Ext)</p>
+            <h2 style="color: #10b981;">{{ stats.entrada_ativos }}</h2>
+        </div>
+    </div>
+
+    <!-- HISTORICAL CARDS -->
+    <h4
+        style="margin-bottom: 0.5rem; color: var(--text-color, #374151); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        Histórico Completo (Acumulado)</h4>
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card-stat" style="border-right-color: #6b7280;">
+            <p>Total Geral</p>
+            <h2 style="color: var(--text-color);">{{ stats.total_historico }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #ef4444;">
+            <p>Saídas (Total)</p>
+            <h2 style="color: #991b1b;">{{ stats.saida_historico }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #10b981;">
+            <p>Entradas (Total)</p>
+            <h2 style="color: #065f46;">{{ stats.entrada_historico }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #f59e0b;">
+            <p>Países</p>
+            <h2 style="color: #f59e0b;">{{ stats.total_paises }}</h2>
+        </div>
+        <div class="card-stat" style="border-right-color: #8b5cf6;">
+            <p>Inst. Parceiras</p>
+            <h2 style="color: #8b5cf6;">{{ stats.total_inst }}</h2>
+        </div>
+    </div>
+
+    <!-- MAPA & FILTER -->
+    <div class="card"
+        style="margin-bottom: 2rem; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h3 class="section-title" style="margin-bottom: 0; border: none;">Distribuição Geográfica Global</h3>
+                <p class="text-muted" style="font-size: 0.9rem; margin: 0;">Visualiza tanto destinos de brasileiros
+                    quanto origens de estrangeiros.</p>
+            </div>
+            <div>
+                <!-- FORCED DARK FONT on INPUT for Visibility -->
+                <select id="countryFilter" class="form-select" onchange="filterDashboard()"
+                    style="padding: 0.5rem; min-width: 250px;">
+                    <option value="">🌍 Visualizar Mundo Inteiro</option>
+                    {% for pais in lista_paises %}
+                    <option value="{{ pais }}">{{ pais }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div id="regions_div" style="width: 100%; height: 500px;"></div>
+    </div>
+
+    <!-- SEÇÃO ACORDOS (ESTILO BOLSISTAS v23.7) -->
+    <div class="card" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <h3 style="margin: 0; color: var(--primary-color); font-weight: 700;">
+                📜 Parcerias Institucionais e Acordos
+            </h3>
+            <button class="btn btn-primary btn-sm" onclick="openAcordoModal()">
+                {{ icon('plus', size=14) }} Novo Acordo
+            </button>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color);">País</th>
+                <thead style="background: rgba(0,0,0,0.02);">
+                    <tr>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 15%;">País</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 35%;">Instituição</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 20%;">Tipo</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 15%;">Vigência</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 15%; text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-acordos-corpo">
+                    {% for acordo in acordos %}
+                    <tr style="border-bottom: 1px solid var(--border-color);" id="row-acordo-{{ acordo.id }}" data-acordo-obj='{{ acordo.to_dict()|tojson|forceescape }}'>
+                        <td style="padding: 1rem;"><span style="color: var(--text-muted); font-weight: 500;">{{ acordo.pais }}</span></td>
+                        <td style="padding: 1rem; font-weight: 600; color: var(--text-color);">{{ acordo.instituicao }}</td>
+                        <td style="padding: 1rem; color: var(--text-muted);">
+                            {{ acordo.tipo_acordo }}
+                            {% if acordo.is_gcub %}
+                            <br><span class="badge mt-1" style="background-color: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px;">
+                                {{ icon('award', size=10) }} GCUB (Ed. {{ acordo.numero_edital }})
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem;">
+                            {% if acordo.ativo %}
+                            <span style="color: var(--success-color); font-weight: 600;">
+                                {{ acordo.data_vencimento.strftime('%d/%m/%Y') if acordo.data_vencimento else 'Vigente' }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary text-white">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem;">
+                            <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-end;">
+                                <a href="javascript:void(0)" 
+                                   class="btn-acao-editar"
+                                   data-id="{{ acordo.id }}">Editar</a>
+                                <a href="javascript:void(0)" 
+                                   class="btn-acao-excluir"
+                                   data-id="{{ acordo.id }}">Excluir</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5" style="font-style: italic;">Nenhum acordo internacional cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SPLIT SECTIONS (GRAPHS) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Outbound Section -->
+        <div class="chart-container">
+            <h3 class="section-title" style="color: #ef4444;">Saídas (Outbound) - Países Mais Visitados</h3>
+            {% if top_destinos %}
+            <div class="bar-chart">
+                {% for item in top_destinos %}
+                <div class="bar-item">
+                    <span class="bar-label">{{ item.label }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ item.pct }}%; background-color: {{ item.color }};">
+                            {% if item.pct > 10 %}
+                            {{ "%.1f"|format(item.pct) }}%
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="bar-count">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center" style="padding: 2rem;">Sem dados de saídas ainda.</p>
+            {% endif %}
+        </div>
+
+        <!-- Inbound Section -->
+        <div class="chart-container">
+            <h3 class="section-title" style="color: #10b981;">Entradas (Inbound) - Origens Frequentes</h3>
+            {% if top_origens %}
+            <div class="bar-chart">
+                {% for item in top_origens %}
+                <div class="bar-item">
+                    <span class="bar-label">{{ item.label }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ item.pct }}%; background-color: {{ item.color }};">
+                            {% if item.pct > 10 %}
+                            {{ "%.1f"|format(item.pct) }}%
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="bar-count">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center" style="padding: 2rem;">Sem dados de entradas ainda.</p>
+            {% endif %}
+
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <h4 style="font-size: 1rem; color: var(--text-color); margin-bottom: 0.5rem;">Cursos Mais Procurados
+                </h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    {% for c, n in top_cursos %}
+                    <span
+                        style="background: var(--bg-secondary); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;">
+                        {{ c }} ({{ n }})
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO REGISTRO DETALHADO (ESTILO BOLSISTAS v23.7) -->
+    <div class="card" style="margin-bottom: 2rem; padding: 1.5rem; border-radius: 8px;">
+        <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <h3 style="margin: 0; color: var(--text-color); font-weight: 700;">
+                📊 Registro Detalhado de Mobilidade
+            </h3>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="width: 100%; border-collapse: collapse;" id="mobilityTable">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 18%;">Bolsista</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 10%;">Direção</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 15%;">País (Dest/Orig)</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 22%;">Instituição</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 15%;">Tipo/Agência</th>
+                        <th style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); width: 10%;">Período</th>
+                        <th style="padding: 1rem; text-align: right; font-size: 0.85rem; color: var(--text-color); width: 10%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mobilidades %}
+                    <tr data-pais="{{ m.pais_destino }}" style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1rem;">
+                            <a href="{{ url_for('bolsistas.editar', id=m.bolsista.id) }}"
+                                style="text-decoration: none; color: inherit; display: block;" title="Editar Bolsista">
+                                <div style="font-weight: 700; color: var(--text-color); font-size: 0.9rem;">{{ m.bolsista.nome }}</div>
+                                <div style="color: var(--text-muted); font-size: 0.75rem;">{{ m.bolsista.programa_link.sigla_programa if m.bolsista.programa_link else '-' }}</div>
+                            </a>
+                        </td>
+                        <td style="padding: 1rem;">
+                            {% if m.tipo_fluxo == 'entrada' %}
+                            <span style="color: var(--success-color); font-weight: 600; font-size: 0.85rem;">{{ icon('download', size=12) }} Entrada</span>
+                            {% else %}
+                            <span style="color: var(--primary-color); font-weight: 600; font-size: 0.85rem;">{{ icon('upload', size=12) }} Saída</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem;"><span style="color: var(--text-muted); font-weight: 500;">{{ m.pais_destino }}</span></td>
+                        <td style="padding: 1rem; font-size: 0.85rem; color: var(--text-color); font-weight: 500;">{{ m.instituicao_destino }}</td>
+                        <td style="padding: 1rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">{{ m.tipo_mobilidade }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.8;">{{ m.agencia_fomento or '-' }}</div>
+                        </td>
+                        <td style="padding: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                            {{ m.data_inicio|date_br }}<br>{{ m.data_fim|date_br }}
+                        </td>
+                        <td style="padding: 1rem; text-align: right;">
+                            {% if m.ativo_hoje %}
+                            <span style="color: var(--success-color); font-weight: 600; font-size: 0.85rem;">
+                                Ativo
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-weight: 600; font-size: 0.85rem;">
+                                Encerrado
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOVO ACORDO (VERSÃO VANILLA v23.5) -->
+<div id="modalAcordo" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 800px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); margin: 2rem; display: flex; flex-direction: column; max-height: 90vh;">
+        <div style="padding: 24px 32px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: 8px; color: var(--primary-color); display: flex; align-items: center; justify-content: center;">
+                    {{ icon('globe', size=24) }}
+                </div>
+                <div>
+                    <h5 style="margin: 0; font-weight: bold; font-size: 1.25rem; color: var(--text-color);">Registrar Novo Acordo</h5>
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Gestão de parcerias e convênios internacionais</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeAcordoModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+
+        <form id="formAcordo" style="margin: 0;">
+            <div style="padding: 32px; overflow-y: auto; max-height: 60vh;">
+                <div style="margin-bottom: 1.5rem;">
+                    <label class="form-group-label">{{ icon('flag', size=14) }} País de Destino (Origem)*</label>
+                    <select class="form-select input-premium" id="acordoPais" required style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                        <option value="">Selecione um país...</option>
+                        <option value="Afeganistão">Afeganistão</option>
+                        <option value="África do Sul">África do Sul</option>
+                        <option value="Albânia">Albânia</option>
+                        <option value="Alemanha">Alemanha</option>
+                        <option value="Andorra">Andorra</option>
+                        <option value="Angola">Angola</option>
+                        <option value="Antígua e Barbuda">Antígua e Barbuda</option>
+                        <option value="Arábia Saudita">Arábia Saudita</option>
+                        <option value="Argélia">Argélia</option>
+                        <option value="Argentina">Argentina</option>
+                        <option value="Armênia">Armênia</option>
+                        <option value="Austrália">Austrália</option>
+                        <option value="Áustria">Áustria</option>
+                        <option value="Azerbaijão">Azerbaijão</option>
+                        <option value="Bahamas">Bahamas</option>
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Barbados">Barbados</option>
+                        <option value="Bahrein">Bahrein</option>
+                        <option value="Bélgica">Bélgica</option>
+                        <option value="Belize">Belize</option>
+                        <option value="Benim">Benim</option>
+                        <option value="Bielorrússia">Bielorrússia</option>
+                        <option value="Bolívia">Bolívia</option>
+                        <option value="Bósnia e Herzegovina">Bósnia e Herzegovina</option>
+                        <option value="Botsuana">Botsuana</option>
+                        <option value="Brasil">Brasil</option>
+                        <option value="Brunei">Brunei</option>
+                        <option value="Bulgária">Bulgária</option>
+                        <option value="Burquina Faso">Burquina Faso</option>
+                        <option value="Burundi">Burundi</option>
+                        <option value="Butão">Butão</option>
+                        <option value="Cabo Verde">Cabo Verde</option>
+                        <option value="Camarões">Camarões</option>
+                        <option value="Camboja">Camboja</option>
+                        <option value="Canadá">Canadá</option>
+                        <option value="Catar">Catar</option>
+                        <option value="Cazaquistão">Cazaquistão</option>
+                        <option value="Chade">Chade</option>
+                        <option value="Chile">Chile</option>
+                        <option value="China">China</option>
+                        <option value="Chipre">Chipre</option>
+                        <option value="Colômbia">Colômbia</option>
+                        <option value="Comores">Comores</option>
+                        <option value="Congo-Brazzaville">Congo-Brazzaville</option>
+                        <option value="Congo-Kinshasa">Congo-Kinshasa</option>
+                        <option value="Coreia do Norte">Coreia do Norte</option>
+                        <option value="Coreia do Sul">Coreia do Sul</option>
+                        <option value="Costa do Marfim">Costa do Marfim</option>
+                        <option value="Costa Rica">Costa Rica</option>
+                        <option value="Croácia">Croácia</option>
+                        <option value="Cuba">Cuba</option>
+                        <option value="Dinamarca">Dinamarca</option>
+                        <option value="Djibuti">Djibuti</option>
+                        <option value="Dominica">Dominica</option>
+                        <option value="Egito">Egito</option>
+                        <option value="El Salvador">El Salvador</option>
+                        <option value="Emirados Árabes Unidos">Emirados Árabes Unidos</option>
+                        <option value="Equador">Equador</option>
+                        <option value="Eritreia">Eritreia</option>
+                        <option value="Eslováquia">Eslováquia</option>
+                        <option value="Eslovênia">Eslovênia</option>
+                        <option value="Espanha">Espanha</option>
+                        <option value="Estados Unidos">Estados Unidos</option>
+                        <option value="Estônia">Estônia</option>
+                        <option value="Eswatini">Eswatini</option>
+                        <option value="Etiópia">Etiópia</option>
+                        <option value="Fiji">Fiji</option>
+                        <option value="Filipinas">Filipinas</option>
+                        <option value="Finlândia">Finlândia</option>
+                        <option value="França">França</option>
+                        <option value="Gabão">Gabão</option>
+                        <option value="Gâmbia">Gâmbia</option>
+                        <option value="Gana">Gana</option>
+                        <option value="Geórgia">Geórgia</option>
+                        <option value="Granada">Granada</option>
+                        <option value="Grécia">Grécia</option>
+                        <option value="Guatemala">Guatemala</option>
+                        <option value="Guiana">Guiana</option>
+                        <option value="Guiné">Guiné</option>
+                        <option value="Guiné Equatorial">Guiné Equatorial</option>
+                        <option value="Guiné-Bissau">Guiné-Bissau</option>
+                        <option value="Haiti">Haiti</option>
+                        <option value="Holanda">Holanda (Países Baixos)</option>
+                        <option value="Honduras">Honduras</option>
+                        <option value="Hungria">Hungria</option>
+                        <option value="Iêmen">Iêmen</option>
+                        <option value="Ilhas Marshall">Ilhas Marshall</option>
+                        <option value="Ilhas Salomão">Ilhas Salomão</option>
+                        <option value="Índia">Índia</option>
+                        <option value="Indonésia">Indonésia</option>
+                        <option value="Irã">Irã</option>
+                        <option value="Iraque">Iraque</option>
+                        <option value="Irlanda">Irlanda</option>
+                        <option value="Islândia">Islândia</option>
+                        <option value="Israel">Israel</option>
+                        <option value="Itália">Itália</option>
+                        <option value="Jamaica">Jamaica</option>
+                        <option value="Japão">Japão</option>
+                        <option value="Jordânia">Jordânia</option>
+                        <option value="Kiribati">Kiribati</option>
+                        <option value="Kuwait">Kuwait</option>
+                        <option value="Laos">Laos</option>
+                        <option value="Lesoto">Lesoto</option>
+                        <option value="Letônia">Letônia</option>
+                        <option value="Líbano">Líbano</option>
+                        <option value="Libéria">Libéria</option>
+                        <option value="Líbia">Líbia</option>
+                        <option value="Liechtenstein">Liechtenstein</option>
+                        <option value="Lituânia">Lituânia</option>
+                        <option value="Luxemburgo">Luxemburgo</option>
+                        <option value="Macedônia do Norte">Macedônia do Norte</option>
+                        <option value="Madagascar">Madagascar</option>
+                        <option value="Malásia">Malásia</option>
+                        <option value="Malaui">Malaui</option>
+                        <option value="Maldivas">Maldivas</option>
+                        <option value="Mali">Mali</option>
+                        <option value="Malta">Malta</option>
+                        <option value="Marrocos">Marrocos</option>
+                        <option value="Maurícia">Maurícia</option>
+                        <option value="Mauritânia">Mauritânia</option>
+                        <option value="México">México</option>
+                        <option value="Mianmar">Mianmar</option>
+                        <option value="Micronésia">Micronésia</option>
+                        <option value="Moçambique">Moçambique</option>
+                        <option value="Moldávia">Moldávia</option>
+                        <option value="Mônaco">Mônaco</option>
+                        <option value="Mongólia">Mongólia</option>
+                        <option value="Montenegro">Montenegro</option>
+                        <option value="Namíbia">Namíbia</option>
+                        <option value="Nauru">Nauru</option>
+                        <option value="Nepal">Nepal</option>
+                        <option value="Nicarágua">Nicarágua</option>
+                        <option value="Níger">Níger</option>
+                        <option value="Nigéria">Nigéria</option>
+                        <option value="Noruega">Noruega</option>
+                        <option value="Nova Zelândia">Nova Zelândia</option>
+                        <option value="Omã">Omã</option>
+                        <option value="Palau">Palau</option>
+                        <option value="Panamá">Panamá</option>
+                        <option value="Papua Nova Guiné">Papua Nova Guiné</option>
+                        <option value="Paquistão">Paquistão</option>
+                        <option value="Paraguai">Paraguai</option>
+                        <option value="Peru">Peru</option>
+                        <option value="Polônia">Polônia</option>
+                        <option value="Portugal">Portugal</option>
+                        <option value="Quênia">Quênia</option>
+                        <option value="Quirguistão">Quirguistão</option>
+                        <option value="Reino Unido">Reino Unido</option>
+                        <option value="República Centro-Africana">República Centro-Africana</option>
+                        <option value="República Dominicana">República Dominicana</option>
+                        <option value="Romênia">Romênia</option>
+                        <option value="Ruanda">Ruanda</option>
+                        <option value="Rússia">Rússia</option>
+                        <option value="Samoa">Samoa</option>
+                        <option value="Santa Lúcia">Santa Lúcia</option>
+                        <option value="São Cristóvão e Neves">São Cristóvão e Neves</option>
+                        <option value="São Marinho">São Marinho</option>
+                        <option value="São Tomé e Príncipe">São Tomé e Príncipe</option>
+                        <option value="São Vicente e Granadinas">São Vicente e Granadinas</option>
+                        <option value="Seicheles">Seicheles</option>
+                        <option value="Senegal">Senegal</option>
+                        <option value="Serra Leoa">Serra Leoa</option>
+                        <option value="Sérvia">Sérvia</option>
+                        <option value="Singapura">Singapura</option>
+                        <option value="Síria">Síria</option>
+                        <option value="Somália">Somália</option>
+                        <option value="Sri Lanka">Sri Lanka</option>
+                        <option value="Sudão do Sul">Sudão do Sul</option>
+                        <option value="Sudão">Sudão</option>
+                        <option value="Suécia">Suécia</option>
+                        <option value="Suíça">Suíça</option>
+                        <option value="Suriname">Suriname</option>
+                        <option value="Tadjiquistão">Tadjiquistão</option>
+                        <option value="Tailândia">Tailândia</option>
+                        <option value="Taiwan">Taiwan</option>
+                        <option value="Tanzânia">Tanzânia</option>
+                        <option value="Tchéquia">Tchéquia</option>
+                        <option value="Timor-Leste">Timor-Leste</option>
+                        <option value="Togo">Togo</option>
+                        <option value="Tonga">Tonga</option>
+                        <option value="Trinidad e Tobago">Trinidad e Tobago</option>
+                        <option value="Tunísia">Tunísia</option>
+                        <option value="Turcomenistão">Turcomenistão</option>
+                        <option value="Turquia">Turquia</option>
+                        <option value="Tuvalu">Tuvalu</option>
+                        <option value="Ucrânia">Ucrânia</option>
+                        <option value="Uganda">Uganda</option>
+                        <option value="Uruguai">Uruguai</option>
+                        <option value="Uzbequistão">Uzbequistão</option>
+                        <option value="Vanuatu">Vanuatu</option>
+                        <option value="Vaticano">Vaticano</option>
+                        <option value="Venezuela">Venezuela</option>
+                        <option value="Vietnã">Vietnã</option>
+                        <option value="Zâmbia">Zâmbia</option>
+                        <option value="Zimbábue">Zimbábue</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label class="form-group-label">{{ icon('building', size=14) }} Instituição Parceira*</label>
+                    <input type="text" class="form-control input-premium" id="acordoInstituicao" required style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-group-label">{{ icon('hash', size=14) }} Processo SEI</label>
+                        <input type="text" class="form-control input-premium" id="acordoSei" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label class="form-group-label">{{ icon('layers', size=14) }} Tipo de Acordo</label>
+                        <select class="form-select input-premium" id="acordoTipo" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                            <option value="Cooperação Técnica">Cooperação Técnica</option>
+                            <option value="Dupla Diplomação">Dupla Diplomação</option>
+                            <option value="Mobilidade Discente">Mobilidade Discente</option>
+                            <option value="Pesquisa Conjunta">Pesquisa Conjunta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- VÍNCULO GCUB (PREMIUM) -->
+                <div style="background: rgba(0,0,0,0.05); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <h6 style="margin: 0; font-weight: bold; color: var(--text-color);">{{ icon('award', size=16) }} Vínculo GCUB</h6>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Ative caso o acordo seja mediado pelo GCUB</p>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <input type="checkbox" id="acordoGcub" onchange="toggleEdital()" style="width: 20px; height: 20px; cursor: pointer;">
+                        </div>
+                    </div>
+                    <div id="editalContainer" style="display: none; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <label class="form-group-label" style="color: var(--primary-color);">{{ icon('file-text', size=14) }} Número do Edital*</label>
+                        <input type="text" class="form-control input-premium" id="acordoEdital" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--primary-color);">
+                    </div>
+                </div>
+
+                <h6 style="text-transform: uppercase; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); margin: 2rem 0 1rem 0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    {{ icon('file-text', size=14) }} Condições & Vigência
+                </h6>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-group-label">Data de Assinatura</label>
+                        <input type="date" class="form-control input-premium" id="acordoDataAssinatura" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label class="form-group-label">Data de Vencimento</label>
+                        <input type="date" class="form-control input-premium" id="acordoDataVencimento" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-group-label">Vagas Anuais</label>
+                        <input type="number" class="form-control input-premium" id="acordoVagas" value="0" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label class="form-group-label">Idioma de Instrução</label>
+                        <input type="text" class="form-control input-premium" id="acordoIdioma" placeholder="Ex: Inglês B2" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 0;">
+                    <label class="form-group-label">{{ icon('tag', size=14) }} Áreas do Conhecimento (Tags)</label>
+                    <input type="text" class="form-control input-premium" id="acordoAreas" placeholder="Ex: Engenharia Civil" style="width: 100%; padding: 0.75rem; border-radius: 8px;">
+                </div>
+            </div>
+            <div style="padding: 24px 32px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" onclick="closeAcordoModal()" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: bold;">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarAcordo(this)" style="padding: 10px 24px; font-weight: bold;">
+                    {{ icon('save', size=18) }} Gravar Parceria
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- [V23.10] Injeção Segura de Dados (Padrão Ouro para evitar erros de aspas/script crash) -->
+<script id="acordos-data" type="application/json">
+{
+    {% for a in acordos %}
+    "{{ a.id }}": {{ a.to_dict()|tojson|safe }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<!-- Google Charts -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', { 'packages': ['geochart'], 'language': 'pt' });
+    google.charts.setOnLoadCallback(drawMap);
+
+    // [V23.8] Controle do Modal (Novo/Editar)
+    let currentAcordoId = null;
+
+    function openAcordoModal() {
+        currentAcordoId = null;
+        document.getElementById('modalAcordo').style.display = 'flex';
+        document.getElementById('formAcordo').reset();
+        document.getElementById('editalContainer').style.display = 'none';
+        
+        // Reset Títulos e Botão
+        document.querySelector('#modalAcordo h5').innerText = "Registrar Novo Acordo";
+        document.querySelector('#modalAcordo p').innerText = "Gestão de parcerias e convênios internacionais";
+        document.querySelector('#modalAcordo .btn-primary').innerHTML = `{{ icon('save', size=18) }} Gravar Parceria`;
+    }
+
+    // [V23.10] Inicialização do Cache via JSON Script (Seguro contra aspas e injeções)
+    let acordosCache = {};
+    try {
+        const jsonData = document.getElementById('acordos-data').textContent;
+        acordosCache = JSON.parse(jsonData);
+        console.log("Acordos Cache Carregado com Sucesso:", Object.keys(acordosCache).length, "registros.");
+    } catch (e) {
+        console.error("Erro Crítico ao carregar cache de acordos:", e);
+    }
+
+    // [V24.0] Event Delegation Pattern - Ouvinte Universal
+    document.getElementById('tabela-acordos-corpo').addEventListener('click', function(e) {
+        const target = e.target;
+        
+        // Clique em Editar
+        if (target.classList.contains('btn-acao-editar')) {
+            const id = target.getAttribute('data-id');
+            console.log("[E2E Audit] Clique em Editar detectado. ID:", id);
+            editarAcordo(id, target);
+        }
+        
+        // Clique em Excluir
+        if (target.classList.contains('btn-acao-excluir')) {
+            const id = target.getAttribute('data-id');
+            console.log("[E2E Audit] Clique em Excluir detectado. ID:", id);
+            excluirAcordo(id);
+        }
+    });
+
+    function editarAcordo(id, el) {
+        try {
+            console.log("[E2E Audit] Iniciando fluxo de abertura do modal...");
+            
+            // Tenta obter do Cache (v23.10) ou do Atributo da Linha Blindado (v24.0)
+            let data = acordosCache[id];
+            if (!data && el) {
+                const row = el.closest('tr');
+                if (row && row.dataset.acordoObj) {
+                    // O dado agora vem com forceescape, então o JSON.parse é seguro
+                    data = JSON.parse(row.dataset.acordoObj);
+                    console.log("[E2E Audit] Dados recuperados via Blindagem (data-acordo-obj)");
+                }
+            }
+
+            if (!data) {
+                throw new Error("Dados do acordo não localizados para ID: " + id);
+            }
+
+            currentAcordoId = id;
+            const modal = document.getElementById('modalAcordo');
+            modal.style.display = 'flex';
+            
+            console.log("[E2E Audit] Preenchendo campos do modal para:", data.instituicao);
+            
+            document.getElementById('acordoPais').value = data.pais || '';
+            document.getElementById('acordoInstituicao').value = data.instituicao || '';
+            document.getElementById('acordoSei').value = data.processo_sei || '';
+            document.getElementById('acordoTipo').value = data.tipo || '';
+            document.getElementById('acordoVagas').value = data.vagas_anuais || 0;
+            document.getElementById('acordoDataAssinatura').value = data.data_assinatura || '';
+            document.getElementById('acordoDataVencimento').value = data.data_vencimento || '';
+            document.getElementById('acordoIdioma').value = data.idioma_instrucao || '';
+            document.getElementById('acordoAreas').value = data.areas_conhecimento || '';
+            
+            const isGcub = !!data.is_gcub;
+            document.getElementById('acordoGcub').checked = isGcub;
+            document.getElementById('acordoEdital').value = data.numero_edital || '';
+            toggleEdital();
+
+            // Alterar Títulos e Botão (v24.0)
+            document.querySelector('#modalAcordo h5').innerText = "Editar Acordo Internacional";
+            document.querySelector('#modalAcordo p').innerText = "Ajustando parceria com " + (data.instituicao || 'Instituição');
+            
+            const btnSave = document.querySelector('#modalAcordo .btn-primary');
+            btnSave.innerHTML = 'Gravar Alterações'; 
+            
+            console.log("[E2E Audit] Modal pronto e visível.");
+
+        } catch (error) {
+            console.error("[E2E Audit] Falha Catastrófica no editarAcordo:", error);
+            alert("Erro crítico no sistema de edição. Veja os detalhes no Console (F12).");
+        }
+    }
+
+    function closeAcordoModal() {
+        document.getElementById('modalAcordo').style.display = 'none';
+        currentAcordoId = null;
+    }
+
+    let mapData = null;
+    
+    // Theme-Aware Redraw
+    document.addEventListener('themeChanged', function() {
+        if (chartMap) drawMap();
+    });
+    let mapOptions = null; // Defined dynamically in drawMap()
+
+    // ISO-3166-1 Mapping for Zoom and GeoCharts Parsing
+    const countryToCode = {
+        "Afeganistão": "AF", "África do Sul": "ZA", "Albânia": "AL", "Alemanha": "DE", "Andorra": "AD", "Angola": "AO",
+        "Antígua e Barbuda": "AG", "Arábia Saudita": "SA", "Argélia": "DZ", "Argentina": "AR", "Armênia": "AM",
+        "Austrália": "AU", "Áustria": "AT", "Azerbaijão": "AZ", "Bahamas": "BS", "Bangladesh": "BD", "Barbados": "BB",
+        "Bahrein": "BH", "Bélgica": "BE", "Belize": "BZ", "Benim": "BJ", "Bielorrússia": "BY", "Bolívia": "BO",
+        "Bósnia e Herzegovina": "BA", "Botsuana": "BW", "Brasil": "BR", "Brunei": "BN", "Bulgária": "BG",
+        "Burquina Faso": "BF", "Burundi": "BI", "Butão": "BT", "Cabo Verde": "CV", "Camarões": "CM", "Camboja": "KH",
+        "Canadá": "CA", "Catar": "QA", "Cazaquistão": "KZ", "Chade": "TD", "Chile": "CL", "China": "CN", "Chipre": "CY",
+        "Colômbia": "CO", "Comores": "KM", "Congo-Brazzaville": "CG", "Congo-Kinshasa": "CD", "Coreia do Norte": "KP",
+        "Coreia do Sul": "KR", "Costa do Marfim": "CI", "Costa Rica": "CR", "Croácia": "HR", "Cuba": "CU",
+        "Dinamarca": "DK", "Djibuti": "DJ", "Dominica": "DM", "Egito": "EG", "El Salvador": "SV",
+        "Emirados Árabes Unidos": "AE", "Equador": "EC", "Eritreia": "ER", "Eslováquia": "SK", "Eslovênia": "SI",
+        "Espanha": "ES", "Estados Unidos": "US", "Estônia": "EE", "Eswatini": "SZ", "Etiópia": "ET", "Fiji": "FJ",
+        "Filipinas": "PH", "Finlândia": "FI", "França": "FR", "Gabão": "GA", "Gâmbia": "GM", "Gana": "GH",
+        "Geórgia": "GE", "Granada": "GD", "Grécia": "GR", "Guatemala": "GT", "Guiana": "GY", "Guiné": "GN",
+        "Guiné Equatorial": "GQ", "Guiné-Bissau": "GW", "Haiti": "HT", "Holanda": "NL", "Holanda (Países Baixos)": "NL",
+        "Honduras": "HN", "Hungria": "HU", "Iêmen": "YE", "Ilhas Marshall": "MH", "Ilhas Salomão": "SB", "Índia": "IN",
+        "Indonésia": "ID", "Irã": "IR", "Iraque": "IQ", "Irlanda": "IE", "Islândia": "IS", "Israel": "IL", "Itália": "IT",
+        "Jamaica": "JM", "Japão": "JP", "Jordânia": "JO", "Kiribati": "KI", "Kuwait": "KW", "Laos": "LA", "Lesoto": "LS",
+        "Letônia": "LV", "Líbano": "LB", "Libéria": "LR", "Líbia": "LY", "Liechtenstein": "LI", "Lituânia": "LT",
+        "Luxemburgo": "LU", "Macedônia do Norte": "MK", "Madagascar": "MG", "Malásia": "MY", "Malaui": "MW",
+        "Maldivas": "MV", "Mali": "ML", "Malta": "MT", "Marrocos": "MA", "Maurícia": "MU", "Mauritânia": "MR",
+        "México": "MX", "Mianmar": "MM", "Micronésia": "FM", "Moçambique": "MZ", "Moldávia": "MD", "Mônaco": "MC",
+        "Mongólia": "MN", "Montenegro": "ME", "Namíbia": "NA", "Nauru": "NR", "Nepal": "NP", "Nicarágua": "NI",
+        "Níger": "NE", "Nigéria": "NG", "Noruega": "NO", "Nova Zelândia": "NZ", "Omã": "OM", "Palau": "PW",
+        "Panamá": "PA", "Papua Nova Guiné": "PG", "Paquistão": "PK", "Paraguai": "PY", "Peru": "PE", "Polônia": "PL",
+        "Portugal": "PT", "Quênia": "KE", "Quirguistão": "KG", "Reino Unido": "GB", "República Centro-Africana": "CF",
+        "República Dominicana": "DO", "Romênia": "RO", "Ruanda": "RW", "Rússia": "RU", "Samoa": "WS",
+        "Santa Lúcia": "LC", "São Cristóvão e Neves": "KN", "São Marinho": "SM", "São Tomé e Príncipe": "ST",
+        "São Vicente e Granadinas": "VC", "Seicheles": "SC", "Senegal": "SN", "Serra Leoa": "SL", "Sérvia": "RS",
+        "Singapura": "SG", "Síria": "SY", "Somália": "SO", "Sri Lanka": "LK", "Sudão do Sul": "SS", "Sudão": "SD",
+        "Suécia": "SE", "Suíça": "CH", "Suriname": "SR", "Tadjiquistão": "TJ", "Tailândia": "TH", "Taiwan": "TW",
+        "Tanzânia": "TZ", "Tchéquia": "CZ", "Timor-Leste": "TL", "Togo": "TG", "Tonga": "TO", "Trinidad e Tobago": "TT",
+        "Tunísia": "TN", "Turcomenistão": "TM", "Turquia": "TR", "Tuvalu": "TV", "Ucrânia": "UA", "Uganda": "UG",
+        "Uruguai": "UY", "Uzbequistão": "UZ", "Vanuatu": "VU", "Vaticano": "VA", "Venezuela": "VE", "Vietnã": "VN",
+        "Zâmbia": "ZM", "Zimbábue": "ZW", "Outros": ""
+    };
+
+    function filterDashboard() {
+        const selectedCountry = document.getElementById('countryFilter').value;
+        const rows = document.querySelectorAll('#mobilityTable tbody tr');
+
+        // Filter Table
+        rows.forEach(row => {
+            if (selectedCountry === "" || row.dataset.pais === selectedCountry) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // Filter Map Zoom
+        if (chartMap && mapData) {
+            let newOptions = JSON.parse(JSON.stringify(mapOptions));
+            if (selectedCountry && countryToCode[selectedCountry]) {
+                newOptions.region = countryToCode[selectedCountry];
+            } else {
+                newOptions.region = 'world';
+            }
+            chartMap.draw(mapData, newOptions);
+        }
+    }
+
+    function drawMap() {
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        let mapOptions = {
+            colorAxis: {
+                values: [0, 10, 50, 100, 1500],
+                colors: isDark 
+                    ? ['#1e293b', '#3b82f6', '#6366f1', '#8b5cf6', '#f59e0b']
+                    : ['#e0f2fe', '#7dd3fc', '#0ea5e9', '#0369a1', '#f59e0b']
+            },
+            backgroundColor: 'transparent',
+            datalessRegionColor: isDark ? '#1e293b' : '#f3f4f6',
+            datalessRegionOutlineColor: isDark ? '#475569' : '#e5e7eb', // Highlight borders
+            defaultColor: isDark ? '#1e293b' : '#f5f5f5',
+            keepAspectRatio: true,
+            tooltip: { isHtml: true, textStyle: { color: isDark ? '#f8fafc' : '#333' }, showColorCode: true }
+        };
+
+        var finalData = {{ map_data | tojson | safe }};
+        if (!finalData || finalData.length < 2) {
+            document.getElementById('regions_div').innerHTML = '<div style="text-align:center; padding: 3rem; color: #999;">Nenhum acordo ou mobilidade registrada para visualizar o mapa.</div>';
+            return;
+        }
+
+        // Converte nomes Pt-Br em Códigos ISO-A2
+        for (let i = 1; i < finalData.length; i++) {
+            let nomePt = finalData[i][0];
+            if (countryToCode[nomePt]) {
+                finalData[i][0] = countryToCode[nomePt];
+            }
+        }
+
+        mapData = google.visualization.arrayToDataTable(finalData);
+        chartMap = new google.visualization.GeoChart(document.getElementById('regions_div'));
+        chartMap.draw(mapData, mapOptions);
+    }
+
+    function toggleEdital() {
+        const isGcub = document.getElementById('acordoGcub').checked;
+        const editalContainer = document.getElementById('editalContainer');
+        const inputEdital = document.getElementById('acordoEdital');
+        if (isGcub) {
+            editalContainer.style.display = 'block';
+            inputEdital.required = true;
+        } else {
+            editalContainer.style.display = 'none';
+            inputEdital.required = false;
+            inputEdital.value = '';
+        }
+    }
+
+    // Funcionalidades AJAX CRUD Acordos
+    function salvarAcordo(btn) {
+        try {
+            const pais = document.getElementById('acordoPais').value.trim();
+            const instituicao = document.getElementById('acordoInstituicao').value.trim();
+            const isGcub = document.getElementById('acordoGcub').checked;
+            const edital = document.getElementById('acordoEdital').value.trim();
+
+            if (!pais || !instituicao) {
+                alert("Os campos 'País' e 'Instituição' são obrigatórios.");
+                return;
+            }
+
+            if (isGcub && !edital) {
+                alert("O Número do Edital é obrigatório para acordos vinculados ao GCUB.");
+                return;
+            }
+
+            const payload = {
+                pais: pais,
+                instituicao: instituicao,
+                processo_sei: document.getElementById('acordoSei').value,
+                tipo_acordo: document.getElementById('acordoTipo').value,
+                vagas_anuais: parseInt(document.getElementById('acordoVagas').value) || 0,
+                data_assinatura: document.getElementById('acordoDataAssinatura').value,
+                data_vencimento: document.getElementById('acordoDataVencimento').value,
+                idioma_instrucao: document.getElementById('acordoIdioma').value,
+                areas_conhecimento: document.getElementById('acordoAreas').value,
+                ativo: true,
+                is_gcub: isGcub,
+                numero_edital: edital
+            };
+
+            const originalText = btn.innerHTML;
+            btn.innerText = "Salvando...";
+            btn.disabled = true;
+
+            const url = currentAcordoId 
+                ? `/api/internacionalizacao/acordos/${currentAcordoId}`
+                : '/api/internacionalizacao/acordos';
+                
+            const method = currentAcordoId ? 'PUT' : 'POST';
+
+            console.log(`Enviando ${method} para ${url}`, payload);
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Erro HTTP: " + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        console.log("Salvo com sucesso!");
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.error || "Erro desconhecido");
+                    }
+                })
+                .catch(err => {
+                    console.error("Falha na requisição:", err);
+                    alert("Erro ao gravar parceria: " + err.message);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        } catch (fatalError) {
+            console.error("Erro fatal no salvarAcordo:", fatalError);
+            alert("Erro inesperado no formulário. Verifique o console.");
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    function excluirAcordo(acordoId) {
+        if (!confirm("Tem certeza que deseja desvincular e exluir este acordo?")) return;
+
+        fetch(`/api/internacionalizacao/acordos/${acordoId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) window.location.reload();
+                else alert("Falha na exclusão: " + data.error);
+            })
+            .catch(e => {
+                console.error(e);
+                alert("Falha de conexão com a API.");
+            });
+    }
+</script>
+{% endblock %}
