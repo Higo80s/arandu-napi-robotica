@@ -75,9 +75,14 @@ arandu_source_hash.zip
 .env
 .env.local
 
-# Backups
+# Backups e dumps de banco
 backups/
+backups_emergencia/
 *.bak
+backup_pre_*.sql
+gestao_editais*.db*
+*.pre_phase*
+*.pre_refactor*
 
 # Temporary files
 verify_*.py
