@@ -78,12 +78,11 @@
 </head>
 
 <body>
+    {% from 'macros/email_brand.html' import email_header %}
     <div class="container">
-        <div class="header">
-            <h1 style="margin: 0;">NOTIFICAÇÃO DE GESTÃO</h1>
-        </div>
+        {% include 'emails/_marca_napi.html' %}
+        {{ email_header('Notificação de gestão', 'Pendências de cancelamento') }}
         <div class="content">
-            <h2>Pendências de Cancelamento Pendentes</h2>
             <p>Prezado(a) Coordenador(a),</p>
             <p>Identificamos discentes sob sua responsabilidade cujas bolsas já <strong>encerraram a vigência</strong>
                 em meses anteriores, mas o desligamento ainda não foi efetivado no sistema Arandú.</p>

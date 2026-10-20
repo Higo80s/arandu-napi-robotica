@@ -1,0 +1,25 @@
+{# Letterhead NAPI-Robótica (topo do e-mail, acima do título).
+
+   Envio: cid:napi_logo (multipart/related no email_sender).
+
+   Prévia admin/navegador: passe logo_src com URL estática absoluta. #}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background:#ffffff;">
+
+    <tr>
+
+        <td align="center" style="padding:18px 24px 14px 24px; background:#ffffff; border-bottom:1px solid #e5e7eb;">
+
+            <img src="{{ logo_src|default('cid:napi_logo', true) }}" width="220" height="auto"
+
+                alt="NAPI Robótica Paraná — UTFPR"
+
+                style="display:block; width:220px; max-width:80%; height:auto; margin:0 auto; border:0; outline:none; text-decoration:none;">
+
+        </td>
+
+    </tr>
+
+</table>
+
+

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <title>Último mês de bolsa</title>
+
+    <style>
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+
+        .container { max-width: 640px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+
+        .content { padding: 28px; color: #333; line-height: 1.6; }
+
+        .box { background: #fff7ed; border-left: 4px solid #ea580c; padding: 16px; margin: 20px 0; border-radius: 4px; }
+
+        .footer { padding: 16px; text-align: center; font-size: 12px; color: #888; background: #f9fafb; }
+
+    </style>
+
+</head>
+
+<body>
+
+    {% from 'macros/email_brand.html' import email_header %}
+
+    <div class="container">
+
+        {% include 'emails/_marca_napi.html' %}
+
+        {{ email_header('Último mês de bolsa', 'Aviso de encerramento de vigência') }}
+
+        <div class="content">
+
+            <p>Prezado(a) <strong>{{ bolsista.nome }}</strong>,</p>
+
+            {% if bolsista.orientador %}
+
+            <p>Prezado(a) orientador(a)/supervisor(a) <strong>{{ bolsista.orientador }}</strong>,</p>
+
+            {% endif %}
+
+
+
+            {{ corpo_html|safe }}
+
+
+
+            <div class="box">
+
+                <p style="margin:0 0 8px;"><strong>Edital:</strong> {{ edital_numero }}</p>
+
+                {% if data_fim %}<p style="margin:0 0 8px;"><strong>Fim previsto da bolsa:</strong> {{ data_fim.strftime('%d/%m/%Y') }}</p>{% endif %}
+
+                <p style="margin:0;"><strong>Parcela:</strong> {{ parcela }}/{{ total_parcelas }}</p>
+
+            </div>
+
+
+
+            <p>
+
+                Em caso de dúvidas, responda a este e-mail ou escreva para
+
+                <a href="mailto:{{ reply_email }}">{{ reply_email }}</a>.
+
+            </p>
+
+
+
+            <p>Atenciosamente,<br><strong>Secretaria do Projeto NAPI-Robótica — UTFPR</strong></p>
+
+        </div>
+
+        <div class="footer">Mensagem automática do sistema Arandu NAPI-Robótica.</div>
+
+    </div>
+
+</body>
+
+</html>
+
+

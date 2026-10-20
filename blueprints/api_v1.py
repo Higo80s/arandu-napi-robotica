@@ -4,7 +4,7 @@ from extensions import db
 from models import (
     RodadaSelecao, EditalRegra, EtapaCronograma, Candidatura
 )
-from utils import parse_flexible_date
+from utils import parse_flexible_date, sanitizar_cpf
 
 api_v1_bp = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 
@@ -51,6 +51,12 @@ def update_component():
             for p_field in parent_fields:
                 if p_field in payload:
                     setattr(record, p_field, payload[p_field])
+            if comp_type == 'candidato':
+                rodada_id = payload.get('rodada_id')
+                if not rodada_id or not RodadaSelecao.query.get(rodada_id):
+                    return jsonify(success=False, error="Rodada inválida"), 400
+                max_ordem = db.session.query(db.func.max(Candidatura.ordem)).filter_by(rodada_id=rodada_id).scalar()
+                record.ordem = (max_ordem if max_ordem is not None else -1) + 1
             db.session.add(record)
         else:
             # [UPDATE or DELETE]
@@ -69,6 +75,20 @@ def update_component():
         # [UPDATE or CREATE Fields]
         for field, value in payload.items():
             if field in allowed_fields:
+                if comp_type == 'candidato' and field == 'cpf':
+                    value = sanitizar_cpf(value) if value else value
+                    if value:
+                        duplicate = Candidatura.query.filter(
+                            Candidatura.rodada_id == record.rodada_id,
+                            Candidatura.cpf == value,
+                            Candidatura.id != record.id,
+                        ).first()
+                        if duplicate:
+                            return jsonify(success=False, error="Já existe candidatura com este CPF nesta rodada"), 400
+                if comp_type == 'candidato' and field == 'status':
+                    allowed_statuses = {'INSCRITO', 'SELECIONADO', 'EXCEDENTE', 'REJEITADO'}
+                    if value not in allowed_statuses:
+                        return jsonify(success=False, error="Status de candidatura inválido"), 400
                 is_date_field = 'data' in field or 'fim' in field or 'inicio' in field or 'limite' in field
                 if is_date_field and value and isinstance(value, str):
                     try:

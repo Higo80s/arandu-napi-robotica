@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Cobrança — Relatório Final</h1>
+    <a href="{{ url_for('admin.automacoes_hub') }}" class="btn btn-secondary btn-sm">Central de automações</a>
+</div>
+
+<div class="card" style="max-width: 720px; margin: 0 auto; padding: 2rem;">
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Texto enviado ao <strong>bolsista desligado</strong> e ao <strong>orientador/supervisor</strong>
+        no ato do desligamento e, todo <strong>dia 15</strong>, enquanto o checkout não for marcado.
+        Cadastros ainda em implantação (aguardando ativação da Fundação) <strong>não entram</strong> nesta cobrança.
+        A equipe Robótica recebe um e-mail separado com a lista de pendências (somente se houver devedores).
+    </p>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">E-mail da equipe Robótica (resumo dia 15)</label>
+        <input type="text" name="equipe_emails" required value="{{ equipe_raw }}"
+            placeholder="robotica-ct@utfpr.edu.br"
+            style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:1.75rem;">
+
+        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Texto do e-mail (bolsista e orientador)</label>
+        <textarea name="email_corpo" rows="14" required
+            style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.5rem; font-family: inherit; line-height: 1.5;">{{ corpo_raw }}</textarea>
+        <small style="color: var(--text-muted); display:block; margin-bottom:1.5rem;">
+            Nome do bolsista, edital, data de desligamento e link do modelo na Nuvem são incluídos automaticamente.
+            Use linha em branco entre parágrafos.
+        </small>
+
+        <button type="submit" class="btn btn-primary">Salvar configuração</button>
+    </form>
+</div>
+{% endblock %}

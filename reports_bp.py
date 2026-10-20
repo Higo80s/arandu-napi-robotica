@@ -266,7 +266,7 @@ def edital_report_print(id):
         items.append({
             'nome': b.nome,
             'cpf': b.cpf,
-            'instituicao': b.instituicao or (b.programa_link.campus.sigla_campus if b.programa_link else (b.campus_sigla or b.campus or "-")),
+            'instituicao': b.instituicao or b.sigla_campus_display or "-",
             'tipo': b.modalidade.nivel if b.modalidade else 'Bolsista',
             'inicio': b.data_inicio_bolsa,
             'fim': b.data_fim_bolsa,

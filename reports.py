@@ -13,24 +13,14 @@ from datetime import datetime
 from decimal import Decimal
 
 def gerar_relatorio_excel(mes_referencia_str):
-    # mes_referencia_str format: YYYY-MM
+    # mes_referencia_str format: YYYY-MM — mesma linha do log individual (PagamentoBolsistaService)
+    from services.pagamento_bolsista_service import PagamentoBolsistaService, PAGAMENTO_HEADERS
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Pagamento Bolsas"
+    ws.append(PAGAMENTO_HEADERS)
 
-    # Headers
-    headers = [
-        "Edital", "SEI", "CPF", "Nome", "E-mail", "Orientador", "Instituição",
-        "Banco", "Agência", "Conta", "Tipo", "Nível",
-        "Valor", "Início Bolsa", "Referência", "Vencimento",
-        "Parcela Atual", "Total Parcelas"
-    ]
-    ws.append(headers)
-
-    # Reference Date
-    ref_date = datetime.strptime(mes_referencia_str + '-01', '%Y-%m-%d').date()
-
-    # Fetch and sort: by Edital number, then by bolsista name (alphabetical)
     bolsistas = Bolsista.query.filter_by(ativo=True).all()
     bolsistas.sort(key=lambda b: (
         (Edital.query.get(b.edital_id).numero if b.edital_id else ""),
@@ -38,37 +28,15 @@ def gerar_relatorio_excel(mes_referencia_str):
     ))
 
     for b in bolsistas:
-        mod = Modalidade.query.get(b.modalidade_id)
-        edital = Edital.query.get(b.edital_id)
-
-        if not mod or not edital:
+        row = PagamentoBolsistaService.build_row(b, mes_referencia_str)
+        if not row:
             continue
-
-        # Calculate Parcel
-        parcela = calcular_parcelas(b.data_inicio_bolsa, ref_date, b.data_desligamento)
-
-        if parcela > 0 and parcela <= b.meses_duracao:
-            row = [
-                edital.numero,
-                b.processo_sei or edital.processo_sei or "N/A",
-                b.cpf,
-                b.nome,
-                b.email or "N/Informado",
-                b.orientador or "N/Informado",
-                b.instituicao or (b.programa_link.campus.sigla_campus if b.programa_link else (b.campus_sigla or b.campus or "N/I")),
-                b.banco,
-                b.agencia,
-                b.conta,
-                b.tipo_conta,
-                mod.nivel,
-                f"R$ {mod.valor_mensal:.2f}",
-                b.data_inicio_bolsa.strftime('%d/%m/%Y'),
-                mes_referencia_str,
-                VencimentoFactory.get_strategy(edital.numero).get_vencimento_label(),
-                parcela,
-                b.meses_duracao
-            ]
-            ws.append(row)
+        ws.append([
+            row['edital'], row['sei'], row['cpf'], row['nome'], row['email'],
+            row['orientador'], row['instituicao'], row['banco'], row['agencia'],
+            row['conta'], row['tipo'], row['nivel'], row['valor'], row['inicio_bolsa'],
+            row['referencia'], row['vencimento'], row['parcela_atual'], row['total_parcelas'],
+        ])
 
     output = io.BytesIO()
     wb.save(output)
@@ -166,7 +134,7 @@ def gerar_relatorio_pdf(mes_referencia_str):
                 Paragraph(nome_display, cell_style),
                 Paragraph(nivel_str, cell_style),
                 Paragraph(b.cpf or "-", cell_style),
-                Paragraph(b.instituicao or (b.programa_link.campus.sigla_campus if b.programa_link else (b.campus_sigla or b.campus or "-")), cell_style),
+                Paragraph(b.instituicao or b.sigla_campus_display or "-", cell_style),
                 Paragraph(banco_display, cell_style),
                 b.agencia or "-",
                 b.conta or "-",
@@ -386,7 +354,7 @@ def gerar_relatorio_graficos(mes_referencia_str):
 
     for b in active_bolsistas:
         # Campus
-        c = (b.programa_link.campus.sigla_campus if b.programa_link else (b.campus_sigla or (b.campus[:3].upper() if b.campus else 'N/A')))
+        c = b.sigla_campus_display or 'N/A'
         campus_count[c] = campus_count.get(c, 0) + 1
         
         # Investment
@@ -782,7 +750,7 @@ def gerar_relatorio_devolucao():
     
     # Sort by Campus, then Program, then Name
     bolsistas.sort(key=lambda b: (
-        b.programa_link.campus.nome if b.programa_link and b.programa_link.campus else (b.campus or ""),
+        b.programa_link.campus.nome if b.programa_link and b.programa_link.campus else (b.campus.nome if b.campus else ""),
         b.programa_link.nome_programa if b.programa_link else (b.programa or ""),
         b.nome
     ))
@@ -794,7 +762,7 @@ def gerar_relatorio_devolucao():
     
     for b in bolsistas:
         prog_nome = b.programa_link.nome_programa if b.programa_link else (b.programa or "-")
-        campus_nome = b.programa_link.campus.sigla_campus if b.programa_link and b.programa_link.campus else (b.campus_sigla or "-")
+        campus_nome = b.sigla_campus_display or "-"
         
         # Stats
         key = (prog_nome, campus_nome)

@@ -8,6 +8,11 @@ class EditalForm(FlaskForm):
     numero_edital = StringField('Número do Edital', validators=[Optional(), Length(max=20)])
     ano_edital = IntegerField('Ano do Edital', validators=[Optional()])
     empresa = StringField('Empresa / Parceiro', validators=[Optional(), Length(max=100)])
+    numero_convenio = StringField('Número do Convênio', validators=[Optional(), Length(max=100)])
+    coordenador_geral_proppg = StringField(
+        'Coordenador Geral do Projeto / PROPPG',
+        validators=[Optional(), Length(max=200)],
+    )
     descricao = TextAreaField('Descrição / Objeto', validators=[DataRequired()])
     agencia = StringField('Agência de Fomento / Origem', validators=[DataRequired(), Length(max=50)])
     codigo_projeto = StringField('Código do Projeto', validators=[DataRequired(), Length(max=50)])

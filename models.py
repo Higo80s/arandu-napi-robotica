@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db # [REFATORACAO] Instancia centralizada
+from core.datetime_utils import utc_now
 from sqlalchemy.orm import validates
 from sqlalchemy import event, or_
 from encryption import EncryptedString
@@ -208,7 +209,9 @@ class Edital(db.Model):
     numero_edital = db.Column(db.String(150))          # Ex: "01", "002"
     ano_edital = db.Column(db.Integer)                 # Ex: 2024, 2025
     empresa = db.Column(db.String(150))                # [NEW] Empresa/Parceiro vinculado ao fomento
-    
+    numero_convenio = db.Column(db.String(100))        # Ex: "CONV 110/2025"
+    coordenador_geral_proppg = db.Column(db.String(200))  # Coordenador Geral do Projeto / PROPPG
+
     # [NEW V11.2 - Prod] Vigência do Edital
     data_inicio = db.Column(db.Date, nullable=True)
     data_fim = db.Column(db.Date, nullable=True)
@@ -226,9 +229,10 @@ class Edital(db.Model):
     bolsistas = db.relationship('Bolsista', backref='edital', cascade='all, delete-orphan', lazy=True)
     modalidades = db.relationship('Modalidade', backref='edital', cascade='all, delete-orphan', lazy=True)
     # [NEW V10] Módulo Seleção
-    rodadas = db.relationship('RodadaSelecao', backref='edital', cascade='all, delete-orphan', lazy=True)
+    rodadas = db.relationship('RodadaSelecao', backref='edital', cascade='all, delete-orphan', lazy=True, order_by='RodadaSelecao.ordem')
     # [NEW FASE E] Regras Dinâmicas (Módulo Seleção)
     regras = db.relationship('EditalRegra', backref='edital', cascade='all, delete-orphan', lazy=True, order_by='EditalRegra.ordem')
+    comentarios_historico = db.relationship('ComentarioEdital', back_populates='edital', cascade='all, delete-orphan', lazy=True, order_by='ComentarioEdital.criado_em.asc()')
     
     @property
     def status_prestacao(self):
@@ -386,11 +390,28 @@ class ComentarioBolsista(db.Model):
     bolsista_id = db.Column(db.Integer, db.ForeignKey('bolsistas.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
     texto = db.Column(db.Text, nullable=False)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
-    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=utc_now)
+    atualizado_em = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relacionamentos
     bolsista = db.relationship('Bolsista', back_populates='comentarios_historico')
+    autor = db.relationship('User')
+
+class ComentarioEdital(db.Model):
+    """
+    Tabela: comentarios_edital
+    Descrição: Histórico de anotações para o edital.
+    """
+    __tablename__ = 'comentarios_edital'
+
+    id = db.Column(db.Integer, primary_key=True)
+    edital_id = db.Column(db.Integer, db.ForeignKey('editais.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
+    texto = db.Column(db.Text, nullable=False)
+    criado_em = db.Column(db.DateTime, default=utc_now)
+    atualizado_em = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+
+    edital = db.relationship('Edital', back_populates='comentarios_historico')
     autor = db.relationship('User')
 
 class Bolsista(db.Model):
@@ -424,6 +445,8 @@ class Bolsista(db.Model):
     # Isso permite que um discente migre de nível (M->D) ou troque de edital.
     cpf = db.Column(EncryptedString(255))
     email = db.Column(db.String(100))
+    telefone = db.Column(db.String(30))
+    data_nascimento = db.Column(db.Date, nullable=True)
     pais_origem = db.Column(db.String(100), default='Brasil') # [NEW Phase 2 - Internacionalização]
     
     # Dados Acadêmicos
@@ -457,6 +480,14 @@ class Bolsista(db.Model):
         if self.programa_link and self.programa_link.campus:
             return self.programa_link.campus.instituicao or "UTFPR"
         return "Não Informada"
+
+    @property
+    def sigla_campus_display(self):
+        if self.programa_link and self.programa_link.campus:
+            return self.programa_link.campus.sigla_campus
+        if self.campus:
+            return self.campus.sigla_campus
+        return None
     
     data_inicio_curso = db.Column(db.Date)
     previsao_defesa = db.Column(db.Date)
@@ -480,12 +511,14 @@ class Bolsista(db.Model):
     is_pdse = db.Column(db.Boolean, default=False) # [NEW] V3: Flag para Sanduíche
     pais_destino = db.Column(db.String(100))       # [NEW] V3: País do Sanduíche
     
-    data_inicio_bolsa = db.Column(db.Date, nullable=False)
-    meses_duracao = db.Column(db.Integer, nullable=False)
-    data_fim_bolsa = db.Column(db.Date, nullable=False) # Calculada automaticamente
+    data_inicio_bolsa = db.Column(db.Date)
+    meses_duracao = db.Column(db.Integer)
+    data_fim_bolsa = db.Column(db.Date) # Calculada automaticamente
     
     # Status e Desligamento
     ativo = db.Column(db.Boolean, default=True)
+    # Cadastrado sem pagamentos: aguarda vigência e/ou contrato FUNTEF/FA
+    implantacao_pendente = db.Column(db.Boolean, default=False)
     motivo_desligamento = db.Column(db.Text)
     data_desligamento = db.Column(db.Date)
     
@@ -507,6 +540,20 @@ class Bolsista(db.Model):
     
     # [NEW PHASE 2] Controle de Checkout/Relatório Final
     relatorio_entregue = db.Column(db.Boolean, default=False)
+    relatorio_ultima_cobranca_em = db.Column(db.DateTime, nullable=True)
+
+    # [FUNTEF / Conveniar] Onboarding de novo bolsista
+    link_pasta_nuvem = db.Column(db.Text)
+    conveniar_cadastrado = db.Column(db.Boolean, default=False)
+    funtef_email_enviado_em = db.Column(db.DateTime, nullable=True)
+    funtef_contrato_pronto = db.Column(db.Boolean, default=False)
+
+    # [AVISO ÚLTIMO MÊS] Notificação proativa ao bolsista e orientador
+    ultimo_mes_email_enviado_em = db.Column(db.DateTime, nullable=True)
+    ultimo_mes_email_competencia = db.Column(db.String(7), nullable=True)  # YYYY-MM
+
+    # Confirmação de início (bolsista + orientador, após ativação FA)
+    inicio_email_enviado_em = db.Column(db.DateTime, nullable=True)
 
     # [NEW FASE 4] Índices Estratégicos para Performance
     # Aceleram consultas frequentes (listagens, dashboards, filtros)
@@ -522,6 +569,38 @@ class Bolsista(db.Model):
         """
         from core.status_engine import StatusEngine
         return StatusEngine.get_status(self)
+
+    @property
+    def em_ultimo_mes_bolsa(self):
+        """True se ativo e data_fim_bolsa cai no mês/ano corrente."""
+        from datetime import date
+        hoje = date.today()
+        return bool(
+            self.ativo
+            and self.data_fim_bolsa
+            and self.data_fim_bolsa.month == hoje.month
+            and self.data_fim_bolsa.year == hoje.year
+        )
+
+    @property
+    def pendencias_implantacao(self):
+        from services.implantacao_bolsa_service import ImplantacaoBolsaService
+        return ImplantacaoBolsaService.pendencias(self, exigir_inicio=False)
+
+    @property
+    def motivo_implantacao_pendente(self):
+        from services.implantacao_bolsa_service import ImplantacaoBolsaService
+        return ImplantacaoBolsaService.label_pendencia(self)
+
+    @property
+    def cobranca_relatorio_pendente(self):
+        """Desligado sem checkout de relatório final (não inclui implantação pendente)."""
+        return (
+            (not self.ativo)
+            and (not self.relatorio_entregue)
+            and (not getattr(self, 'implantacao_pendente', False))
+            and getattr(self, 'status_governanca', None) != 'PENDENTE'
+        )
     
     def update_governance_status(self):
         """
@@ -533,7 +612,10 @@ class Bolsista(db.Model):
         
         if current_status == BolsistaStatus.INATIVO:
             self.status_governanca = 'INATIVO'
-        elif current_status == BolsistaStatus.PENDENTE_GOVERNANCA:
+        elif current_status in (
+            BolsistaStatus.PENDENTE_GOVERNANCA,
+            BolsistaStatus.AGUARDANDO_IMPLANTACAO,
+        ):
              self.status_governanca = 'PENDENTE'
         else:
             self.status_governanca = 'ATIVO'
@@ -673,10 +755,11 @@ class RodadaSelecao(db.Model):
     data_fim = db.Column(db.Date, nullable=False)
     ativa = db.Column(db.Boolean, default=True)      # Se é a chamada atual
     descricao = db.Column(db.Text)
+    ordem = db.Column(db.Integer, default=0)
     
     # Relações
     etapas = db.relationship('EtapaCronograma', backref='rodada', cascade='all, delete-orphan', lazy=True)
-    candidaturas = db.relationship('Candidatura', backref='rodada', cascade='all, delete-orphan', lazy=True)
+    candidaturas = db.relationship('Candidatura', backref='rodada', cascade='all, delete-orphan', lazy=True, order_by='Candidatura.ordem')
 
 class EtapaCronograma(db.Model):
     """
@@ -704,6 +787,7 @@ class Candidatura(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     rodada_id = db.Column(db.Integer, db.ForeignKey('rodadas_selecao.id'), nullable=False)
+    ordem = db.Column(db.Integer, default=0)
     
     # Dados do Candidato
     nome = db.Column(db.String(100), nullable=False)
@@ -804,8 +888,8 @@ class DadosSociais(db.Model):
     situacao_moradia = db.Column(db.String(100))  # Própria, Alugada, Casa Estudante
     
     # Metadados
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
-    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=utc_now)
+    atualizado_em = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relacionamento 1:1
     bolsista = db.relationship('Bolsista', backref=db.backref('dados_sociais', uselist=False, cascade='all, delete-orphan'))
@@ -903,6 +987,33 @@ class AcordoInternacional(db.Model):
             "is_gcub": self.is_gcub,
             "numero_edital": self.numero_edital or ''
         }
+
+class SistemaConfig(db.Model):
+    """Configurações editáveis pelo admin (chave/valor)."""
+    __tablename__ = 'sistema_config'
+
+    chave = db.Column(db.String(100), primary_key=True)
+    valor = db.Column(db.Text)
+    atualizado_em = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+
+
+class AnotacaoSistema(db.Model):
+    """
+    Tabela: anotacoes_sistema
+    Quadro de tarefas compartilhado da equipe NAPI-Robótica.
+    """
+    __tablename__ = 'anotacoes_sistema'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
+    texto = db.Column(db.Text, nullable=False)
+    concluida = db.Column(db.Boolean, default=False, nullable=False)
+    concluida_em = db.Column(db.DateTime, nullable=True)
+    criado_em = db.Column(db.DateTime, default=utc_now)
+    atualizado_em = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+
+    autor = db.relationship('User', backref=db.backref('anotacoes_sistema', lazy=True))
+
 
 class LogAutomacao(db.Model):
     """

@@ -46,6 +46,32 @@
             {% endif %}
         </div>
 
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Número do Convênio</label>
+            <input type="text" name="numero_convenio"
+                value="{{ form.numero_convenio.data if form.numero_convenio.data else (edital.numero_convenio if edital else '') }}"
+                placeholder="Ex: CONV 110/2025"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+            {% if form.numero_convenio.errors %}
+                {% for error in form.numero_convenio.errors %}
+                    <small style="color: #dc2626; display: block;">{{ error }}</small>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nome do Coordenador Geral do Projeto / PROPPG</label>
+            <input type="text" name="coordenador_geral_proppg"
+                value="{{ form.coordenador_geral_proppg.data if form.coordenador_geral_proppg.data else (edital.coordenador_geral_proppg if edital else '') }}"
+                placeholder="Nome Completo"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+            {% if form.coordenador_geral_proppg.errors %}
+                {% for error in form.coordenador_geral_proppg.errors %}
+                    <small style="color: #dc2626; display: block;">{{ error }}</small>
+                {% endfor %}
+            {% endif %}
+        </div>
+
         <div style="margin-bottom: 1rem; opacity: 0.8; background: #f9fafb; padding: 10px; border: 1px dashed #ccc;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #666;">
                 Identificador Legado (Completo) <small>- Usado para compatibilidade interna</small>
@@ -158,6 +184,25 @@
                 {% endfor %}
             {% endif %}
         </div>
+
+        {% if edital %}
+        <section id="historico-comentarios" style="margin-bottom: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+            <h3 style="font-size: 1.05rem; margin-bottom: .75rem;">Histórico de anotações</h3>
+            {% if edital.comentarios_historico %}
+            <div style="display: flex; flex-direction: column; gap: .5rem;">
+                {% for comentario in edital.comentarios_historico|reverse %}
+                <div style="padding: .75rem; border: 1px solid #e5e7eb; border-radius: .375rem; background: #f9fafb;">
+                    <small style="color: #6b7280;"><strong>{{ comentario.autor.nome if comentario.autor else 'Sistema' }}</strong> · {{ comentario.criado_em.strftime('%d/%m/%Y %H:%M') if comentario.criado_em else '' }}</small>
+                    <div style="white-space: pre-wrap; margin-top: .25rem;">{{ comentario.texto }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #6b7280; margin: 0;">Nenhuma anotação no histórico ainda.</p>
+            {% endif %}
+            <small style="display: block; margin-top: .5rem; color: #6b7280;">Use o Painel de Seleção para adicionar ou editar anotações.</small>
+        </section>
+        {% endif %}
 
         <!-- [NEW V11.2 - Prod] Vigência -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">

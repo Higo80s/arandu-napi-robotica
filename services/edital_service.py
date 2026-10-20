@@ -12,7 +12,8 @@ class EditalService:
         try:
             # Filtra dados para o modelo (evita passar csrf_token etc)
             allowed_fields = [
-                'numero', 'numero_edital', 'ano_edital', 'empresa', 'descricao',
+                'numero', 'numero_edital', 'ano_edital', 'empresa',
+                'numero_convenio', 'coordenador_geral_proppg', 'descricao',
                 'agencia', 'codigo_projeto', 'descricao_projeto', 'processo_sei',
                 'data_inicio', 'data_fim', 'orcamento_total', 'prestacao_contas',
                 'comentarios', 'proap_distribuicao_id'
@@ -48,7 +49,8 @@ class EditalService:
                 return False, "Edital não encontrado."
 
             allowed_fields = [
-                'numero', 'numero_edital', 'ano_edital', 'empresa', 'descricao',
+                'numero', 'numero_edital', 'ano_edital', 'empresa',
+                'numero_convenio', 'coordenador_geral_proppg', 'descricao',
                 'agencia', 'codigo_projeto', 'descricao_projeto', 'processo_sei',
                 'data_inicio', 'data_fim', 'orcamento_total', 'prestacao_contas',
                 'comentarios', 'proap_distribuicao_id'

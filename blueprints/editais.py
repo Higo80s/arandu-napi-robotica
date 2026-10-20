@@ -7,12 +7,12 @@ from decimal import Decimal
 
 # [REFATORACAO] Imports centralizados
 from extensions import db
-from models import Edital, Bolsista, Modalidade, ProapDistribuicao, Campus, ProgramaAcademico, EditalRegra, RodadaSelecao, EtapaCronograma, Candidatura
-from utils import parse_flexible_date
+from models import Edital, Bolsista, Modalidade, ProapDistribuicao, Campus, ProgramaAcademico, EditalRegra, RodadaSelecao, EtapaCronograma, Candidatura, ComentarioEdital
+from utils import parse_flexible_date, sanitizar_cpf
 from forms.edital_form import EditalForm
 from services.edital_service import EditalService
 from audit import log_action
-from decorators import admin_required
+from decorators import admin_required, require_role
 from utils.permissions import apply_user_scope, filter_editais_by_scope  # [V22] Filtros de escopo hierárquico
 from sqlalchemy import not_, func, and_
 
@@ -324,8 +324,9 @@ def painel_selecao(id):
         stats_rodada['efetivados'] = len([c for c in rodada_focada.candidaturas if c.status == 'EFETIVADO'])
         
     # [NEW V10.9] Registro de CPFs efetivados para trava de idempotência
-    from utils.idempotency import get_cpfs_efetivados_set
+    from utils.idempotency import get_cpfs_efetivados_set, get_bolsistas_por_cpf_edital
     cpfs_efetivados = get_cpfs_efetivados_set()
+    bolsistas_por_cpf = get_bolsistas_por_cpf_edital(id)
         
     return render_template('editais/selecao_painel.html', 
                            edital=edital, 
@@ -340,7 +341,47 @@ def painel_selecao(id):
                                'saldo': v_stats['saldo']
                            },
                            funnel=stats_rodada,
-                           cpfs_efetivados=cpfs_efetivados)
+                           cpfs_efetivados=cpfs_efetivados,
+                           bolsistas_por_cpf=bolsistas_por_cpf)
+
+@editais_bp.route('/editais/<int:id>/comentario', methods=['POST'])
+@login_required
+@require_role(['admin', 'master', 'gestor'])
+def comentario_novo_edital(id):
+    """Registra uma anotação no histórico do edital."""
+    edital = Edital.query.get_or_404(id)
+    texto = (request.form.get('novo_comentario') or request.form.get('texto') or '').strip()
+    rodada_id = request.form.get('rodada_id', type=int)
+    back = url_for('editais.painel_selecao', id=edital.id, rodada_id=rodada_id) if rodada_id else (
+        url_for('editais.editar', id=edital.id) + '#historico-comentarios'
+    )
+    if not texto:
+        flash('Digite o texto da anotação.', 'warning')
+        return redirect(back)
+
+    comentario = ComentarioEdital(edital_id=edital.id, texto=texto, user_id=current_user.id)
+    db.session.add(comentario)
+    db.session.commit()
+    log_action('CREATE_COMENTARIO_EDITAL', tabela='comentarios_edital', registro_id=comentario.id, detalhes=f'edital_id={edital.id}')
+    flash('Anotação registrada.', 'success')
+    return redirect(back)
+
+@editais_bp.route('/editais/comentario/<int:id>/editar', methods=['POST'])
+@login_required
+@require_role(['admin', 'master', 'gestor'])
+def editar_comentario_edital(id):
+    """Edita uma anotação do edital pelo autor ou por usuário de gestão."""
+    comentario = ComentarioEdital.query.get_or_404(id)
+    if current_user.role not in ('admin', 'master', 'gestor') and comentario.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Sem permissão para editar esta anotação.'}), 403
+
+    texto = (request.form.get('texto') or '').strip()
+    if not texto:
+        return jsonify({'success': False, 'message': 'Texto não pode ser vazio.'}), 400
+
+    comentario.texto = texto
+    db.session.commit()
+    return jsonify({'success': True, 'texto': comentario.texto})
 
 @editais_bp.route('/editais/<int:id>/rodadas/nova', methods=['GET', 'POST'])
 @login_required
@@ -350,13 +391,15 @@ def rodadas_nova(id):
         return render_template('editais/rodada_form.html', edital=edital)
 
     try:
+        max_ordem = db.session.query(func.coalesce(func.max(RodadaSelecao.ordem), -1)).filter_by(edital_id=edital.id).scalar()
         nova_rodada = RodadaSelecao(
             edital_id=edital.id,
             nome=request.form['nome'],
             data_inicio=parse_flexible_date(request.form['data_inicio']),
             data_fim=parse_flexible_date(request.form['data_fim']),
             descricao=request.form.get('descricao', ''),
-            ativa=True
+            ativa=True,
+            ordem=(max_ordem if max_ordem is not None else -1) + 1
         )
         db.session.add(nova_rodada)
         db.session.flush()
@@ -501,6 +544,44 @@ def api_etapas_reordenar():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@editais_bp.route('/api/rodadas/reordenar', methods=['POST'])
+@login_required
+@require_role(['admin', 'master', 'gestor'])
+def api_rodadas_reordenar():
+    try:
+        data = request.get_json() or {}
+        edital_id = data.get('edital_id')
+        if not edital_id:
+            return jsonify({'success': False, 'error': 'edital_id obrigatório'}), 400
+        for item in data.get('rodadas') or []:
+            rodada = RodadaSelecao.query.get(int(item['id']))
+            if rodada and rodada.edital_id == int(edital_id):
+                rodada.ordem = int(item['ordem'])
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@editais_bp.route('/api/candidaturas/reordenar', methods=['POST'])
+@login_required
+@require_role(['admin', 'master', 'gestor'])
+def api_candidaturas_reordenar():
+    try:
+        data = request.get_json() or {}
+        rodada_id = data.get('rodada_id')
+        if not rodada_id:
+            return jsonify({'success': False, 'error': 'rodada_id obrigatório'}), 400
+        for item in data.get('candidaturas') or []:
+            candidatura = Candidatura.query.get(int(item['id']))
+            if candidatura and candidatura.rodada_id == int(rodada_id):
+                candidatura.ordem = int(item['ordem'])
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @editais_bp.route('/rodadas/<int:id>/candidatura/nova', methods=['GET', 'POST'])
 @login_required
 def candidatura_nova(id):
@@ -514,10 +595,13 @@ def candidatura_nova(id):
         return render_template('editais/candidatura_form.html', rodada=rodada, edital=edital, programas=programas, campuses=campuses)
 
     try:
+        cpf = request.form['cpf']
+        cpf = sanitizar_cpf(cpf) if sanitizar_cpf else cpf
+        max_ordem = db.session.query(func.coalesce(func.max(Candidatura.ordem), -1)).filter_by(rodada_id=rodada.id).scalar()
         nova_cand = Candidatura(
             rodada_id=rodada.id,
             nome=request.form['nome'],
-            cpf=request.form['cpf'],
+            cpf=cpf,
             email=request.form['email'],
             campus_id=int(request.form.get('campus_id')) if request.form.get('campus_id') else None,
             programa_id=int(request.form.get('programa_id')) if request.form.get('programa_id') else None,
@@ -530,7 +614,8 @@ def candidatura_nova(id):
             instituicao=request.form.get('instituicao'),
             anotacoes=request.form.get('anotacoes'),
             status='INSCRITO',
-            data_submissao=datetime.now()
+            data_submissao=datetime.now(),
+            ordem=(max_ordem if max_ordem is not None else -1) + 1
         )
         db.session.add(nova_cand)
         db.session.commit()
@@ -562,20 +647,63 @@ def candidatura_status(id):
 @editais_bp.route('/candidatura/<int:id>/promover', methods=['POST'])
 @login_required
 def candidatura_promover(id):
+    from services.bolsista_service import BolsistaService
+
     cand = Candidatura.query.get_or_404(id)
+    edital_id = cand.rodada.edital_id
+    rodada_id = cand.rodada_id
     if cand.status != 'SELECIONADO':
         flash('Apenas candidatos com status SELECIONADO podem ser promovidos.', 'warning')
-        return redirect(url_for('editais.painel_selecao', id=cand.rodada.edital_id, rodada_id=cand.rodada_id))
-        
+        return redirect(url_for('editais.painel_selecao', id=edital_id, rodada_id=rodada_id))
+
+    # Se já existe bolsista com o mesmo CPF neste edital, vincula em vez de criar outro.
+    existente = BolsistaService.find_by_cpf_edital(cand.cpf, edital_id)
+    if existente:
+        ok, result = BolsistaService.vincular_candidatura_existente(cand, bolsista=existente)
+        if ok:
+            flash(
+                f'Candidatura vinculada ao cadastro existente de {existente.nome} '
+                f'(#{existente.id}). Nenhum novo bolsista foi criado.',
+                'success',
+            )
+            return redirect(url_for('bolsistas.editar', id=existente.id))
+        flash(result or 'Não foi possível vincular a candidatura.', 'warning')
+        return redirect(url_for('editais.painel_selecao', id=edital_id, rodada_id=rodada_id))
+
     is_posdoc = False
     if cand.programa:
         niveis = (cand.programa.niveis or "").upper()
         if any(x in niveis for x in ['PÓS', 'POS', 'RESID']):
             is_posdoc = True
-    
+
     if is_posdoc:
         return redirect(url_for('posdoc.novo', candidatura_id=cand.id))
     return redirect(url_for('bolsistas.novo', candidatura_id=cand.id))
+
+
+@editais_bp.route('/candidatura/<int:id>/vincular', methods=['POST'])
+@login_required
+def candidatura_vincular(id):
+    """Efetiva candidatura apontando para bolsista já cadastrado no mesmo edital."""
+    from services.bolsista_service import BolsistaService
+
+    cand = Candidatura.query.get_or_404(id)
+    edital_id = cand.rodada.edital_id
+    rodada_id = cand.rodada_id
+    if cand.status not in ('SELECIONADO', 'EXCEDENTE', 'INSCRITO'):
+        flash('Esta candidatura não pode ser vinculada neste status.', 'warning')
+        return redirect(url_for('editais.painel_selecao', id=edital_id, rodada_id=rodada_id))
+
+    ok, result = BolsistaService.vincular_candidatura_existente(cand)
+    if ok:
+        bolsista = result
+        flash(
+            f'Candidatura vinculada ao cadastro existente de {bolsista.nome} (#{bolsista.id}).',
+            'success',
+        )
+        return redirect(url_for('bolsistas.editar', id=bolsista.id))
+    flash(result or 'Nenhum bolsista com este CPF neste edital.', 'warning')
+    return redirect(url_for('editais.painel_selecao', id=edital_id, rodada_id=rodada_id))
 
 @editais_bp.route('/rodadas/<int:id>/imprimir', methods=['GET'])
 @login_required

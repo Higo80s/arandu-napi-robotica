@@ -1,0 +1,15 @@
+---
+description: CPF criptografado — nunca filtrar por igualdade SQL
+globs: models.py,encryption.py,blueprints/services/validation_strategies.py,utils/idempotency.py,services/bolsista_service.py
+alwaysApply: false
+---
+
+# CPF / EncryptedString
+
+Campos `cpf` usam `EncryptedString` (Fernet). Cada `encrypt()` gera ciphertext diferente.
+
+**Proibido:** `Model.query.filter_by(cpf=...)` ou `Model.cpf == valor` para achar pessoa.
+
+**Obrigatório:** carregar valores (TypeDecorator descriptografa) e comparar com `sanitizar_cpf` em Python — ver `utils/idempotency.py` e `AcumuloBolsaAtivaStrategy`.
+
+Ao promover candidatura → bolsista, passar `candidatura_id_ignorar` no validador de acúmulo para não flagrar a própria seleção.

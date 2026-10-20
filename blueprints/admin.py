@@ -9,7 +9,7 @@ import csv
 import re
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
-from decorators import admin_required
+from decorators import admin_required, require_role
 import backup_system
 
 admin_bp = Blueprint('admin', __name__)
@@ -244,11 +244,8 @@ def sobre_simbolo():
 
 @admin_bp.route('/admin/monitor-automacao')
 @login_required
+@require_role(['admin', 'gestor', 'master'])
 def monitor_automacao():
-    if current_user.role not in ['admin', 'gestor']:
-        flash("Acesso restrito a administradores.", "warning")
-        return redirect(url_for('index'))
-        
     logs = LogAutomacao.query.order_by(LogAutomacao.data_execucao.desc()).limit(50).all()
     return render_template('admin/monitor_automacao.html', logs=logs)
 
@@ -664,3 +661,174 @@ def download_legacy_report():
     
     filename = f"Relatorio_Saude_Arandu_{date.today().strftime('%Y%m%d')}.xlsx"
     return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=filename)
+
+
+@admin_bp.route('/admin/config-funtef', methods=['GET', 'POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_funtef():
+    from services.funtef_onboarding_service import FuntefOnboardingService
+
+    if request.method == 'POST':
+        ok, msg = FuntefOnboardingService.save_config(
+            request.form.get('funtef_emails', ''),
+            request.form.get('funtef_email_corpo', ''),
+        )
+        flash(msg, 'success' if ok else 'danger')
+        if ok:
+            return redirect(url_for('admin.config_funtef'))
+
+    return render_template(
+        'admin/config_funtef.html',
+        emails_raw='; '.join(FuntefOnboardingService.get_funtef_external_recipients()),
+        corpo_raw=FuntefOnboardingService.get_email_body_raw(),
+        preview_html=FuntefOnboardingService.render_preview_html(),
+    )
+
+
+@admin_bp.route('/admin/config-funtef/preview', methods=['POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_funtef_preview():
+    """Prévia AJAX do HTML do e-mail FUNTEF (dados de exemplo)."""
+    from services.funtef_onboarding_service import FuntefOnboardingService
+    corpo = request.form.get('corpo', '')
+    html = FuntefOnboardingService.render_preview_html(corpo_text=corpo)
+    return jsonify({'html': html})
+
+
+@admin_bp.route('/admin/config-relatorio-final', methods=['GET', 'POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_relatorio_final():
+    from services.relatorio_final_service import RelatorioFinalService
+
+    if request.method == 'POST':
+        ok, msg = RelatorioFinalService.save_config(
+            request.form.get('email_corpo', ''),
+            request.form.get('equipe_emails', ''),
+        )
+        flash(msg, 'success' if ok else 'danger')
+        if ok:
+            return redirect(url_for('admin.config_relatorio_final'))
+
+    return render_template(
+        'admin/config_relatorio_final.html',
+        corpo_raw=RelatorioFinalService.get_email_body_raw(),
+        equipe_raw=RelatorioFinalService.get_equipe_email_raw(),
+    )
+
+
+@admin_bp.route('/admin/config-ultimo-mes-bolsa', methods=['GET', 'POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_ultimo_mes_bolsa():
+    from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+
+    if request.method == 'POST':
+        ok, msg = UltimoMesBolsaService.save_config(
+            request.form.get('email_corpo', ''),
+            request.form.get('equipe_emails', ''),
+        )
+        flash(msg, 'success' if ok else 'danger')
+        if ok:
+            return redirect(url_for('admin.config_ultimo_mes_bolsa'))
+
+    return render_template(
+        'admin/config_ultimo_mes_bolsa.html',
+        corpo_raw=UltimoMesBolsaService.get_email_body_raw(),
+        equipe_raw=UltimoMesBolsaService.get_equipe_email_raw(),
+    )
+
+
+@admin_bp.route('/admin/config-confirmacao-inicio', methods=['GET', 'POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_confirmacao_inicio():
+    from services.confirmacao_inicio_bolsa_service import ConfirmacaoInicioBolsaService
+
+    if request.method == 'POST':
+        ok, msg = ConfirmacaoInicioBolsaService.save_config(
+            request.form.get('email_corpo', ''),
+            request.form.get('equipe_emails', ''),
+        )
+        flash(msg, 'success' if ok else 'danger')
+        if ok:
+            return redirect(url_for('admin.config_confirmacao_inicio'))
+
+    preview_html, _meta, _subject = ConfirmacaoInicioBolsaService.render_preview_html()
+    return render_template(
+        'admin/config_confirmacao_inicio.html',
+        corpo_raw=ConfirmacaoInicioBolsaService.get_email_body_raw(),
+        equipe_raw=ConfirmacaoInicioBolsaService.get_equipe_email_raw(),
+        preview_html=preview_html,
+    )
+
+
+@admin_bp.route('/admin/config-confirmacao-inicio/preview', methods=['POST'])
+@login_required
+@require_role(['admin', 'gestor'])
+def config_confirmacao_inicio_preview():
+    from services.confirmacao_inicio_bolsa_service import ConfirmacaoInicioBolsaService
+    corpo = request.form.get('corpo', '')
+    html, _meta, _subject = ConfirmacaoInicioBolsaService.render_preview_html(corpo_text=corpo)
+    return jsonify({'html': html})
+
+
+@admin_bp.route('/admin/automacoes')
+@login_required
+@require_role(['admin', 'gestor', 'master'])
+def automacoes_hub():
+    """Central de automações — status + atalhos (não gerencia o Task Scheduler)."""
+    from services.automacoes_hub_service import build_hub
+    return render_template('admin/automacoes_hub.html', **build_hub())
+
+
+@admin_bp.route('/admin/config-pagamento-bolsas', methods=['GET', 'POST'])
+@login_required
+@require_role(['admin', 'gestor', 'master'])
+def config_pagamento_bolsas():
+    from services.pagamento_email_service import PagamentoEmailService
+
+    if request.method == 'POST' and request.form.get('action') == 'salvar':
+        ok, msg = PagamentoEmailService.save_config(
+            request.form.get('email_corpo', ''),
+            request.form.get('equipe_emails', ''),
+        )
+        flash(msg, 'success' if ok else 'danger')
+        if ok:
+            return redirect(url_for('admin.config_pagamento_bolsas'))
+
+    mes_ref = request.args.get('mes') or PagamentoEmailService.default_mes()
+    preview_html, meta = PagamentoEmailService.render_preview_html(mes_yyyy_mm=mes_ref)
+    return render_template(
+        'admin/config_pagamento_bolsas.html',
+        corpo_raw=PagamentoEmailService.get_email_body_raw(),
+        equipe_raw=PagamentoEmailService.get_equipe_email_raw(),
+        preview_html=preview_html,
+        meta=meta,
+        mes_ref=mes_ref,
+    )
+
+
+@admin_bp.route('/admin/config-pagamento-bolsas/preview', methods=['POST'])
+@login_required
+@require_role(['admin', 'gestor', 'master'])
+def config_pagamento_bolsas_preview():
+    from services.pagamento_email_service import PagamentoEmailService
+    corpo = request.form.get('corpo', '')
+    mes = request.form.get('mes') or PagamentoEmailService.default_mes()
+    html, _meta = PagamentoEmailService.render_preview_html(mes_yyyy_mm=mes, corpo_text=corpo)
+    return jsonify({'html': html})
+
+
+@admin_bp.route('/admin/config-pagamento-bolsas/disparar', methods=['POST'])
+@login_required
+@require_role(['admin', 'gestor', 'master'])
+def config_pagamento_bolsas_disparar():
+    from services.pagamento_email_service import PagamentoEmailService
+
+    mes = (request.form.get('mes') or '').strip() or PagamentoEmailService.default_mes()
+    ok, msg = PagamentoEmailService.disparar(mes_yyyy_mm=mes, forcar=True)
+    flash(msg, 'success' if ok else 'danger')
+    return redirect(url_for('admin.config_pagamento_bolsas', mes=mes))

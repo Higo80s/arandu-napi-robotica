@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>E-mails FUNTEF</h1>
+    <a href="{{ url_for('admin.automacoes_hub') }}" class="btn btn-secondary btn-sm">Central de automações</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; max-width: 1200px; margin: 0 auto;">
+    <div class="card" style="padding: 2rem;">
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+            Configure os destinatários e o texto enviado automaticamente quando um novo bolsista é cadastrado
+            (após confirmação do Conveniar e link da pasta na Nuvem).
+        </p>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">E-mails da FUNTEF (externos)</label>
+            <textarea name="funtef_emails" rows="3" required
+                placeholder="kamila.camelo@funtefpr.org.br; outro@funtefpr.org.br"
+                style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.5rem;">{{ emails_raw }}</textarea>
+            <small style="color: var(--text-muted); display:block; margin-bottom:1.75rem;">
+                Separe vários endereços com ponto e vírgula, vírgula ou quebra de linha.
+                A cópia para a secretaria NAPI (<code>robotica-ct@utfpr.edu.br</code>) é enviada automaticamente em todo disparo.
+            </small>
+
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Texto do e-mail</label>
+            <textarea id="funtef_email_corpo" name="funtef_email_corpo" rows="14" required
+                style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.5rem; font-family: inherit; line-height: 1.5;">{{ corpo_raw }}</textarea>
+            <small style="color: var(--text-muted); display:block; margin-bottom:1.5rem;">
+                Este texto aparece no corpo do e-mail. Os dados do bolsista e o link da pasta na Nuvem são incluídos automaticamente abaixo.
+                Use linha em branco entre parágrafos. A prévia ao lado atualiza ao digitar (não precisa salvar).
+            </small>
+
+            <button type="submit" class="btn btn-primary">Salvar configuração</button>
+        </form>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <h3 style="margin:0; font-size:1rem; color: var(--text-color);">Prévia do e-mail</h3>
+            <small style="color: var(--text-muted);">dados de exemplo</small>
+        </div>
+        <div id="funtef-preview-frame"
+            style="border: 1px solid var(--border-color); border-radius: 8px; background: #e5e7eb; padding: 0.75rem; max-height: 70vh; overflow: auto;">
+            {{ preview_html|safe }}
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const textarea = document.getElementById('funtef_email_corpo');
+    const frame = document.getElementById('funtef-preview-frame');
+    if (!textarea || !frame) return;
+
+    let timer = null;
+    function refreshPreview() {
+        const body = new FormData();
+        body.append('corpo', textarea.value);
+        body.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        fetch('{{ url_for("admin.config_funtef_preview") }}', {
+            method: 'POST',
+            body: body,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.html) frame.innerHTML = data.html;
+        })
+        .catch(() => {});
+    }
+
+    textarea.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(refreshPreview, 400);
+    });
+})();
+</script>
+
+<style>
+@media (max-width: 960px) {
+    div[style*="grid-template-columns: 1fr 1fr"] {
+        display: block !important;
+    }
+}
+</style>
+{% endblock %}

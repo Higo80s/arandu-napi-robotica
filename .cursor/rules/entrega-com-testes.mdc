@@ -1,0 +1,28 @@
+---
+description: Nenhum ajuste é entregue sem testes automatizados passando
+alwaysApply: true
+---
+
+# Entrega com testes (obrigatório)
+
+Todo ajuste no Arandu Robótica só está pronto com pytest passando. Espelho da rotina do Proppg, adaptada a este repo.
+
+## Ordem
+
+1. **Bug: reproduzir primeiro.** Teste que falha no comportamento relatado (dados fictícios). Sem reproduzir, não mexer no código.
+2. **Corrigir/implementar.** O teste do passo 1 passa. Feature nova: caminho principal + recusa (fora do dia, já enviado, sem destinatário…).
+3. **Rodar:** `venv\Scripts\python.exe -m pytest tests -q --tb=short`. Sem `TEST_DATABASE_URL`, só `tests/unit/` coleta. Com banco isolado, a suíte em `tests/` tem que ficar verde. Nunca apagar teste para passar.
+4. UI/template: pytest não substitui conferência no navegador.
+5. Só então perguntar commit. Teste novo vai no mesmo commit do código.
+
+## Onde e como testar
+
+- Comportamento puro / tarefa / Nuvem / e-mail: `tests/unit/test_*.py` com mock (`requests`, `mail.send`, `LogAutomacao`). Sem PUT real, sem SMTP, sem Agendador.
+- Rota Flask: `tests/test_*.py` só com `TEST_DATABASE_URL` ≠ produção e nome do banco contendo `test`. Fixtures em `tests/conftest.py`.
+- **Proibido:** `pytest_suite/` (drop de schema e senha hardcoded). **Proibido:** pytest no `DATABASE_URL` de produção.
+- E-mails de teste: `@utfpr.edu.br` / `example.org`. Sem CPF/dado real.
+
+## Ao entregar, dizer
+
+- Quantos testes passaram e qual arquivo cobre o ajuste.
+- O que não foi automático (JS no browser, Nuvem/SMTP reais, Task Scheduler) e como conferir.

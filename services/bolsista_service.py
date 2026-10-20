@@ -9,7 +9,11 @@ class BolsistaService:
     def calculate_end_date(data_inicio_bolsa, meses_duracao, afastamentos):
         """
         Calcula a data final da bolsa considerando suspensões/afastamentos.
+        Retorna None enquanto a vigência não estiver definida.
         """
+        if not data_inicio_bolsa or not meses_duracao:
+            return None
+
         ext_suspension = 0
         for afast in afastamentos:
             if afast.get('tipo') in ['trancamento', 'saude', 'pdse']:
@@ -25,27 +29,86 @@ class BolsistaService:
         mod = Modalidade.query.get(modalidade_id)
         if not mod:
             return False, "Modalidade não encontrada."
-            
-        occupied_count = Bolsista.query.filter_by(modalidade_id=modalidade_id, ativo=True).count()
+
+        # Reserva vaga também para cadastros aguardando implantação/governança
+        occupied_count = Bolsista.query.filter(
+            Bolsista.modalidade_id == modalidade_id,
+            db.or_(
+                Bolsista.ativo.is_(True),
+                Bolsista.implantacao_pendente.is_(True),
+                Bolsista.status_governanca == 'PENDENTE',
+            ),
+        ).count()
         if occupied_count >= mod.vagas:
             return False, f"Limite de Vagas Esgotado! Esta modalidade possui {mod.vagas} vagas."
             
         return True, None
 
     @staticmethod
-    def sync_candidacy(candidatura_id, bolsista_cpf):
+    def sync_candidacy(candidatura_id, bolsista_cpf, bolsista_id=None):
         """
         Efetiva a candidatura vinculada ao bolsista.
         """
         if not candidatura_id:
-            return
-            
+            return False
+
         cand = Candidatura.query.get(candidatura_id)
-        if cand:
-            cand.status = 'EFETIVADO'
-            log_action('EFETIVAR_CANDIDATURA', tabela='candidaturas', registro_id=cand.id, 
-                       detalhes=f"Candidatura {candidatura_id} efetivada para o CPF {bolsista_cpf}")
-            db.session.commit()
+        if not cand:
+            return False
+        cand.status = 'EFETIVADO'
+        detalhes = f"Candidatura {candidatura_id} efetivada para o CPF {bolsista_cpf}"
+        if bolsista_id:
+            detalhes += f" (bolsista_id={bolsista_id})"
+        log_action(
+            'EFETIVAR_CANDIDATURA',
+            tabela='candidaturas',
+            registro_id=cand.id,
+            detalhes=detalhes,
+        )
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def find_by_cpf_edital(cpf, edital_id):
+        """Localiza bolsista do edital com o mesmo CPF (comparação só por dígitos)."""
+        from utils.formatters import sanitizar_cpf
+
+        key = sanitizar_cpf(cpf)
+        if not key or not edital_id:
+            return None
+        for bol in Bolsista.query.filter_by(edital_id=edital_id).all():
+            if sanitizar_cpf(bol.cpf) == key:
+                return bol
+        return None
+
+    @staticmethod
+    def vincular_candidatura_existente(candidatura, bolsista=None):
+        """
+        Marca candidatura como EFETIVADO apontando para bolsista já cadastrado
+        no mesmo edital (evita criar segundo registro).
+        """
+        if not candidatura:
+            return False, 'Candidatura não encontrada.'
+        edital_id = candidatura.rodada.edital_id if candidatura.rodada else None
+        bolsista = bolsista or BolsistaService.find_by_cpf_edital(candidatura.cpf, edital_id)
+        if not bolsista:
+            return False, 'Nenhum bolsista com este CPF neste edital.'
+        ok = BolsistaService.sync_candidacy(
+            candidatura.id, bolsista.cpf, bolsista_id=bolsista.id
+        )
+        if not ok:
+            return False, 'Não foi possível efetivar a candidatura.'
+        log_action(
+            'VINCULAR_CANDIDATURA_BOLSISTA',
+            tabela='candidaturas',
+            registro_id=candidatura.id,
+            detalhes=(
+                f"Candidatura {candidatura.id} vinculada ao bolsista {bolsista.id} "
+                f"({bolsista.nome})."
+            ),
+        )
+        db.session.commit()
+        return True, bolsista
 
     @staticmethod
     def calculate_current_installment(bolsista):
@@ -145,6 +208,17 @@ class BolsistaService:
         """
         bolsista = Bolsista.query.get(id)
         if not bolsista: return False, "Bolsista não encontrado."
+
+        from services.funtef_onboarding_service import FuntefOnboardingService
+        from services.implantacao_bolsa_service import ImplantacaoBolsaService
+
+        ok, msg = FuntefOnboardingService.can_activate(bolsista)
+        if not ok:
+            return False, msg
+
+        pendencias = ImplantacaoBolsaService.pendencias(bolsista, exigir_inicio=False)
+        if pendencias:
+            return False, pendencias[0]
         
         if isinstance(data_liberacao, str):
             data_liberacao = date.fromisoformat(data_liberacao)
@@ -154,6 +228,7 @@ class BolsistaService:
         
         bolsista.status_governanca = 'ATIVO'
         bolsista.ativo = True
+        bolsista.implantacao_pendente = False
         bolsista.data_liberacao_fundacao = data_liberacao
         
         # Ajusta data_inicio_bolsa para ser a data de liberação
@@ -162,6 +237,8 @@ class BolsistaService:
         # [NEW] Limpa dados de desligamento residual (caso estivesse desativado anteriormente)
         bolsista.data_desligamento = None
         bolsista.motivo_desligamento = None
+        bolsista.ultimo_mes_email_competencia = None
+        bolsista.ultimo_mes_email_enviado_em = None
         
         # Recalcula data_fim_bolsa
         bolsista.data_fim_bolsa = BolsistaService.calculate_end_date(
@@ -169,6 +246,8 @@ class BolsistaService:
             bolsista.meses_duracao, 
             []
         )
+
+        ImplantacaoBolsaService.registrar_ativacao(bolsista)
         
         db.session.commit()
         log_action('ATIVACAO_GOVERNANCA', tabela='bolsistas', registro_id=id, 

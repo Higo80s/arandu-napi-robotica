@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+    <h1>{{ icon('activity', size=22) }} Central de automações</h1>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <a href="{{ url_for('admin.monitor_automacao') }}" class="btn btn-secondary"
+           title="Histórico bruto das últimas execuções">{{ icon('scroll-text', size=16) }} Logs recentes</a>
+    </div>
+</div>
+
+<div class="card" style="padding:1.25rem 1.5rem; margin-bottom:1.25rem;">
+    <p style="margin:0 0 0.5rem; color:var(--text-muted);">
+        Visão operacional das automações de e-mail e rotinas agendadas.
+        <strong>Não altera</strong> o Agendador de Tarefas do Windows — use esta página para
+        conferir o último status e ir à tela de configuração / texto / destinatários de cada fluxo.
+    </p>
+    <details>
+        <summary style="cursor:pointer; font-weight:600; color:var(--primary-color);">Como usar</summary>
+        <ul style="margin:0.75rem 0 0; padding-left:1.25rem; color:var(--text-muted); font-size:0.92rem;">
+            <li><strong>Diárias:</strong> o agendador verifica todo dia; o e-mail só sai quando há pendência
+                (ou no dia fixo, como o 15 / 20).</li>
+            <li><strong>Pendentes:</strong> quantos avisos ainda não foram enviados nesta competência.</li>
+            <li><strong>Configurar:</strong> abre a página onde se edita texto, destinatários e se dispara sob demanda.</li>
+            <li>Para recriar as tarefas silenciosas no Windows:
+                <code>.\scripts\recriar_agendamentos_silenciosos.ps1</code></li>
+        </ul>
+    </details>
+    <p style="margin:0.75rem 0 0; font-size:0.9rem; color:var(--text-muted);">
+        {{ total }} fluxo(s)
+        {% if alertas %}
+        · <span style="color:#b91c1c; font-weight:600;">{{ alertas }} com último status de erro/parcial</span>
+        {% else %}
+        · nenhum alerta no último registro conhecido
+        {% endif %}
+        {% if smtp_configured is defined and not smtp_configured %}
+        · <span style="color:#b45309; font-weight:600;">SMTP incompleto — envios reais podem falhar</span>
+        {% endif %}
+    </p>
+</div>
+
+{% for g in grupos %}
+<div class="card" style="padding:1.25rem 1.5rem; margin-bottom:1.25rem;">
+    <h3 style="margin:0 0 1rem; font-size:1.05rem;">{{ g.label }}</h3>
+    <div class="table-responsive">
+        <table class="table" style="font-size:0.9rem; margin:0;">
+            <thead>
+                <tr>
+                    <th>Automação</th>
+                    <th style="white-space:nowrap;">Quando</th>
+                    <th>Último status</th>
+                    <th style="white-space:nowrap;">Pendentes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in g.itens %}
+                <tr>
+                    <td>
+                        <strong>{{ item.nome }}</strong>
+                        {% if item.obs %}
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">{{ item.obs }}</div>
+                        {% endif %}
+                        {% if item.tarefa_windows %}
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">
+                            Agendador: <code>{{ item.tarefa_windows }}</code>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        {{ item.frequencia }}
+                        {% if item.horario and item.horario != '—' %}
+                        <div style="font-size:0.8rem; color:var(--text-muted);">{{ item.horario }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set st = item.ultimo_status %}
+                        {% if st == 'SUCESSO' %}
+                        <span style="display:inline-block; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:10px; background:#d1fae5; color:#065f46;">SUCESSO</span>
+                        {% elif st == 'PARCIAL' %}
+                        <span style="display:inline-block; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:10px; background:#fef3c7; color:#92400e;">PARCIAL</span>
+                        {% elif st == 'ERRO' %}
+                        <span style="display:inline-block; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:10px; background:#fee2e2; color:#991b1b;">ERRO</span>
+                        {% else %}
+                        <span style="display:inline-block; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:10px; background:#f3f4f6; color:#6b7280;">Sem registro</span>
+                        {% endif %}
+                        {% if item.ultimo_em %}
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">
+                            {{ item.ultimo_em.strftime('%d/%m/%Y %H:%M') }}
+                            {% if item.ultimo_registros is not none %} · {{ item.ultimo_registros }} reg.{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if item.ultimo_mensagem %}
+                        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem; max-width:320px;"
+                             title="{{ item.ultimo_mensagem }}">{{ item.ultimo_mensagem }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap; text-align:center;">
+                        {% if item.pendentes is not none %}
+                            {% if item.pendentes > 0 %}
+                            <strong style="color:#b45309;">{{ item.pendentes }}</strong>
+                            {% else %}
+                            <span style="color:var(--text-muted);">0</span>
+                            {% endif %}
+                        {% else %}
+                        <span style="color:var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        {% if item.config_url %}
+                        <a href="{{ item.config_url }}" class="btn btn-secondary btn-sm"
+                           title="Abrir configuração / texto / disparo">Configurar</a>
+                        {% else %}
+                        <span style="color:var(--text-muted); font-size:0.85rem;">CLI / .env</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+
+<div class="card" style="padding:1.25rem 1.5rem;">
+    <h3 style="margin:0 0 0.75rem; font-size:1.05rem;">Últimas execuções (todas as tarefas)</h3>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 0.75rem;">
+        Amostra rápida do <code>LogAutomacao</code>. Para a lista completa,
+        use <a href="{{ url_for('admin.monitor_automacao') }}">Logs recentes</a>.
+    </p>
+    <div class="table-responsive">
+        <table class="table" style="font-size:0.85rem; margin:0;">
+            <thead>
+                <tr>
+                    <th>Quando</th>
+                    <th>Tarefa</th>
+                    <th>Status</th>
+                    <th>Mensagem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recentes %}
+                <tr>
+                    <td style="white-space:nowrap;">{{ log.data_execucao.strftime('%d/%m/%Y %H:%M') if log.data_execucao else '—' }}</td>
+                    <td>{{ log.nome_tarefa }}</td>
+                    <td>{{ log.status }}</td>
+                    <td style="max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                        title="{{ log.mensagem or '' }}">{{ log.mensagem or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align:center; color:var(--text-muted); padding:1rem;">
+                        Nenhum log de automação registrado ainda.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Novo bolsista — verificação FUNTEF</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+        .container { max-width: 640px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+        .content { padding: 28px; color: #333; line-height: 1.6; }
+        .box { background: #f0f9ff; border-left: 4px solid #0284c7; padding: 16px; margin: 20px 0; border-radius: 4px; }
+        .box h3 { margin: 0 0 12px; font-size: 15px; color: #0369a1; }
+        .box p { margin: 0 0 8px; }
+        .box p:last-child { margin-bottom: 0; }
+        .btn { display: inline-block; background: #002e6d; color: #fff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 12px; }
+        .footer { padding: 16px; text-align: center; font-size: 12px; color: #888; background: #f9fafb; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    {% from 'macros/email_brand.html' import email_header %}
+    <div class="container">
+        {% include 'emails/_marca_napi.html' %}
+        {{ email_header('Novo bolsista — verificação FUNTEF', 'Secretaria do projeto NAPI-Robótica') }}
+        <div class="content">
+            <p>Prezada equipe FUNTEF,</p>
+
+            {{ corpo_html|safe }}
+
+            <div class="box">
+                <h3>Dados do projeto / edital</h3>
+                <p><strong>Edital:</strong> {{ edital_numero }}</p>
+                {% if numero_convenio %}<p><strong>Número do Convênio:</strong> {{ numero_convenio }}</p>{% endif %}
+                {% if coordenador_geral %}<p><strong>Coordenador Geral do Projeto / PROPPG:</strong> {{ coordenador_geral }}</p>{% endif %}
+                {% if bolsista.processo_sei %}<p><strong>Processo SEI:</strong> {{ bolsista.processo_sei }}</p>{% endif %}
+            </div>
+
+            <div class="box">
+                <h3>Dados do novo bolsista / indicado</h3>
+                <p><strong>Nome Completo:</strong> {{ bolsista.nome }}</p>
+                {% if bolsista.cpf %}<p><strong>CPF:</strong> {{ bolsista.cpf }}</p>{% endif %}
+                {% if data_nascimento %}<p><strong>Data de Nascimento:</strong> {{ data_nascimento }}</p>{% endif %}
+                {% if bolsista.email %}<p><strong>E-mail:</strong> {{ bolsista.email }}</p>{% endif %}
+                {% if bolsista.telefone %}<p><strong>Telefone de Contato:</strong> {{ bolsista.telefone }}</p>{% endif %}
+                {% if modalidade %}<p><strong>Modalidade da Bolsa:</strong> {{ modalidade }}</p>{% endif %}
+                {% if valor_parcela %}<p><strong>Valor da Parcela:</strong> {{ valor_parcela }}</p>{% endif %}
+                {% if qtd_parcelas %}<p><strong>Quantidade de Parcelas a Pagar:</strong> {{ qtd_parcelas }}</p>{% endif %}
+                {% if data_inicio %}<p><strong>Data de Início das Atividades:</strong> {{ data_inicio }}</p>{% endif %}
+                {% if data_termino %}<p><strong>Data de Término da Bolsa:</strong> {{ data_termino }}</p>{% endif %}
+                {% if bolsista.orientador %}<p><strong>Orientador:</strong> {{ bolsista.orientador }}</p>{% endif %}
+            </div>
+
+            <p><strong>Pasta na Nuvem (documentação):</strong></p>
+            <p><a href="{{ link_pasta }}" class="btn" target="_blank">Abrir pasta compartilhada</a></p>
+            <p style="font-size:13px; color:#555; word-break:break-all;">{{ link_pasta }}</p>
+        </div>
+        <div class="footer">
+            Mensagem automática do sistema Arandu NAPI-Robótica.
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Aviso — Último mês de bolsa</h1>
+    <a href="{{ url_for('admin.automacoes_hub') }}" class="btn btn-secondary btn-sm">Central de automações</a>
+</div>
+
+<div class="card" style="max-width: 720px; margin: 0 auto; padding: 2rem;">
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Texto enviado ao <strong>bolsista</strong> e ao <strong>orientador/supervisor</strong>
+        quando a bolsa entra no <strong>último mês de vigência</strong> (badge “Última Parcela”).
+        A equipe Robótica recebe um e-mail com a lista dos avisados (somente se houver envios no dia).
+        O envio é único por competência (mês/ano do fim da bolsa).
+    </p>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">E-mail da equipe Robótica (resumo)</label>
+        <input type="text" name="equipe_emails" required value="{{ equipe_raw }}"
+            placeholder="robotica-ct@utfpr.edu.br"
+            style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:1.75rem;">
+
+        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Texto do e-mail (bolsista e orientador)</label>
+        <textarea name="email_corpo" rows="14" required
+            style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.5rem; font-family: inherit; line-height: 1.5;">{{ corpo_raw }}</textarea>
+        <small style="color: var(--text-muted); display:block; margin-bottom:1.5rem;">
+            Nome, edital, data de fim e parcela são incluídos automaticamente. Use linha em branco entre parágrafos.
+        </small>
+
+        <button type="submit" class="btn btn-primary">Salvar configuração</button>
+    </form>
+</div>
+{% endblock %}

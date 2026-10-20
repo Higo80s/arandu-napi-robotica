@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+    <h1>Confirmação — Início de bolsa</h1>
+    <a href="{{ url_for('admin.automacoes_hub') }}" class="btn btn-secondary btn-sm">Central de automações</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; max-width: 1200px; margin: 0 auto;">
+    <div class="card" style="padding: 2rem;">
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+            Texto enviado ao <strong>bolsista</strong> e ao <strong>orientador/supervisor</strong>
+            na <strong>ativação pela Fundação</strong> (após prévia no cadastro) ou no reenvio manual.
+            A tarefa diária cobre ativações sem e-mail. A equipe Robótica recebe um resumo
+            somente se houver envios no lote agendado.
+        </p>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">E-mail da equipe Robótica (resumo)</label>
+            <input type="text" name="equipe_emails" required value="{{ equipe_raw }}"
+                placeholder="robotica-ct@utfpr.edu.br"
+                style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:1.75rem;">
+
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Texto do e-mail (bolsista e orientador)</label>
+            <textarea id="inicio_email_corpo" name="email_corpo" rows="12" required
+                style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.5rem; font-family: inherit; line-height: 1.5;">{{ corpo_raw }}</textarea>
+            <small style="color: var(--text-muted); display:block; margin-bottom:1.5rem;">
+                Início, fim, quantidade de parcelas, edital e valor mensal entram automaticamente.
+                Use linha em branco entre parágrafos. A prévia ao lado atualiza ao digitar.
+            </small>
+
+            <button type="submit" class="btn btn-primary">Salvar configuração</button>
+        </form>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <h3 style="margin:0; font-size:1rem; color: var(--text-color);">Prévia do e-mail</h3>
+            <small style="color: var(--text-muted);">dados de exemplo</small>
+        </div>
+        <div id="inicio-preview-frame"
+            style="border: 1px solid var(--border-color); border-radius: 8px; background: #e5e7eb; padding: 0.75rem; max-height: 70vh; overflow: auto;">
+            {{ preview_html|safe }}
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const textarea = document.getElementById('inicio_email_corpo');
+    const frame = document.getElementById('inicio-preview-frame');
+    if (!textarea || !frame) return;
+    let timer = null;
+    function refreshPreview() {
+        const body = new FormData();
+        body.append('corpo', textarea.value);
+        body.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        fetch('{{ url_for("admin.config_confirmacao_inicio_preview") }}', {
+            method: 'POST',
+            body: body,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => { if (data && data.html) frame.innerHTML = data.html; })
+        .catch(() => {});
+    }
+    textarea.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(refreshPreview, 400);
+    });
+})();
+</script>
+<style>
+@media (max-width: 960px) {
+    div[style*="grid-template-columns: 1fr 1fr"] { display: block !important; }
+}
+</style>
+{% endblock %}

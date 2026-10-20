@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <title>Relatório final pendente</title>
+
+    <style>
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+
+        .container { max-width: 640px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+
+        .content { padding: 28px; color: #333; line-height: 1.6; }
+
+        .box { background: #fffbeb; border-left: 4px solid #d97706; padding: 16px; margin: 20px 0; border-radius: 4px; }
+
+        .btn { display: inline-block; background: #002e6d; color: #fff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 12px; }
+
+        .footer { padding: 16px; text-align: center; font-size: 12px; color: #888; background: #f9fafb; }
+
+    </style>
+
+</head>
+
+<body>
+
+    {% from 'macros/email_brand.html' import email_header %}
+
+    <div class="container">
+
+        {% include 'emails/_marca_napi.html' %}
+
+        {{ email_header('Relatório Final', 'Pendência de encerramento de bolsa') }}
+
+        <div class="content">
+
+            <p>Prezado(a) <strong>{{ bolsista.nome }}</strong>,</p>
+
+            {% if bolsista.orientador %}
+
+            <p>Prezado(a) orientador(a)/supervisor(a) <strong>{{ bolsista.orientador }}</strong>,</p>
+
+            {% endif %}
+
+
+
+            {{ corpo_html|safe }}
+
+
+
+            <div class="box">
+
+                <p style="margin:0 0 8px;"><strong>Edital:</strong> {{ edital_numero }}</p>
+
+                {% if data_desligamento %}<p style="margin:0;"><strong>Desligamento:</strong> {{ data_desligamento.strftime('%d/%m/%Y') }}</p>{% endif %}
+
+            </div>
+
+
+
+            <p><strong>Modelo do relatório (download):</strong></p>
+
+            <p><a href="{{ modelo_url }}" class="btn" target="_blank">Baixar Relatório Final</a></p>
+
+            <p style="font-size:13px; color:#555; word-break:break-all;">{{ modelo_url }}</p>
+
+
+
+            <p>
+
+                Após preencher, envie o documento respondendo a este e-mail ou para
+
+                <a href="mailto:{{ reply_email }}">{{ reply_email }}</a>.
+
+            </p>
+
+
+
+            {% if motivo == 'mensal' %}
+
+            <p style="font-size:0.9rem; color:#666;">
+
+                Lembrete mensal (dia 15). Novos avisos serão enviados todo dia 15 até a secretaria registrar a entrega no sistema.
+
+            </p>
+
+            {% endif %}
+
+
+
+            <p>Atenciosamente,<br><strong>Secretaria do Projeto NAPI-Robótica — UTFPR</strong></p>
+
+        </div>
+
+        <div class="footer">
+
+            Mensagem automática do sistema Arandu NAPI-Robótica.
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
+
+

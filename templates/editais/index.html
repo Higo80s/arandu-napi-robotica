@@ -68,6 +68,9 @@
                         title="Relatório Financeiro">
                         {{ icon('printer', size=18) }}
                     </a>
+                    <a href="{{ url_for('editais.painel_selecao', id=edital.id) }}"
+                        style="color: #0f766e; text-decoration: none; font-weight: 500; margin-right: 10px;"
+                        title="Painel de seleção">Seleção</a>
                     <a href="{{ url_for('editais.modalidades_gerenciar', id=edital.id) }}"
                         style="color: var(--secondary-color); text-decoration: none; font-weight: 500; margin-right: 10px;">Bolsas</a>
                     <a href="{{ url_for('editais.editar', id=edital.id) }}"

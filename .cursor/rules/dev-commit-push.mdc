@@ -1,0 +1,20 @@
+---
+description: Ao concluir tarefa no Robótica, commit e push no GitHub sem perguntar
+alwaysApply: true
+---
+
+# Rotina Robótica: commit + push
+
+O código só está seguro no GitHub (`origin` = `https://github.com/Higo80s/arandu-napi-robotica.git`).
+
+Ao **concluir** uma tarefa com mudança de código:
+
+1. Pytest verde (rule `entrega-com-testes`). Com teste falhando, não commitar.
+2. `git status` + `git diff` (resumo).
+3. Commit da mudança da tarefa (mensagem curta no *porquê*). Sem `.env`, dumps, credenciais ou PII.
+4. `git push -u origin HEAD`.
+5. Informar hash e URL do commit.
+
+Não perguntar. Pedido permanente do usuário (out/2026). Experimentação pela metade não entra, salvo pedido explícito.
+
+Dados de bolsas não vão no Git.

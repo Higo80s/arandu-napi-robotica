@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <title>Relatórios finais pendentes</title>
+
+    <style>
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+
+        .container { max-width: 720px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+
+        .content { padding: 28px; color: #333; line-height: 1.5; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+
+        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+
+        th { background: #f3f4f6; }
+
+        .footer { padding: 16px; text-align: center; font-size: 12px; color: #888; background: #f9fafb; }
+
+    </style>
+
+</head>
+
+<body>
+
+    {% from 'macros/email_brand.html' import email_header %}
+
+    <div class="container">
+
+        {% include 'emails/_marca_napi.html' %}
+
+        {{ email_header('Relatórios finais pendentes', 'Referência: ' ~ data_ref.strftime('%d/%m/%Y')) }}
+
+        <div class="content">
+
+            <p>Equipe,</p>
+
+            <p>
+
+                Segue a lista de <strong>{{ pendentes|length }}</strong> bolsista(s) desligado(s)
+
+                que ainda <strong>não tiveram o relatório final registrado</strong> no sistema
+
+                (Checkout do Bolsista).
+
+            </p>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Nome</th>
+
+                        <th>Edital</th>
+
+                        <th>Desligamento</th>
+
+                        <th>E-mail bolsista</th>
+
+                        <th>E-mail orientador</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for b in pendentes %}
+
+                    <tr>
+
+                        <td>{{ b.nome }}</td>
+
+                        <td>{{ b.edital.numero if b.edital else '-' }}</td>
+
+                        <td>{{ (b.data_desligamento or b.data_fim_bolsa).strftime('%d/%m/%Y') if (b.data_desligamento or b.data_fim_bolsa) else '-' }}</td>
+
+                        <td>{{ b.email or '—' }}</td>
+
+                        <td>{{ b.email_orientador or '—' }}</td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+            <p style="margin-top:20px; font-size:13px;">
+
+                Modelo do relatório: <a href="{{ modelo_url }}">{{ modelo_url }}</a>
+
+            </p>
+
+        </div>
+
+        <div class="footer">Mensagem automática do sistema Arandu NAPI-Robótica.</div>
+
+    </div>
+
+</body>
+
+</html>
+
+

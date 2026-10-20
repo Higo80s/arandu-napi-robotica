@@ -42,7 +42,7 @@
     {% endif %}
     <div class="actions-group" style="display: flex; gap: 0.5rem;">
         {% if not bolsista or not bolsista.id %}
-        <button type="button" class="btn btn-primary" onclick="openCadastroRapidoModal()">
+        <button type="button" class="btn btn-secondary" onclick="openCadastroRapidoModal()">
             <i class="lucide-zap mr-1"></i> Cadastro Rápido
         </button>
         {% endif %}
@@ -75,7 +75,7 @@
 
 <form method="POST" class="card" style="max-width: 800px;" id="bolsistaForm">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="hidden" name="candidatura_id" value="{{ request.args.get('candidatura_id', '') }}" />
+    <input type="hidden" name="candidatura_id" value="{{ request.form.get('candidatura_id') or request.args.get('candidatura_id', '') }}" />
     <input type="hidden" id="modalidade_nivel_hidden"
         value="{% if bolsista and bolsista.modalidade %}{{ bolsista.modalidade.nivel }}{% endif %}" />
 
@@ -88,25 +88,91 @@
 
     {% if bolsista and bolsista.id %}
     <div
-        style="margin-bottom: 1.5rem; padding: 1rem; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-color);">
-        <div style="display:flex; align-items:center;">
-            <span style="font-size: 1.1em; font-weight: bold; margin-right: 1rem;">
-                {% set display = bolsista.get_status_display() %}
-                <span style="color: {{ display.color }};">Status: {{ display.label|upper }}</span>
-            </span>
+        style="margin-bottom: 1.5rem; padding: 1rem 1.15rem; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-color);{% if bolsista.implantacao_pendente or bolsista.status_governanca == 'PENDENTE' %} border-left: 4px solid #d97706; background: rgba(217, 119, 6, 0.06);{% elif not bolsista.ativo %} border-left: 4px solid var(--danger-color, #dc2626); background: rgba(220, 38, 38, 0.04);{% endif %}">
+        <div style="display:flex; align-items:flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="display:flex; flex-direction: column; gap: 0.35rem; min-width: 0;">
+                <span style="font-size: 1.1em; font-weight: bold;">
+                    {% set display = bolsista.get_status_display() %}
+                    <span style="color: {{ display.color }};">Status: {{ display.label|upper }}</span>
+                </span>
 
-            {% if bolsista.status_governanca == 'PENDENTE' %}
-            <button type="button" class="btn btn-primary" onclick="openAtivacaoModal()" 
-                style="padding: 0.5rem 1rem; font-weight: bold; background: #059669; border: none; box-shadow: 0 0 10px rgba(5, 150, 105, 0.3);">
+                {% if bolsista.implantacao_pendente or bolsista.status_governanca == 'PENDENTE' %}
+                {% set faltas = bolsista.pendencias_implantacao %}
+                <small style="color: #b45309;">
+                    {{ bolsista.motivo_implantacao_pendente }} — sem folha de pagamento e sem e-mails
+                    automáticos de vigência até a ativação pela Fundação.
+                </small>
+                {% if faltas %}
+                <ul style="margin: 0.25rem 0 0 1.1rem; color: #92400e; font-size: 0.85rem;">
+                    {% for falta in faltas %}
+                    <li>{{ falta }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% endif %}
+
+                {% if bolsista.data_desligamento %}
+                <small style="color: var(--danger-color);">
+                    Desligado em: {{ bolsista.data_desligamento|date_br }}
+                </small>
+                {% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            {% if bolsista.status_governanca == 'PENDENTE' or bolsista.implantacao_pendente %}
+            <button type="button" class="btn btn-secondary" onclick="openAtivacaoModal()"
+                style="padding: 0.5rem 1rem; font-weight: 600;">
                 <i class="lucide-play mr-1"></i> Ativar Bolsista (Fundação)
             </button>
             {% endif %}
 
-            {% if bolsista.data_desligamento %}
-            <small style="color: var(--danger-color);">
-                Desligado em: {{ bolsista.data_desligamento|date_br }}
+            {% if bolsista.ativo and not bolsista.implantacao_pendente and bolsista.status_governanca != 'PENDENTE' and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openReenvioInicioModal()"
+                title="{% if bolsista.inicio_email_enviado_em %}Reenvia o e-mail de confirmação de início{% else %}Envia a confirmação de início para bolsista e orientador{% endif %}">
+                {% if bolsista.inicio_email_enviado_em %}Reenvio confirmação de início{% else %}Enviar confirmação de início{% endif %}
+            </button>
+            {% if bolsista.inicio_email_enviado_em %}
+            <small style="color: var(--text-muted);">
+                Confirmação: {{ bolsista.inicio_email_enviado_em|datetime_br }}
             </small>
             {% endif %}
+            {% endif %}
+
+            {% if bolsista.em_ultimo_mes_bolsa and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+            <button type="submit" form="reenviarUltimoMesForm" class="btn btn-secondary btn-sm"
+                title="{% if bolsista.ultimo_mes_email_enviado_em %}Reenvia o e-mail de último mês{% else %}Envia o aviso de último mês para bolsista e orientador{% endif %}"
+                onclick="return confirm('{% if bolsista.ultimo_mes_email_enviado_em %}Reenviar{% else %}Enviar{% endif %} aviso de último mês para bolsista e orientador?');">
+                {% if bolsista.ultimo_mes_email_enviado_em %}
+                Reenvio de aviso
+                {% else %}
+                Aviso último mês
+                {% endif %}
+            </button>
+            {% if bolsista.ultimo_mes_email_enviado_em %}
+            <small style="color: var(--text-muted);">
+                Último aviso: {{ bolsista.ultimo_mes_email_enviado_em|datetime_br }}
+                {% if bolsista.ultimo_mes_email_competencia %}(comp. {{ bolsista.ultimo_mes_email_competencia }}){% endif %}
+            </small>
+            {% endif %}
+            {% endif %}
+
+            {% if bolsista.cobranca_relatorio_pendente and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+            <button type="submit" form="reenviarCobrancaRelatorioForm" class="btn btn-secondary btn-sm"
+                title="{% if bolsista.relatorio_ultima_cobranca_em %}Reenvia cobrança do relatório final{% else %}Envia cobrança do relatório final{% endif %}"
+                onclick="return confirm('{% if bolsista.relatorio_ultima_cobranca_em %}Reenviar{% else %}Enviar{% endif %} cobrança de relatório final para bolsista e orientador?');">
+                {% if bolsista.relatorio_ultima_cobranca_em %}
+                Reenvio cobrança relatório
+                {% else %}
+                Cobrança relatório final
+                {% endif %}
+            </button>
+            {% if bolsista.relatorio_ultima_cobranca_em %}
+            <small style="color: #b45309;">
+                Última cobrança: {{ bolsista.relatorio_ultima_cobranca_em|datetime_br }}
+            </small>
+            {% endif %}
+            {% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
@@ -153,11 +219,28 @@
         <button type="button" class="tab-btn" id="btn-tab-vigencia" onclick="showTab('tab-vigencia')">💰 Vigência & Bolsa</button>
         <button type="button" class="tab-btn" id="btn-tab-historico" onclick="showTab('tab-historico')">🌍 Histórico & Mobilidade</button>
         {% if bolsista and bolsista.id %}
-        <button type="button" class="tab-btn" id="btn-tab-auditoria" onclick="showTab('tab-auditoria')">🕒 Auditoria</button>
+        <button type="button" class="tab-btn" id="btn-tab-auditoria" onclick="showTab('tab-auditoria')">🕒 Histórico e auditoria</button>
         {% endif %}
     </div>
 
     <script>
+        function syncFuntefContratoLock() {
+            const root = document.getElementById('funtefStepper');
+            const contrato = document.getElementById('funtefContrato');
+            if (!root || !contrato) return;
+            const emailOk = root.getAttribute('data-email-enviado') === '1';
+            contrato.disabled = !emailOk;
+            const wrap = contrato.closest('.funtef-step__check');
+            if (wrap) wrap.classList.toggle('is-disabled', !emailOk);
+        }
+
+        function highlightFuntefCurrentStep() {
+            const current = document.querySelector('#funtefStepper .funtef-step.is-current');
+            if (current) {
+                current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
         function showTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -170,8 +253,14 @@
             if (activeContent) activeContent.classList.add('active');
             
             localStorage.setItem('activeBolsistaTab', tabId);
+
+            if (tabId === 'tab-vigencia') {
+                syncFuntefContratoLock();
+                setTimeout(highlightFuntefCurrentStep, 50);
+            }
         }
         document.addEventListener('DOMContentLoaded', () => {
+             syncFuntefContratoLock();
              const lastTab = localStorage.getItem('activeBolsistaTab');
              if (lastTab && document.getElementById(lastTab)) {
                  showTab(lastTab);
@@ -206,6 +295,20 @@
         <div>
             <label style="display: block; margin-bottom: 0.5rem;">E-mail</label>
             <input type="email" name="email" value="{{ bolsista.email if bolsista else '' }}"
+                placeholder="E-mail ativo"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Data de Nascimento</label>
+            <input type="date" name="data_nascimento"
+                value="{{ bolsista.data_nascimento|date_iso if bolsista and bolsista.data_nascimento else '' }}"
+                onfocus="this.showPicker && this.showPicker()"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Telefone de Contato</label>
+            <input type="tel" name="telefone" value="{{ bolsista.telefone if bolsista and bolsista.telefone else '' }}"
+                placeholder="(00) 00000-0000"
                 style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
         </div>
     </div>
@@ -314,11 +417,21 @@
                 </select>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Modalidade/Nível</label>
+                <label style="display: block; margin-bottom: 0.5rem;">Modalidade da Bolsa</label>
                 <select name="modalidade_id" id="modalidade_select" required {% if not bolsista %}disabled{% endif %}
                     style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
                     <option value="">Selecione um edital primeiro</option>
                 </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Valor da Parcela</label>
+                <input type="text" id="valor_parcela_display" readonly
+                    value="{% if bolsista and bolsista.modalidade and bolsista.modalidade.valor_mensal is not none %}R$ {{ '%.2f'|format(bolsista.modalidade.valor_mensal|float) }}{% else %}—{% endif %}"
+                    placeholder="Definido pela modalidade"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--background-color); color: var(--text-muted);">
+                <small style="display: block; color: var(--text-muted); margin-top: 0.35rem;">
+                    Valor mensal da modalidade selecionada (não editável aqui).
+                </small>
             </div>
         </div>
 
@@ -356,24 +469,37 @@
 
     <!-- SECTION 5: BOLSA -->
     <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dados da Bolsa</h3>
+    <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid #fde68a; background: #fffbeb; color: #92400e; font-size: 0.85rem; line-height: 1.45;">
+        <strong>Fundação Araucária:</strong> as datas da bolsa podem ficar em branco no cadastro.
+        O sistema salva como <em>Aguardando implantação</em>. Na ativação, a data de início vem da
+        <strong>liberação da Fundação</strong>; informe antes os <strong>meses de duração</strong>.
+    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
         <div>
-            <label style="display: block; margin-bottom: 0.5rem;">Início da Bolsa</label>
+            <label style="display: block; margin-bottom: 0.5rem;">Data de Início das Atividades</label>
             <input type="date" name="data_inicio_bolsa"
-                value="{{ bolsista.data_inicio_bolsa|date_iso if bolsista else '' }}" required
+                value="{{ bolsista.data_inicio_bolsa|date_iso if bolsista else '' }}"
                 style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            <small style="display: block; color: var(--text-muted); margin-top: 0.35rem;">
+                Opcional no cadastro; na ativação usa a data de liberação da Fundação.
+            </small>
         </div>
         <div>
-            <label style="display: block; margin-bottom: 0.5rem;">Meses de Duração</label>
-            <input type="number" name="meses_duracao" value="{{ bolsista.meses_duracao if bolsista else '' }}" required
+            <label style="display: block; margin-bottom: 0.5rem;">Quantidade de Parcelas a Pagar</label>
+            <input type="number" name="meses_duracao" value="{{ bolsista.meses_duracao if bolsista else '' }}"
                 min="1"
                 style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            <small style="display: block; color: var(--text-muted); margin-top: 0.35rem;">
+                Número de parcelas/meses — necessário antes de ativar os pagamentos.
+            </small>
         </div>
         <div>
-            <label style="display: block; margin-bottom: 0.5rem;">Fim da Bolsa</label>
+            <label style="display: block; margin-bottom: 0.5rem;">Data de Término da Bolsa</label>
             <input type="date" name="data_fim_bolsa" value="{{ bolsista.data_fim_bolsa|date_iso if bolsista else '' }}"
-                required
                 style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem;">
+            <small style="display: block; color: var(--text-muted); margin-top: 0.35rem;">
+                Calculado na ativação (início + duração).
+            </small>
         </div>
     </div>
 
@@ -423,6 +549,136 @@
         </div>
     </div>
 
+    {% set _link_nuvem = (bolsista.link_pasta_nuvem if bolsista and bolsista.link_pasta_nuvem else '')|trim %}
+    {% set funtef_s1 = bolsista and bolsista.conveniar_cadastrado and _link_nuvem %}
+    {% set funtef_s2 = bolsista and bolsista.funtef_email_enviado_em %}
+    {% set funtef_s3 = bolsista and bolsista.funtef_contrato_pronto %}
+    {% set funtef_s4 = bolsista and bolsista.id and not bolsista.implantacao_pendente and bolsista.status_governanca != 'PENDENTE' %}
+    {% if funtef_s4 %}
+        {% set funtef_current = 0 %}
+    {% elif funtef_s3 %}
+        {% set funtef_current = 4 %}
+    {% elif funtef_s2 %}
+        {% set funtef_current = 3 %}
+    {% elif funtef_s1 %}
+        {% set funtef_current = 2 %}
+    {% else %}
+        {% set funtef_current = 1 %}
+    {% endif %}
+
+    <div class="funtef-stepper" id="funtefStepper" data-email-enviado="{{ '1' if funtef_s2 else '0' }}">
+        <div class="funtef-stepper__head">
+            <h4 class="funtef-stepper__title">
+                {{ icon('mail', size=18) }} Encaminhamento FUNTEF / Conveniar
+            </h4>
+            {% if bolsista and bolsista.id %}
+            <p class="funtef-stepper__progress-label">
+                {% if funtef_current == 0 %}
+                Implantação concluída
+                {% else %}
+                Etapa {{ funtef_current }} de 4
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+
+        {% if bolsista and bolsista.id %}
+        <nav class="funtef-stepper__rail" aria-label="Progresso da implantação FUNTEF">
+            {% for n, label in [(1, 'Nuvem'), (2, 'E-mail'), (3, 'Contrato'), (4, 'Ativar')] %}
+            {% set done = (n == 1 and funtef_s1) or (n == 2 and funtef_s2) or (n == 3 and funtef_s3) or (n == 4 and funtef_s4) %}
+            {% set current = funtef_current == n %}
+            <div class="funtef-stepper__rail-item{% if done %} is-done{% endif %}{% if current %} is-current{% endif %}">
+                <span class="funtef-stepper__rail-num" aria-hidden="true">{% if done %}✓{% else %}{{ n }}{% endif %}</span>
+                <span class="funtef-stepper__rail-label">{{ label }}</span>
+            </div>
+            {% if not loop.last %}<span class="funtef-stepper__rail-sep" aria-hidden="true"></span>{% endif %}
+            {% endfor %}
+        </nav>
+        {% endif %}
+
+        <ol class="funtef-stepper__list">
+            <li class="funtef-step{% if funtef_s1 %} is-done{% elif funtef_current == 1 %} is-current{% else %} is-locked{% endif %}" data-step="1">
+                <div class="funtef-step__badge" aria-hidden="true">{% if funtef_s1 %}✓{% else %}1{% endif %}</div>
+                <div class="funtef-step__body">
+                    <h5 class="funtef-step__title">Documentação e Conveniar</h5>
+                    <p class="funtef-step__hint">Monte a pasta na Nuvem, marque o Conveniar, informe o link e salve o cadastro.</p>
+                    <label class="funtef-step__check">
+                        <input type="checkbox" name="conveniar_cadastrado" id="funtefConveniar"
+                            {% if bolsista and bolsista.conveniar_cadastrado %}checked{% endif %}>
+                        <span>
+                            <strong>Cadastro solicitado no Conveniar</strong>
+                            <small>Após solicitar no Conveniar para o bolsista preencher dados bancários.</small>
+                        </span>
+                    </label>
+                    <label class="funtef-step__field-label" for="funtefLinkNuvem">Link da pasta na Nuvem</label>
+                    <input type="url" name="link_pasta_nuvem" id="funtefLinkNuvem"
+                        placeholder="https://nuvem.utfpr.edu.br/..."
+                        value="{{ bolsista.link_pasta_nuvem if bolsista and bolsista.link_pasta_nuvem else '' }}"
+                        class="funtef-step__input">
+                </div>
+            </li>
+
+            <li class="funtef-step{% if funtef_s2 %} is-done{% elif funtef_current == 2 %} is-current{% else %} is-locked{% endif %}" data-step="2">
+                <div class="funtef-step__badge" aria-hidden="true">{% if funtef_s2 %}✓{% else %}2{% endif %}</div>
+                <div class="funtef-step__body">
+                    <h5 class="funtef-step__title">E-mail à FUNTEF</h5>
+                    <p class="funtef-step__hint">Enviado automaticamente uma vez ao salvar a etapa 1 (não vai ao discente).</p>
+                    {% if funtef_s2 %}
+                    <p class="funtef-step__status funtef-step__status--ok">
+                        Enviado em {{ bolsista.funtef_email_enviado_em|datetime_br }}.
+                    </p>
+                    {% if bolsista.id and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+                    <button type="submit" form="reenviarFuntefForm" class="btn btn-secondary btn-sm"
+                        onclick="return confirm('Reenviar e-mail apenas para os destinatários FUNTEF externos?');">
+                        Reenvio FUNTEF (externo)
+                    </button>
+                    {% endif %}
+                    {% elif funtef_s1 %}
+                    <p class="funtef-step__status">Pronto para disparo: clique em <strong>Atualizar Cadastro</strong>.</p>
+                    {% else %}
+                    <p class="funtef-step__status">Aguardando conclusão da etapa 1.</p>
+                    {% endif %}
+                </div>
+            </li>
+
+            <li class="funtef-step{% if funtef_s3 %} is-done{% elif funtef_current == 3 %} is-current{% else %} is-locked{% endif %}" data-step="3">
+                <div class="funtef-step__badge" aria-hidden="true">{% if funtef_s3 %}✓{% else %}3{% endif %}</div>
+                <div class="funtef-step__body">
+                    <h5 class="funtef-step__title">Contrato FUNTEF / Fundação</h5>
+                    <p class="funtef-step__hint">Marque após receber o retorno do contrato da Fundação Araucária.</p>
+                    <label class="funtef-step__check{% if not funtef_s2 %} is-disabled{% endif %}">
+                        <input type="checkbox" name="funtef_contrato_pronto" id="funtefContrato"
+                            {% if bolsista and bolsista.funtef_contrato_pronto %}checked{% endif %}
+                            {% if not funtef_s2 %}disabled{% endif %}>
+                        <span>Contrato FUNTEF / Fundação Araucária pronto (retorno recebido)</span>
+                    </label>
+                    {% if not funtef_s2 %}
+                    <p class="funtef-step__status">Disponível após o e-mail FUNTEF (etapa 2).</p>
+                    {% endif %}
+                </div>
+            </li>
+
+            {% if bolsista and bolsista.id %}
+            <li class="funtef-step{% if funtef_s4 %} is-done{% elif funtef_current == 4 %} is-current{% else %} is-locked{% endif %}" data-step="4">
+                <div class="funtef-step__badge" aria-hidden="true">{% if funtef_s4 %}✓{% else %}4{% endif %}</div>
+                <div class="funtef-step__body">
+                    <h5 class="funtef-step__title">Ativar bolsista (Fundação)</h5>
+                    <p class="funtef-step__hint">Com duração em meses preenchida, ative e confira a prévia do e-mail de confirmação de início.</p>
+                    {% if funtef_s4 %}
+                    <p class="funtef-step__status funtef-step__status--ok">Bolsa liberada — implantação concluída.</p>
+                    {% elif funtef_s1 and funtef_s2 and funtef_s3 %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openAtivacaoModal()">
+                        Ir para ativação
+                    </button>
+                    {% else %}
+                    <p class="funtef-step__status">Conclua as etapas 1 a 3 antes de ativar.</p>
+                    {% endif %}
+                </div>
+            </li>
+            {% endif %}
+        </ol>
+    </div>
+
     <div style="margin-bottom: 2rem;">
         <label style="display: block; margin-bottom: 1rem; font-weight: bold; color: var(--primary-color);">Checkout do Bolsista</label>
         <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed #10b981; padding: 1rem; border-radius: 8px;">
@@ -434,86 +690,47 @@
                 </span>
             </label>
             <p style="font-size: 0.8rem; color: #059669; margin-top: 5px; margin-left: 30px;">
-                A marcação deste item encerra as pendências de integridade do bolsista após o término da vigência.
+                A marcação deste item encerra as pendências de integridade do bolsista após o término da vigência
+                e interrompe os lembretes automáticos (e-mail no desligamento e todo dia 15).
             </p>
+            {% if bolsista and not bolsista.ativo and not bolsista.relatorio_entregue and bolsista.relatorio_ultima_cobranca_em %}
+            <p style="font-size: 0.8rem; color: #b45309; margin-top: 8px; margin-left: 30px;">
+                Última cobrança automática enviada em {{ bolsista.relatorio_ultima_cobranca_em|datetime_br }}.
+            </p>
+            {% endif %}
         </div>
     </div>
 
-    <div style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-        <h4 style="margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-            {{ icon('message-square', size=18) }} Histórico de Comentários
+    <!-- Regras do edital (exibidas ao selecionar edital) -->
+    <div id="regras_edital_container"
+        style="display: none; margin-bottom: 2rem; border: 1px dashed #10b981; padding: 1.5rem; border-radius: 8px; background: rgba(16,185,129,0.05);">
+        <h4 style="margin-top:0; margin-bottom: 0.5rem; color: #059669; font-size: 1.1rem;">Regras extraídas do edital / programa</h4>
+        <div id="regras_edital_texto"
+            style="white-space: pre-wrap; font-size: 0.95em; color: #065f46; font-weight: 500; font-family: 'Courier New', Courier, monospace; line-height: 1.6;">
+            Carregando...</div>
+    </div>
+
+    {% if has_acumulo %}
+    <div
+        style="margin-bottom: 2rem; border: 2px solid #ef4444; padding: 1.5rem; border-radius: 8px; background: rgba(239, 68, 68, 0.05); box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);">
+        <h4 style="margin-top:0; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem;">
+            Atenção: validação de acúmulo de bolsas
         </h4>
-        
-        <!-- Lista de Comentários Anteriores -->
-        {% if bolsista and bolsista.comentarios_historico %}
-        <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-            {% for comentario in bolsista.comentarios_historico %}
-            <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.25rem;">
-                    <span>
-                        <strong>{{ comentario.autor.nome if comentario.autor else 'Sistema' }}</strong> 
-                        &bull; {{ comentario.criado_em.strftime('%d/%m/%Y %H:%M') }}
-                        {% if comentario.criado_em != comentario.atualizado_em %}
-                        <i style="font-size: 0.75rem;">(Editado)</i>
-                        {% endif %}
-                    </span>
-                    {% if current_user.role == 'admin' or (current_user.id == comentario.user_id) %}
-                    <button type="button" onclick="editComentario({{ comentario.id }})" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; font-weight: 500;">{{ icon('edit-2', size=12) }} Editar</button>
-                    {% endif %}
-                </div>
-                <div id="comentario-texto-{{ comentario.id }}" style="white-space: pre-wrap; color: var(--text-color); margin-top: 0.5rem;">{{ comentario.texto }}</div>
-                <div id="comentario-edit-{{ comentario.id }}" style="display: none; margin-top: 0.5rem;">
-                    <textarea id="comentario-input-{{ comentario.id }}" rows="2" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.5rem;">{{ comentario.texto }}</textarea>
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                        <button type="button" onclick="cancelEditComentario({{ comentario.id }})" class="btn" style="background: #e5e7eb; padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancelar</button>
-                        <button type="button" onclick="saveComentario({{ comentario.id }})" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Salvar Edição</button>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Novo Comentário -->
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem;">Adicionar Novo Comentário</label>
-        <textarea name="novo_comentario" rows="2" placeholder="Digite uma anotação e clique em 'Atualizar Cadastro' para registrar o log..."
-            style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: #f9fafb;"></textarea>
+        <p style="color: #991b1b; font-weight: 500; margin-bottom: 1rem;">
+            O sistema detectou que este CPF já possui bolsa ativa cadastrada ou encontra-se em status de seleção ativa
+            em outro edital.
+        </p>
+        <label
+            style="display: flex; align-items: flex-start; cursor: pointer; background: #fee2e2; padding: 1rem; border-radius: 6px;">
+            <input type="checkbox" name="ciente_acumulo" value="true" required
+                style="width: 24px; height: 24px; margin-right: 12px; margin-top: 2px;">
+            <span style="font-weight: bold; color: #7f1d1d; font-size: 1.05rem; line-height: 1.4;">
+                Estou ciente do acúmulo. A exceção é justificada pelas normativas desta agência de fomento (declaro
+                responsabilidade).
+            </span>
+        </label>
     </div>
-
-    <script>
-    function editComentario(id) {
-        document.getElementById('comentario-texto-' + id).style.display = 'none';
-        document.getElementById('comentario-edit-' + id).style.display = 'block';
-    }
-    function cancelEditComentario(id) {
-        document.getElementById('comentario-texto-' + id).style.display = 'block';
-        document.getElementById('comentario-edit-' + id).style.display = 'none';
-    }
-    function saveComentario(id) {
-        const texto = document.getElementById('comentario-input-' + id).value;
-        const formData = new FormData();
-        formData.append('texto', texto);
-        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
-        
-        fetch(`/bolsistas/comentario/${id}/editar`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        }).then(response => response.json()).then(data => {
-            if(data.success) {
-                document.getElementById('comentario-texto-' + id).innerText = data.texto;
-                cancelEditComentario(id);
-            } else {
-                alert(data.message || 'Erro ao editar comentário.');
-            }
-        }).catch(err => {
-            console.error(err);
-            alert('Erro de comunicação.');
-        });
-    }
-    </script>
+    {% endif %}
 
     </div> <!-- END TAB VIGENCIA -->
 
@@ -620,26 +837,101 @@
 
 
     <div id="tab-auditoria" class="tab-content">
+
+    <div class="form-section" id="section-comentarios" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+            {{ icon('message-square', size=18) }} Histórico de comentários
+        </h3>
+
+        {% if bolsista.comentarios_historico %}
+        <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for comentario in bolsista.comentarios_historico %}
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: var(--text-color);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                    <span>
+                        <strong>{{ comentario.autor.nome if comentario.autor else 'Sistema' }}</strong>
+                        &bull; {{ comentario.criado_em|datetime_br }}
+                        {% if comentario.criado_em != comentario.atualizado_em %}
+                        <i style="font-size: 0.75rem;">(Editado)</i>
+                        {% endif %}
+                    </span>
+                    {% if current_user.role in ['admin', 'master', 'gestor'] or (current_user.id == comentario.user_id) %}
+                    <button type="button" onclick="editComentario({{ comentario.id }})" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; font-weight: 500;">{{ icon('edit-2', size=12) }} Editar</button>
+                    {% endif %}
+                </div>
+                <div id="comentario-texto-{{ comentario.id }}" style="white-space: pre-wrap; color: var(--text-color); margin-top: 0.5rem;">{{ comentario.texto }}</div>
+                <div id="comentario-edit-{{ comentario.id }}" style="display: none; margin-top: 0.5rem;">
+                    <textarea id="comentario-input-{{ comentario.id }}" rows="2" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.5rem; background: var(--card-bg); color: var(--text-color);">{{ comentario.texto }}</textarea>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button type="button" onclick="cancelEditComentario({{ comentario.id }})" class="btn" style="background: #e5e7eb; padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancelar</button>
+                        <button type="button" onclick="saveComentario({{ comentario.id }})" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Salvar edição</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Nenhum comentário registrado.</p>
+        {% endif %}
+
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; color: var(--text-color);">Adicionar novo comentário</label>
+        <textarea name="novo_comentario" rows="2" placeholder="Digite uma anotação e clique em 'Atualizar Cadastro' para registrar..."
+            style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);"></textarea>
+    </div>
+
+    <script>
+    function editComentario(id) {
+        document.getElementById('comentario-texto-' + id).style.display = 'none';
+        document.getElementById('comentario-edit-' + id).style.display = 'block';
+    }
+    function cancelEditComentario(id) {
+        document.getElementById('comentario-texto-' + id).style.display = 'block';
+        document.getElementById('comentario-edit-' + id).style.display = 'none';
+    }
+    function saveComentario(id) {
+        const texto = document.getElementById('comentario-input-' + id).value;
+        const formData = new FormData();
+        formData.append('texto', texto);
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+        fetch(`/bolsistas/comentario/${id}/editar`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(response => response.json()).then(data => {
+            if (data.success) {
+                document.getElementById('comentario-texto-' + id).innerText = data.texto;
+                cancelEditComentario(id);
+            } else {
+                alert(data.message || 'Erro ao editar comentário.');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Erro de comunicação.');
+        });
+    }
+    </script>
+
     <div class="form-section" id="section-memento"
-        style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Histórico de Vigência e Estados (Memento)</h3>
+        style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Histórico de vigência (Memento)</h3>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
             Pontos de restauração gerados automaticamente antes de alterações críticas.
         </p>
 
-        <table class="table" style="width: 100%; margin-bottom: 1rem; border-collapse: collapse; font-size: 0.9rem;">
+        <table class="table table-memento" style="width: 100%; margin-bottom: 1rem; border-collapse: collapse; font-size: 0.9rem;">
             <thead>
-                <tr style="background: #f3f4f6; text-align: left;">
-                    <th style="padding: 0.5rem;">Data/Hora</th>
-                    <th style="padding: 0.5rem;">Evento/Contexto</th>
-                    <th style="padding: 0.5rem;">Vigência Antiga</th>
-                    <th style="padding: 0.5rem;">Ação</th>
+                <tr style="background: #f3f4f6; text-align: left; color: #1f2937;">
+                    <th style="padding: 0.5rem; color: #1f2937;">Data/Hora</th>
+                    <th style="padding: 0.5rem; color: #1f2937;">Evento/Contexto</th>
+                    <th style="padding: 0.5rem; color: #1f2937;">Vigência Antiga</th>
+                    <th style="padding: 0.5rem; color: #1f2937;">Ação</th>
                 </tr>
             </thead>
             <tbody>
                 {% for snap in bolsista.snapshots %}
-                <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 0.5rem;">{{ snap.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-color);">
+                    <td style="padding: 0.5rem;">{{ snap.timestamp|datetime_br }}</td>
                     <td style="padding: 0.5rem;">{{ snap.contexto }}</td>
                     <td style="padding: 0.5rem;">
                         {{ snap.data_fim_original|date_br if snap.data_fim_original else '-' }}
@@ -658,53 +950,21 @@
         </table>
     </div>
 
-    <!-- ACÚMULO WARNING E REGRAS -->
-    <div id="regras_edital_container"
-        style="display: none; margin-bottom: 2rem; border: 1px dashed #10b981; padding: 1.5rem; border-radius: 8px; background: rgba(16,185,129,0.05);">
-        <h4 style="margin-top:0; margin-bottom: 0.5rem; color: #059669; font-size: 1.1rem;">📑 Regras Extraídas do
-            Edital / Programa</h4>
-        <div id="regras_edital_texto"
-            style="white-space: pre-wrap; font-size: 0.95em; color: #065f46; font-weight: 500; font-family: 'Courier New', Courier, monospace; line-height: 1.6;">
-            Carregando...</div>
-    </div>
-
-    {% if has_acumulo %}
-    <div
-        style="margin-bottom: 2rem; border: 2px solid #ef4444; padding: 1.5rem; border-radius: 8px; background: rgba(239, 68, 68, 0.05); box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);">
-        <h4 style="margin-top:0; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem;">
-            ⚠️ Atenção: Validação de Acúmulo de Bolsas
-        </h4>
-        <p style="color: #991b1b; font-weight: 500; margin-bottom: 1rem;">
-            O sistema detectou que este CPF já possui bolsa ativa cadastrada ou encontra-se em status de seleção ativa
-            em outro edital.
-        </p>
-        <label
-            style="display: flex; align-items: flex-start; cursor: pointer; background: #fee2e2; padding: 1rem; border-radius: 6px;">
-            <input type="checkbox" name="ciente_acumulo" value="true" required
-                style="width: 24px; height: 24px; margin-right: 12px; margin-top: 2px;">
-            <span style="font-weight: bold; color: #7f1d1d; font-size: 1.05rem; line-height: 1.4;">
-                Estou ciente do acúmulo. A exceção é justificada pelas normativas desta agência de fomento (Declaro
-                Responsabilidade).
-            </span>
-        </label>
-    </div>
-    {% endif %}
-
-    </div> <!-- END TAB AUDITORIA (Fallback close) -->
+    </div> <!-- END TAB HISTORICO E AUDITORIA -->
 
     <div class="sticky-footer d-flex gap-2">
         <!-- SAVE BUTTON -->
-        <button type="submit" class="btn btn-primary" style="flex: 2; font-weight: 600; border: none;">
+        <button type="submit" class="btn btn-secondary" style="flex: 2; font-weight: 600; border: none;">
             {% if bolsista is defined and bolsista and bolsista.id %}
             {{ icon('save', size=18) }} Atualizar Cadastro
             {% else %}
-            {{ icon('user-plus', size=18) }} Efetivar Matrícula
+            {{ icon('save', size=18) }} Salvar
             {% endif %}
         </button>
 
         <!-- Botão Cadastro Rápido -->
-        <button type="button" class="btn btn-info" onclick="openCadastroRapidoModal()"
-            style="background-color: #17a2b8; border-color: #17a2b8; color: white; margin-left: 1rem; padding: 0.5rem 1rem; font-weight: 600;">
+        <button type="button" class="btn btn-secondary" onclick="openCadastroRapidoModal()"
+            style="margin-left: 1rem; padding: 0.5rem 1rem; font-weight: 600;">
             <i class="lucide-zap" style="margin-right: 4px;"></i> Cadastro Rápido
         </button>
 
@@ -720,6 +980,94 @@
         {% endif %}
     </div>
 </form>
+
+{% if bolsista and bolsista.id %}
+<div class="card" style="max-width: 800px; margin-top: 1.5rem; padding: 1.25rem;">
+    <h3 style="margin: 0 0 0.5rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+        {{ icon('wallet', size=18) }} Log de pagamentos
+    </h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Mesmas colunas e regras da folha enviada à Nuvem. Cada competência (mês) gera uma linha.
+        Ao corrigir <strong>Início da Bolsa</strong> e salvar, este log e as próximas folhas são recalculados juntos.
+    </p>
+    {% set linhas = pagamentos_log|default([]) %}
+    {% if linhas %}
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.78rem;">
+            <thead>
+                <tr style="background: #f3f4f6; text-align: left; color: #1f2937;">
+                    <th style="padding: 0.4rem; white-space: nowrap;">Edital</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">SEI</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">CPF</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Nome</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">E-mail</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Orientador</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Instituição</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Banco</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Agência</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Conta</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Tipo</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Nível</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Valor</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Início Bolsa</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Referência</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Vencimento</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Parcela Atual</th>
+                    <th style="padding: 0.4rem; white-space: nowrap;">Total Parcelas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in linhas %}
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-color);">
+                    <td style="padding: 0.4rem;">{{ p.edital }}</td>
+                    <td style="padding: 0.4rem;">{{ p.sei }}</td>
+                    <td style="padding: 0.4rem;">{{ p.cpf }}</td>
+                    <td style="padding: 0.4rem;">{{ p.nome }}</td>
+                    <td style="padding: 0.4rem;">{{ p.email }}</td>
+                    <td style="padding: 0.4rem;">{{ p.orientador }}</td>
+                    <td style="padding: 0.4rem;">{{ p.instituicao }}</td>
+                    <td style="padding: 0.4rem;">{{ p.banco }}</td>
+                    <td style="padding: 0.4rem;">{{ p.agencia }}</td>
+                    <td style="padding: 0.4rem;">{{ p.conta }}</td>
+                    <td style="padding: 0.4rem;">{{ p.tipo }}</td>
+                    <td style="padding: 0.4rem;">{{ p.nivel }}</td>
+                    <td style="padding: 0.4rem;">{{ p.valor }}</td>
+                    <td style="padding: 0.4rem;">{{ p.inicio_bolsa }}</td>
+                    <td style="padding: 0.4rem;">{{ p.referencia }}</td>
+                    <td style="padding: 0.4rem;">{{ p.vencimento }}</td>
+                    <td style="padding: 0.4rem;">{{ p.parcela_atual }}</td>
+                    <td style="padding: 0.4rem;">{{ p.total_parcelas }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <small style="color: var(--text-muted);">{{ linhas|length }} competência(s) no log.</small>
+    {% else %}
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+        Nenhuma competência elegível ainda. Informe <strong>Início da Bolsa</strong> e duração; as linhas aparecem a cada mês de vigência (mesma regra da folha Nuvem).
+    </p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if bolsista and bolsista.id and bolsista.funtef_email_enviado_em and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+<form id="reenviarFuntefForm" action="{{ url_for('bolsistas.reenviar_funtef', id=bolsista.id) }}" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endif %}
+
+{% if bolsista and bolsista.id and bolsista.em_ultimo_mes_bolsa and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+<form id="reenviarUltimoMesForm" action="{{ url_for('bolsistas.reenviar_aviso_ultimo_mes', id=bolsista.id) }}" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endif %}
+
+{% if bolsista and bolsista.id and bolsista.cobranca_relatorio_pendente and current_user.role in ['admin', 'gestor', 'diretor_campus', 'master'] %}
+<form id="reenviarCobrancaRelatorioForm" action="{{ url_for('bolsistas.reenviar_cobranca_relatorio', id=bolsista.id) }}" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endif %}
 
 <!-- [V23] MODAL DE CANCELAMENTO -->
 {% if bolsista and bolsista.ativo %}
@@ -854,6 +1202,198 @@
     }
 </script>
 
+
+<!-- MODAL ATIVAÇÃO / CONFIRMAÇÃO DE INÍCIO -->
+{% if bolsista and bolsista.id %}
+<div id="ativacaoModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 4500;">
+    <div style="background: var(--card-bg, #fff); color: var(--text-color); padding: 1.5rem; border-radius: 8px; max-width: 720px; margin: 3% auto; position: relative; max-height: 92vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.25);">
+        <button type="button" onclick="closeAtivacaoModal()"
+            style="position:absolute; top:0.75rem; right:0.9rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-muted);">&times;</button>
+        <h3 id="ativacaoModalTitulo" style="margin:0 0 0.5rem; color: var(--primary-color);">Ativar bolsista</h3>
+        <p id="ativacaoModalIntro" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            Informe a data de liberação da Fundação. Confira a prévia do e-mail antes de enviar.
+        </p>
+
+        <form id="ativacaoForm" method="POST" action="{{ url_for('bolsistas.ativar', id=bolsista.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="enviar_confirmacao" id="ativacaoEnviarFlag" value="1">
+
+            <label style="display:block; font-weight:600; margin-bottom:0.4rem;">Data de liberação da Fundação (início da bolsa)</label>
+            <input type="date" name="data_liberacao" id="ativacaoDataLiberacao" required
+                value="{{ bolsista.data_inicio_bolsa|date_iso if bolsista.data_inicio_bolsa else '' }}"
+                style="width:100%; max-width:220px; padding:0.5rem; border:1px solid var(--border-color); border-radius:6px; margin-bottom:0.75rem;">
+
+            <p id="ativacaoMeta" style="font-size:0.85rem; color: var(--text-muted); margin-bottom:0.75rem;"></p>
+            <p id="ativacaoDest" style="font-size:0.85rem; margin-bottom:0.75rem;"></p>
+            <p id="ativacaoErro" style="display:none; color:#b91c1c; font-size:0.85rem; margin-bottom:0.75rem;"></p>
+
+            <label id="ativacaoCheckWrap" style="display:flex; align-items:flex-start; gap:8px; margin-bottom:1rem; cursor:pointer;">
+                <input type="checkbox" id="ativacaoEnviarCheck" checked style="margin-top:3px;">
+                <span>Enviar e-mail de confirmação ao bolsista e ao orientador, com cópia para a Robótica</span>
+            </label>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <strong style="font-size:0.9rem;">Prévia do e-mail</strong>
+                <small style="color: var(--text-muted);">o envio usa este layout</small>
+            </div>
+            <div id="ativacaoPreview"
+                style="border:1px solid var(--border-color); border-radius:8px; background:#e5e7eb; padding:0.6rem; max-height:42vh; overflow:auto; margin-bottom:1rem;">
+                <p style="color:#6b7280; margin:0.5rem;">Carregando prévia…</p>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeAtivacaoModal()">Cancelar</button>
+                <button type="submit" id="ativacaoSubmit" class="btn btn-primary">Ativar e enviar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function () {
+    const CSRF = '{{ csrf_token() }}';
+    const PREVIEW_URL = '{{ url_for("bolsistas.preview_confirmacao_inicio", id=bolsista.id) }}';
+    const ATIVAR_URL = '{{ url_for("bolsistas.ativar", id=bolsista.id) }}';
+    const REENVIO_URL = '{{ url_for("bolsistas.reenviar_confirmacao_inicio", id=bolsista.id) }}';
+    let modo = 'ativar';
+    let timer = null;
+
+    window.openAtivacaoModal = function () {
+        modo = 'ativar';
+        const form = document.getElementById('ativacaoForm');
+        form.action = ATIVAR_URL;
+        document.getElementById('ativacaoModalTitulo').innerText = 'Ativar bolsista (Fundação)';
+        document.getElementById('ativacaoModalIntro').innerText =
+            'Informe a data de liberação da Fundação. Confira a prévia do e-mail antes de confirmar.';
+        document.getElementById('ativacaoDataLiberacao').disabled = false;
+        document.getElementById('ativacaoCheckWrap').style.display = 'flex';
+        document.getElementById('ativacaoEnviarCheck').checked = true;
+        document.getElementById('ativacaoSubmit').innerText = 'Ativar e enviar';
+        document.getElementById('ativacaoModal').style.display = 'block';
+        refreshInicioPreview();
+    };
+
+    window.openReenvioInicioModal = function () {
+        modo = 'reenvio';
+        const form = document.getElementById('ativacaoForm');
+        form.action = REENVIO_URL;
+        document.getElementById('ativacaoModalTitulo').innerText = 'Confirmação de início';
+        document.getElementById('ativacaoModalIntro').innerText =
+            'Confira a prévia. O e-mail será enviado ao bolsista e ao orientador, com cópia para a Robótica.';
+        document.getElementById('ativacaoDataLiberacao').disabled = true;
+        document.getElementById('ativacaoCheckWrap').style.display = 'none';
+        document.getElementById('ativacaoEnviarCheck').checked = true;
+        document.getElementById('ativacaoSubmit').innerText = 'Enviar confirmação';
+        document.getElementById('ativacaoModal').style.display = 'block';
+        refreshInicioPreview();
+    };
+
+    window.closeAtivacaoModal = function () {
+        document.getElementById('ativacaoModal').style.display = 'none';
+    };
+
+    function showPreviewHtml(frame, html) {
+        frame.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('title', 'Prévia do e-mail');
+        iframe.style.cssText = 'width:100%; min-height:420px; border:0; background:#fff; border-radius:6px;';
+        iframe.srcdoc = html || '<p style="padding:1rem;font-family:sans-serif;">Prévia vazia.</p>';
+        frame.appendChild(iframe);
+    }
+
+    function refreshInicioPreview() {
+        const frame = document.getElementById('ativacaoPreview');
+        const erro = document.getElementById('ativacaoErro');
+        const meta = document.getElementById('ativacaoMeta');
+        const dest = document.getElementById('ativacaoDest');
+        const dataInput = document.getElementById('ativacaoDataLiberacao');
+        if (!frame) return;
+        frame.innerHTML = '<p style="color:#6b7280;margin:0.5rem;">Carregando prévia…</p>';
+        if (erro) erro.style.display = 'none';
+        const body = new FormData();
+        body.append('csrf_token', CSRF);
+        if (dataInput && dataInput.value) body.append('data_liberacao', dataInput.value);
+        fetch(PREVIEW_URL, {
+            method: 'POST',
+            body: body,
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': CSRF,
+                'X-CSRF-Token': CSRF
+            }
+        })
+        .then(async (r) => {
+            const ct = (r.headers.get('content-type') || '');
+            if (!ct.includes('application/json')) {
+                return { ok: false, data: { error: 'Sessão expirada ou resposta inválida. Recarregue a página.' } };
+            }
+            const data = await r.json();
+            return { ok: r.ok && data.ok !== false, data };
+        })
+        .then(({ ok, data }) => {
+            if (!ok) {
+                frame.innerHTML = '';
+                if (erro) {
+                    erro.style.display = 'block';
+                    erro.innerText = (data && (data.message || data.error)) || 'Não foi possível montar a prévia.';
+                }
+                return;
+            }
+            showPreviewHtml(frame, data.html);
+            if (meta) {
+                meta.innerText = `Início: ${data.inicio || '—'}  ·  Fim: ${data.fim || '—'}  ·  Parcelas: ${data.parcelas || '—'}`;
+            }
+            const rec = (data.recipients || []).join(', ') || 'Nenhum e-mail cadastrado';
+            const cc = (data.cc || []).join(', ');
+            if (dest) {
+                dest.innerHTML = `<strong>Para:</strong> ${rec}` +
+                    (cc ? `<br><strong>Cópia (Robótica):</strong> ${cc}` : '');
+            }
+            if (data.aviso && erro) {
+                erro.style.display = 'block';
+                erro.innerText = data.aviso;
+            }
+        })
+        .catch(() => {
+            if (erro) {
+                erro.style.display = 'block';
+                erro.innerText = 'Erro ao carregar a prévia. Recarregue a página e tente de novo.';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dataInput = document.getElementById('ativacaoDataLiberacao');
+        if (dataInput) {
+            dataInput.addEventListener('change', function () {
+                clearTimeout(timer);
+                timer = setTimeout(refreshInicioPreview, 200);
+            });
+        }
+        const form = document.getElementById('ativacaoForm');
+        if (form) {
+            form.addEventListener('submit', function () {
+                document.getElementById('ativacaoDataLiberacao').disabled = false;
+                const enviar = document.getElementById('ativacaoEnviarCheck').checked && modo === 'ativar';
+                document.getElementById('ativacaoEnviarFlag').value = (modo !== 'ativar' || enviar) ? '1' : '0';
+                if (modo === 'ativar') {
+                    document.getElementById('ativacaoSubmit').innerText = enviar ? 'Ativando…' : 'Ativando sem e-mail…';
+                }
+            });
+        }
+        document.getElementById('ativacaoEnviarCheck').addEventListener('change', function () {
+            document.getElementById('ativacaoSubmit').innerText = this.checked
+                ? (modo === 'ativar' ? 'Ativar e enviar' : 'Enviar confirmação')
+                : 'Ativar sem enviar e-mail';
+        });
+        document.getElementById('ativacaoModal').addEventListener('click', function (e) {
+            if (e.target === this) closeAtivacaoModal();
+        });
+    });
+})();
+</script>
+{% endif %}
 
 <!-- CERTIFICATE MODAL -->
 <div id="certModal" class="modal-overlay"
@@ -1715,12 +2255,30 @@ Vigência: ${dataInicio} a ${dataFim}`;
             });
             modalidadeSelect.disabled = false;
 
+            updateValorParcelaDisplay();
             // Trigger logic immediately if data exists
             calculateSystem();
 
         } catch (error) {
             console.error('Erro:', error);
             modalidadeSelect.innerHTML = '<option value="">Erro ao carregar (Verifique conexão)</option>';
+        }
+    }
+
+    function updateValorParcelaDisplay() {
+        const el = document.getElementById('valor_parcela_display');
+        if (!el || !modalidadeSelect) return;
+        const modId = modalidadeSelect.value;
+        const selectedMod = (typeof currentModalidades !== 'undefined')
+            ? currentModalidades.find(m => m.id == modId)
+            : null;
+        if (selectedMod && selectedMod.valor != null && selectedMod.valor !== '') {
+            const n = Number(selectedMod.valor);
+            el.value = Number.isFinite(n)
+                ? 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : ('R$ ' + selectedMod.valor);
+        } else if (!modId) {
+            el.value = '—';
         }
     }
 
@@ -1972,7 +2530,10 @@ Vigência: ${dataInicio} a ${dataFim}`;
         });
     }
 
-    if (modalidadeSelect) modalidadeSelect.addEventListener('change', calculateSystem);
+    if (modalidadeSelect) modalidadeSelect.addEventListener('change', function () {
+        updateValorParcelaDisplay();
+        calculateSystem();
+    });
     if (dataInicioBolsa) dataInicioBolsa.addEventListener('change', calculateSystem);
     // Previsão Defesa needs to trigger check too
     const previsaoInput = document.querySelector('input[name="previsao_defesa"]');
@@ -2361,50 +2922,6 @@ Vigência: ${dataInicio} a ${dataFim}`;
         }
     }
 </script>
-<!-- MODAL: ATIVAÇÃO GOVERNANÇA -->
-{% if bolsista and bolsista.id and bolsista.status_governanca == 'PENDENTE' %}
-<div id="ativacaoModal" class="modal-overlay"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; backdrop-filter: blur(4px);">
-    <div class="modal-content"
-        style="background: white; padding: 2rem; border-radius: 12px; max-width: 450px; margin: 10% auto; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-        <h3 style="margin-top:0; color:#059669; display: flex; align-items: center; gap: 0.5rem;">
-            {{ icon('check-circle', size=24) }} Ativar Bolsa NAPI
-        </h3>
-        <p style="color: #4b5563; font-size: 0.9rem; margin-bottom: 1.5rem;">
-            A bolsa será ativada e a vigência será ajustada conforme a <strong>Data de Liberação da Fundação Araucária</strong>.
-        </p>
-        
-        <form action="{{ url_for('bolsistas.ativar', id=bolsista.id) }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color: #111827;">Data de Liberação (Araucária)</label>
-                <input type="date" name="data_liberacao" required onfocus="this.showPicker()"
-                    style="width: 100%; padding: 0.75rem; border:1px solid #d1d5db; border-radius:6px; font-size: 1rem;">
-            </div>
-
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                <button type="button" onclick="closeAtivacaoModal()" class="btn"
-                    style="flex: 1; background: #f3f4f6; color: #374151; padding: 0.75rem; border: none; border-radius: 6px;">Cancelar</button>
-                <button type="submit" class="btn"
-                    style="flex: 1; background: #059669; color: white; padding: 0.75rem; border: none; border-radius: 6px; font-weight: 600;">Confirmar Ativação</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-    function openAtivacaoModal() {
-        document.getElementById('ativacaoModal').style.display = 'block';
-    }
-    function closeAtivacaoModal() {
-        document.getElementById('ativacaoModal').style.display = 'none';
-    }
-</script>
-{% endif %}
-
-</body>
-</html>
 <!-- SOCIAL DATA MODAL -->
 <div id="socialModal" class="modal-overlay"
     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2500;">

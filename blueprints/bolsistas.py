@@ -12,10 +12,10 @@ from extensions import db
 from models import (
     Bolsista, Edital, Modalidade, Campus, ProgramaAcademico, 
     Afastamento, DadosSociais, MobilidadeInternacional, AcordoInternacional,
-    Candidatura
+    Candidatura, ComentarioBolsista
 )
 from audit import log_action
-from utils import parse_flexible_date
+from utils import parse_flexible_date, format_date_br
 from utils.permissions import apply_user_scope
 from core.memento import BolsistaCaretaker
 from blueprints.services.validation_strategies import ValidadorAcumuloContext, AcumuloBolsaAtivaStrategy, AcumuloProcessoSeletivoStrategy
@@ -23,6 +23,9 @@ from blueprints.services.sync_engine import SyncEngine, AcademicParser
 from blueprints.services.reconciliation import get_conflitos, reconcile_merge, reconcile_keep_one, check_titulacao_conflito
 from services.parser_strategy import StrictoSensuParser
 from services.bolsista_service import BolsistaService
+from services.funtef_onboarding_service import FuntefOnboardingService
+from services.implantacao_bolsa_service import ImplantacaoBolsaService
+from core.datetime_utils import utc_now
 from decorators import require_role, admin_required, check_ownership
 
 bolsistas_bp = Blueprint('bolsistas', __name__)
@@ -32,6 +35,54 @@ def clean_currency(val):
     if not val: return Decimal('0')
     cleaned = re.sub(r'[^\d,]', '', val)
     return Decimal(cleaned.replace(',', '.'))
+
+def _apply_funtef_fields(bolsista):
+    """Campos do fluxo FUNTEF / Conveniar (form POST)."""
+    bolsista.link_pasta_nuvem = request.form.get('link_pasta_nuvem', '').strip() or None
+    bolsista.conveniar_cadastrado = 'conveniar_cadastrado' in request.form
+    bolsista.funtef_contrato_pronto = 'funtef_contrato_pronto' in request.form
+
+
+def _validate_funtef_fields(bolsista):
+    """Valida etapas FUNTEF/Conveniar antes de persistir."""
+    return FuntefOnboardingService.validate_stage_fields(
+        bolsista,
+        'conveniar_cadastrado' in request.form,
+        request.form.get('link_pasta_nuvem', ''),
+        'funtef_contrato_pronto' in request.form,
+    )
+
+
+def _flash_funtef_result(bolsista):
+    ok, msg = FuntefOnboardingService.try_send_notification(bolsista, user_id=current_user.id)
+    if ok and msg:
+        flash(msg, 'success')
+    elif msg:
+        flash(msg, 'warning')
+
+
+def _pagamentos_log(bolsista):
+    """Linhas do log individual (mesmas regras da folha Nuvem)."""
+    if not bolsista or not getattr(bolsista, 'id', None):
+        return []
+    from services.pagamento_bolsista_service import PagamentoBolsistaService
+    return PagamentoBolsistaService.listar_pagamentos(bolsista)
+
+
+def _registrar_comentario_desligamento(bolsista, user_id):
+    """Registra desligamento no Histórico de comentários (aba auditoria)."""
+    data_txt = format_date_br(bolsista.data_desligamento or bolsista.data_fim_bolsa) or '—'
+    motivo = (bolsista.motivo_desligamento or 'Desligamento via sistema').strip()
+    devolucao = 'Sim' if bolsista.devolucao_valores else 'Não'
+    texto = (
+        f'[DESLIGAMENTO] Bolsista desligado do projeto em {data_txt}.\n'
+        f'Motivo: {motivo}\n'
+        f'Devolução de valores: {devolucao}'
+    )
+    bolsista.comentarios_historico.append(
+        ComentarioBolsista(texto=texto, user_id=user_id)
+    )
+
 
 CAMPUS_SIGLA_MAPPING = {
     'Apucarana': 'AP', 'Campo Mourão': 'CM', 'Cornélio Procópio': 'CP', 'Curitiba': 'CT',
@@ -98,17 +149,48 @@ def index():
     
     if sort_by == 'status':
         from core.status_engine import BolsistaStatus
-        if order == 'ativo':
-            bolsistas = [b for b in bolsistas if b.check_status_validity() == BolsistaStatus.ATIVO]
-        elif order == 'inativo':
-            bolsistas = [b for b in bolsistas if b.check_status_validity() in [BolsistaStatus.INATIVO, BolsistaStatus.CANCELAMENTO_REQUERIDO, BolsistaStatus.VENCIDO_CRITICO]]
-        elif order == 'finalizando':
-            bolsistas = [b for b in bolsistas if b.check_status_validity() == BolsistaStatus.FINALIZANDO]
-        elif order == 'suspenso':
-            bolsistas = [b for b in bolsistas if b.check_status_validity() == BolsistaStatus.SUSPENSO]
-        elif order == 'pendente':
-            bolsistas = [b for b in bolsistas if b.check_status_validity() == BolsistaStatus.PENDENTE_GOVERNANCA]
-        bolsistas = sorted(bolsistas, key=lambda b: b.nome)
+        # Agrupa por tipo de status (resumo); dentro do grupo, por nome.
+        # Filtros legados (order=ativo|inativo|...) continuam disponíveis.
+        status_group_order = {
+            BolsistaStatus.ATIVO: 0,
+            BolsistaStatus.ULTIMA_PARCELA: 1,
+            BolsistaStatus.FINALIZANDO: 1,
+            BolsistaStatus.SUSPENSO: 2,
+            BolsistaStatus.AGUARDANDO_IMPLANTACAO: 3,
+            BolsistaStatus.PENDENTE_GOVERNANCA: 3,
+            BolsistaStatus.CANCELAMENTO_REQUERIDO: 4,
+            BolsistaStatus.VENCIDO_CRITICO: 4,
+            BolsistaStatus.INATIVO: 4,
+        }
+        status_filters = {
+            'ativo': [BolsistaStatus.ATIVO],
+            'inativo': [
+                BolsistaStatus.INATIVO,
+                BolsistaStatus.CANCELAMENTO_REQUERIDO,
+                BolsistaStatus.VENCIDO_CRITICO,
+            ],
+            'finalizando': [BolsistaStatus.FINALIZANDO, BolsistaStatus.ULTIMA_PARCELA],
+            'suspenso': [BolsistaStatus.SUSPENSO],
+            'pendente': [
+                BolsistaStatus.PENDENTE_GOVERNANCA,
+                BolsistaStatus.AGUARDANDO_IMPLANTACAO,
+            ],
+        }
+        if order in status_filters:
+            allowed = set(status_filters[order])
+            bolsistas = [b for b in bolsistas if b.check_status_validity() in allowed]
+            bolsistas = sorted(bolsistas, key=lambda b: b.nome or "")
+        else:
+            # asc: Ativo → … → Inativo; desc: Inativo → … → Ativo.
+            # Nome permanece A→Z dentro de cada grupo.
+            direction = -1 if order == 'desc' else 1
+            bolsistas = sorted(
+                bolsistas,
+                key=lambda b: (
+                    status_group_order.get(b.check_status_validity(), 99) * direction,
+                    b.nome or "",
+                ),
+            )
 
     elif sort_by == 'nivel':
         def nivel_key(b):
@@ -142,13 +224,13 @@ def index():
         status = b.check_status_validity()
         if status == BolsistaStatus.ATIVO:
             total_ativos += 1
-        elif status == BolsistaStatus.FINALIZANDO:
+        elif status in (BolsistaStatus.FINALIZANDO, BolsistaStatus.ULTIMA_PARCELA):
             total_finalizando += 1
-        elif status in [BolsistaStatus.INATIVO, BolsistaStatus.CANCELAMENTO_REQUERIDO, BolsistaStatus.VENCIDO_CRITICO]:
+        elif status in (BolsistaStatus.INATIVO, BolsistaStatus.CANCELAMENTO_REQUERIDO, BolsistaStatus.VENCIDO_CRITICO):
             total_inativos += 1
         elif status == BolsistaStatus.SUSPENSO:
             total_suspenso += 1
-        elif status == BolsistaStatus.PENDENTE_GOVERNANCA:
+        elif status in (BolsistaStatus.PENDENTE_GOVERNANCA, BolsistaStatus.AGUARDANDO_IMPLANTACAO):
             total_pendente += 1
         else:
             total_inativos += 1
@@ -198,8 +280,10 @@ def novo():
         # Calculations
         try:
             form_IC = parse_flexible_date(request.form['data_inicio_curso']) if request.form['data_inicio_curso'] else None
-            form_IB = parse_flexible_date(request.form['data_inicio_bolsa'])
-            form_D = int(request.form['meses_duracao'])
+            ib_raw = (request.form.get('data_inicio_bolsa') or '').strip()
+            dur_raw = (request.form.get('meses_duracao') or '').strip()
+            form_IB = parse_flexible_date(ib_raw) if ib_raw else None
+            form_D = int(dur_raw) if dur_raw else None
             form_M = mod.max_meses if mod.max_meses else 0
             
             academic_limit_months = form_M
@@ -218,14 +302,15 @@ def novo():
             return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
 
         # [PI 33/2026] Governança: Início da Bolsa não pode ser anterior ao Início do Curso
-        valid_gov, msg_gov = BolsistaService.validate_governance_dates({
-            'data_inicio_bolsa': form_IB,
-            'data_inicio_curso': form_IC
-        })
-        if not valid_gov:
-            flash(msg_gov, 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+        if form_IB:
+            valid_gov, msg_gov = BolsistaService.validate_governance_dates({
+                'data_inicio_bolsa': form_IB,
+                'data_inicio_curso': form_IC
+            })
+            if not valid_gov:
+                flash(msg_gov, 'error')
+                acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
+                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
 
         # Limits Logic
         ext_maternity = 0 
@@ -242,33 +327,34 @@ def novo():
         # [V14.1] End Date Calculation via Service
         afastamentos_input = [] # Novo bolsista não tem afastamentos prévios no form ainda
         end_date = BolsistaService.calculate_end_date(form_IB, form_D, afastamentos_input)
-        
-        limit_tuple = (limit_date.year, limit_date.month)
-        end_tuple = (end_date.year, end_date.month)
 
-        if end_tuple > limit_tuple:
-            # Exception Logic (Previsao Defesa)
-            try:
-                pd_str = request.form.get('previsao_defesa')
-                form_PD = parse_flexible_date(pd_str) if pd_str else None
-            except:
-                form_PD = None
+        if end_date:
+            limit_tuple = (limit_date.year, limit_date.month)
+            end_tuple = (end_date.year, end_date.month)
 
-            allow_exception = False
-            if form_PD:
-                pd_tuple = (form_PD.year, form_PD.month)
-                if end_tuple <= pd_tuple:
-                    allow_exception = True
-            
-            if not allow_exception:
-                flash(f'Erro de Prazo: Data Final ({end_date.strftime("%m/%Y")}) excede o limite do vínculo ({limit_date.strftime("%m/%Y")}, {academic_limit_months} meses).', 'error')
+            if end_tuple > limit_tuple:
+                # Exception Logic (Previsao Defesa)
+                try:
+                    pd_str = request.form.get('previsao_defesa')
+                    form_PD = parse_flexible_date(pd_str) if pd_str else None
+                except:
+                    form_PD = None
+
+                allow_exception = False
+                if form_PD:
+                    pd_tuple = (form_PD.year, form_PD.month)
+                    if end_tuple <= pd_tuple:
+                        allow_exception = True
+
+                if not allow_exception:
+                    flash(f'Erro de Prazo: Data Final ({end_date.strftime("%m/%Y")}) excede o limite do vínculo ({limit_date.strftime("%m/%Y")}, {academic_limit_months} meses).', 'error')
+                    acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
+                    return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+
+            if form_D and form_D > (form_M + ext_maternity):
+                flash(f'Erro de Duração: {form_D} meses excede o limite da modalidade ({form_M} + {ext_maternity} bônus).', 'error')
                 acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
                 return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
-
-        if form_D > (form_M + ext_maternity):
-            flash(f'Erro de Duração: {form_D} meses excede o limite da modalidade ({form_M} + {ext_maternity} bônus).', 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
 
         # Create Object
         prog_id = int(request.form['programa_id']) if request.form.get('programa_id') else None
@@ -279,10 +365,8 @@ def novo():
 
         campus_text = prog_obj.campus.nome if prog_obj and prog_obj.campus else (campus_obj.nome if campus_obj else request.form.get('campus', ''))
         campus_sigla = prog_obj.campus.sigla_campus if prog_obj and prog_obj.campus else (campus_obj.sigla_campus if campus_obj else get_sigla(campus_text))
-        # [GOVERNANÇA PI 33/2026] Determinar status inicial com base no edital
+        # [GOVERNANÇA] FA / FUNTEF: cadastro sem liberar pagamentos até ativação
         edital_obj = Edital.query.get(mod.edital_id)
-        edital_numero = edital_obj.numero if edital_obj else ""
-        requer_liberacao = '03/2026' in edital_numero  # Apenas Edital 03/2026 exige aprovação da Fundação
         
         # [NEW] Padronização NAPI: Limpeza Defensiva
         instituicao_napi = request.form.get('instituicao', '').strip()
@@ -296,12 +380,15 @@ def novo():
             edital_id=mod.edital_id,
             modalidade_id=mod.id,
             programa_id=prog_obj_id if (instituicao_napi not in VALID_NAPI) else None,
-            status_governanca='PENDENTE' if requer_liberacao else 'ATIVO',
-            ativo=not requer_liberacao,  # False somente para Edital 03/2026
+            status_governanca='ATIVO',
+            ativo=True,
+            implantacao_pendente=False,
             data_fim_bolsa=end_date,
             nome=request.form['nome'],
             cpf=request.form['cpf'],
             email=request.form['email'],
+            telefone=(request.form.get('telefone') or '').strip() or None,
+            data_nascimento=parse_flexible_date(request.form['data_nascimento']) if request.form.get('data_nascimento') else None,
             orientador=request.form['orientador'],
             email_orientador=request.form['email_orientador'],
             data_inicio_curso=parse_flexible_date(request.form['data_inicio_curso']) if request.form['data_inicio_curso'] else None,
@@ -310,8 +397,8 @@ def novo():
             agencia=request.form['agencia'],
             conta=request.form['conta'],
             tipo_conta=request.form['tipo_conta'],
-            data_inicio_bolsa=parse_flexible_date(request.form['data_inicio_bolsa']),
-            meses_duracao=int(request.form['meses_duracao']),
+            data_inicio_bolsa=form_IB,
+            meses_duracao=form_D,
             processo_sei=request.form.get('processo_sei', ''),
             numero_formulario=request.form.get('numero_formulario', ''),
             is_pdse='is_pdse' in request.form,
@@ -326,12 +413,18 @@ def novo():
             instituicao=instituicao_napi,
             cidade=request.form.get('cidade', '')
         )
+        novo_bolsista.edital = edital_obj
         
         caretaker = BolsistaCaretaker()
+        candidatura_id_form = request.form.get('candidatura_id', type=int)
         estrategias = [AcumuloBolsaAtivaStrategy(), AcumuloProcessoSeletivoStrategy()]
         validador = ValidadorAcumuloContext(estrategias)
-        erros = validador.executar_validacoes(novo_bolsista.cpf)
-        
+        erros = validador.executar_validacoes(
+            novo_bolsista.cpf,
+            candidatura_id_ignorar=candidatura_id_form,
+        )
+        has_acumulo_flag = bool(erros)
+
         if erros and not request.form.get('ciente_acumulo'):
             for erro in erros:
                 flash(erro, 'warning')
@@ -341,18 +434,32 @@ def novo():
         # Tratar novo comentário do histórico
         novo_comentario_texto = request.form.get('novo_comentario', '').strip()
         if novo_comentario_texto:
-            from models import ComentarioBolsista
             comentario_obj = ComentarioBolsista(texto=novo_comentario_texto, user_id=current_user.id)
             novo_bolsista.comentarios_historico.append(comentario_obj)
+
+        funtef_errors = _validate_funtef_fields(novo_bolsista)
+        if funtef_errors:
+            for err in funtef_errors:
+                flash(err, 'error')
+            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map)
+
+        _apply_funtef_fields(novo_bolsista)
+
+        aguardando = ImplantacaoBolsaService.deve_ficar_pendente(novo_bolsista)
+        if aguardando:
+            ImplantacaoBolsaService.marcar_pendente(novo_bolsista, user_id=current_user.id)
 
         try:
             caretaker.backup(novo_bolsista)
             db.session.add(novo_bolsista)
             
             # [V14.1] Candidacy Sync via Service
-            cand_id = request.form.get('candidatura_id')
-            if cand_id:
-                BolsistaService.sync_candidacy(cand_id, novo_bolsista.cpf)
+            if candidatura_id_form:
+                db.session.flush()
+                BolsistaService.sync_candidacy(
+                    candidatura_id_form, novo_bolsista.cpf, bolsista_id=novo_bolsista.id
+                )
 
             db.session.commit()
             
@@ -362,6 +469,15 @@ def novo():
                 flash(f'Atenção: {msg_email}', 'warning')
             else:
                 flash('Bolsista cadastrado e e-mail SPARKx disparado!', 'success')
+
+            _flash_funtef_result(novo_bolsista)
+            if aguardando:
+                flash(
+                    'Cadastro salvo sem liberar pagamentos: '
+                    f'{novo_bolsista.motivo_implantacao_pendente.lower()}. '
+                    'Use "Ativar Bolsista (Fundação)" após Conveniar, contrato e data de liberação.',
+                    'warning',
+                )
                 
             return redirect(url_for('bolsistas.editar', id=novo_bolsista.id, show_confirmation=1))
         except Exception as e:
@@ -369,7 +485,7 @@ def novo():
             caretaker.undo(novo_bolsista)
             flash(f"Erro crítico no banco (Rollback acionado): {str(e)}", "error")
             acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=True, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map)
 
     bolsista_pre = None
     if request.method == 'GET':
@@ -418,6 +534,8 @@ def editar(id):
             multicampi_map[p.codigo_programa]['ids'].add(p.campus_id)
 
     if request.method == 'POST':
+        desligado_agora = False
+        fim_anterior = bolsista.data_fim_bolsa
         # [V11.8] Memento Pattern: Granular Snapshot antes de alterações críticas
         bolsista.create_snapshot(contexto="Edição Manual via Formulário")
         
@@ -425,16 +543,22 @@ def editar(id):
         caretaker.backup(bolsista)
         
         cpf = request.form['cpf']
+        candidatura_id_form = request.form.get('candidatura_id', type=int)
         estrategias = [AcumuloBolsaAtivaStrategy(), AcumuloProcessoSeletivoStrategy()]
         validador = ValidadorAcumuloContext(estrategias)
-        erros = validador.executar_validacoes(cpf, bolsista_id_ignorar=bolsista.id)
-        
+        erros = validador.executar_validacoes(
+            cpf,
+            bolsista_id_ignorar=bolsista.id,
+            candidatura_id_ignorar=candidatura_id_form,
+        )
+        has_acumulo_flag = bool(erros)
+
         if erros and not request.form.get('ciente_acumulo'):
             for erro in erros:
                  flash(erro, 'warning')
             flash("⚠️ ATENÇÃO: As alterações NÃO foram salvas. Por favor, marque a caixa 'Estou ciente do acúmulo...' no final da aba 'Vigência & Bolsa' para confirmar o cadastro.", 'danger')
             caretaker.undo(bolsista) # Remove sujeira de memória que Backup capturou
-            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=True, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=True, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
 
         modalidade_id_raw = request.form.get('modalidade_id')
         if modalidade_id_raw:
@@ -448,6 +572,9 @@ def editar(id):
         bolsista.nome = request.form['nome']
         bolsista.cpf = request.form['cpf']
         bolsista.email = request.form['email']
+        bolsista.telefone = (request.form.get('telefone') or '').strip() or None
+        dn_raw = request.form.get('data_nascimento')
+        bolsista.data_nascimento = parse_flexible_date(dn_raw) if dn_raw else None
         bolsista.orientador = request.form['orientador']
         bolsista.email_orientador = request.form['email_orientador']
         bolsista.pais_origem = request.form.get('pais_origem', 'Brasil')
@@ -481,45 +608,62 @@ def editar(id):
         bolsista.previsao_defesa = parse_flexible_date(request.form['previsao_defesa']) if request.form.get('previsao_defesa') else None
 
         # [PI 33/2026] Governança: Início da Bolsa não pode ser anterior ao Início do Curso
-        # Validação só se aplica quando data_inicio_curso foi informada
-        if dic_raw and bolsista.data_inicio_curso:
+        # Validação só se aplica quando ambas as datas foram informadas
+        ib_check_raw = (request.form.get('data_inicio_bolsa') or '').strip()
+        if dic_raw and bolsista.data_inicio_curso and ib_check_raw:
             valid_gov, msg_gov = BolsistaService.validate_governance_dates({
-                'data_inicio_bolsa': parse_flexible_date(request.form['data_inicio_bolsa']),
+                'data_inicio_bolsa': parse_flexible_date(ib_check_raw),
                 'data_inicio_curso': bolsista.data_inicio_curso,
                 'previsao_defesa': bolsista.previsao_defesa
             })
             if not valid_gov:
                 flash(msg_gov, 'error')
-                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=bolsista, multicampi_map=multicampi_map)
+                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=bolsista, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
 
         bolsista.banco = request.form.get('banco', bolsista.banco or '')
         bolsista.agencia = request.form.get('agencia', bolsista.agencia or '')
         bolsista.conta = request.form.get('conta', bolsista.conta or '')
         bolsista.tipo_conta = request.form.get('tipo_conta', bolsista.tipo_conta or 'corrente')
+
+        pendente_impl = bool(
+            getattr(bolsista, 'implantacao_pendente', False)
+            or getattr(bolsista, 'status_governanca', None) == 'PENDENTE'
+        )
         
-        data_inicio_bolsa_raw = request.form.get('data_inicio_bolsa', '')
+        data_inicio_bolsa_raw = (request.form.get('data_inicio_bolsa') or '').strip()
         if data_inicio_bolsa_raw:
-            bolsista.data_inicio_bolsa = parse_flexible_date(data_inicio_bolsa_raw)
-        # Se vazio, mantém data_inicio_bolsa atual do banco (registro legado)
+            nova_inicio = parse_flexible_date(data_inicio_bolsa_raw)
+            if nova_inicio and nova_inicio != bolsista.data_inicio_bolsa:
+                bolsista.data_inicio_bolsa = nova_inicio
+                # Mantém liberação Fundação alinhada — folha Nuvem e log usam data_inicio_bolsa
+                if bolsista.data_liberacao_fundacao:
+                    bolsista.data_liberacao_fundacao = nova_inicio
+            elif nova_inicio:
+                bolsista.data_inicio_bolsa = nova_inicio
+        elif pendente_impl:
+            bolsista.data_inicio_bolsa = None
         
-        meses_raw = request.form.get('meses_duracao', '')
+        meses_raw = (request.form.get('meses_duracao') or '').strip()
         if meses_raw:
             bolsista.meses_duracao = int(meses_raw)
-        # Se vazio, mantém meses_duracao atual do banco
+        elif pendente_impl:
+            bolsista.meses_duracao = None
             
         # Re-calc Logic (Simplified for brevity as it mirrors 'novo')
         form_IB = bolsista.data_inicio_bolsa
         form_D = bolsista.meses_duracao
+        end_date = None
         
         # [V14.1] End Date Calculation via Service — só recalcula se tiver data de início
         if form_IB and form_D:
             afastamentos_data = [{'tipo': a.tipo, 'duracao_meses': a.duracao_meses} for a in bolsista.afastamentos]
             end_date = BolsistaService.calculate_end_date(form_IB, form_D, afastamentos_data)
             
-            # Só atualiza data_fim_bolsa automaticamente se for um registro ativo
-            if bolsista.ativo or 'ativo' in request.form:
+            # Ativo ou aguardando implantação: a vigência acompanha o formulário
+            if bolsista.ativo or 'ativo' in request.form or pendente_impl:
                  bolsista.data_fim_bolsa = end_date
-        
+        elif pendente_impl:
+            bolsista.data_fim_bolsa = None        
         # Meta Fields
         bolsista.processo_sei = request.form.get('processo_sei', '')
         bolsista.numero_formulario = request.form.get('numero_formulario', '')
@@ -527,7 +671,6 @@ def editar(id):
         # Tratar novo comentário do histórico
         novo_comentario_texto = request.form.get('novo_comentario', '').strip()
         if novo_comentario_texto:
-            from models import ComentarioBolsista
             comentario_obj = ComentarioBolsista(texto=novo_comentario_texto, user_id=current_user.id)
             bolsista.comentarios_historico.append(comentario_obj)
             
@@ -538,6 +681,7 @@ def editar(id):
         if 'ativo' not in request.form:
              # Só aciona lógica de desligamento se o bolsista estava ATIVO antes
              if bolsista.ativo:
+                 desligado_agora = True
                  if bolsista.data_fim_bolsa:
                      today = date.today()
                      if bolsista.data_fim_bolsa != today:
@@ -553,20 +697,38 @@ def editar(id):
                  
                  devolucao = request.form.get('devolucao_valores')
                  bolsista.devolucao_valores = (devolucao == 'true')
+                 _registrar_comentario_desligamento(bolsista, current_user.id)
              else:
                  bolsista.ativo = False
         else:
              if not bolsista.ativo:
+                 if getattr(bolsista, 'implantacao_pendente', False) or bolsista.status_governanca == 'PENDENTE':
+                     flash(
+                         'Para liberar pagamentos de bolsa FA, use o botão '
+                         '"Ativar Bolsista (Fundação)" (após Conveniar e contrato).',
+                         'error',
+                     )
+                     acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
+                     return render_template(
+                         'bolsistas/form.html',
+                         bolsista=bolsista, editais=editais, campuses=campuses,
+                         programas=programas, acordos=acordos, multicampi_map=multicampi_map,
+                         pagamentos_log=_pagamentos_log(bolsista),
+                     )
                  bolsista.ativo = True
                  bolsista.data_desligamento = None
+                 bolsista.ultimo_mes_email_competencia = None
+                 bolsista.ultimo_mes_email_enviado_em = None
                  if bolsista.data_fim_bolsa_backup:
                      bolsista.data_fim_bolsa = bolsista.data_fim_bolsa_backup
                      bolsista.data_fim_bolsa_backup = None
                  else:
-                     bolsista.data_fim_bolsa = end_date
+                     if end_date:
+                         bolsista.data_fim_bolsa = end_date
              else:
                  bolsista.ativo = True
-                 bolsista.data_fim_bolsa = end_date
+                 if end_date:
+                     bolsista.data_fim_bolsa = end_date
              
         bolsista.tem_adicional = 'tem_adicional' in request.form
         bolsista.valor_adicional = clean_currency(request.form.get('valor_adicional', '0,00'))
@@ -574,15 +736,51 @@ def editar(id):
         # [PHASE 2] Controle de Checkout
         bolsista.relatorio_entregue = 'relatorio_entregue' in request.form
 
+        funtef_errors = _validate_funtef_fields(bolsista)
+        if funtef_errors:
+            for err in funtef_errors:
+                flash(err, 'error')
+            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
+            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
+
+        _apply_funtef_fields(bolsista)
+
         qtd_adicional_raw = request.form.get('qtd_adicional')
         if qtd_adicional_raw and qtd_adicional_raw.lower() != 'none':
             bolsista.qtd_adicional = int(qtd_adicional_raw)
         else:
             bolsista.qtd_adicional = 1
 
+        from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+        UltimoMesBolsaService.sincronizar_apos_mudanca_fim(bolsista, fim_anterior)
+
         try:
             log_action('UPDATE_BOLSISTA', tabela='bolsistas', registro_id=bolsista.id, detalhes=f"Nome: {bolsista.nome}")
             db.session.commit()
+            _flash_funtef_result(bolsista)
+            if getattr(bolsista, 'implantacao_pendente', False) or bolsista.status_governanca == 'PENDENTE':
+                faltas = ImplantacaoBolsaService.pendencias(bolsista, exigir_inicio=False)
+                if faltas:
+                    flash(
+                        'Cadastro salvo sem pagamentos. Falta para implantar: '
+                        + ' '.join(faltas),
+                        'warning',
+                    )
+                else:
+                    flash(
+                        'Pré-requisitos FUNTEF concluídos. Use "Ativar Bolsista (Fundação)" '
+                        'com a data de liberação para liberar os pagamentos.',
+                        'info',
+                    )
+            if desligado_agora:
+                from services.relatorio_final_service import RelatorioFinalService
+                ok_rel, msg_rel = RelatorioFinalService.enviar_na_desligamento(
+                    bolsista, user_id=current_user.id
+                )
+                if ok_rel and msg_rel:
+                    flash(msg_rel, 'success')
+                elif msg_rel:
+                    flash(msg_rel, 'warning')
             flash('✅ Cadastro Realizado com Sucesso!', 'success')
             return redirect(url_for('bolsistas.editar', id=bolsista.id, show_confirmation=1))
         except Exception as e:
@@ -590,10 +788,19 @@ def editar(id):
             caretaker.undo(bolsista)
             flash(f"Erro crítico no banco (Rollback acionado): {str(e)}", "error")
             acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=True, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
 
     acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-    return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, acordos=acordos, multicampi_map=multicampi_map)
+    return render_template(
+        'bolsistas/form.html',
+        bolsista=bolsista,
+        editais=editais,
+        campuses=campuses,
+        programas=programas,
+        acordos=acordos,
+        multicampi_map=multicampi_map,
+        pagamentos_log=_pagamentos_log(bolsista),
+    )
 
 @bolsistas_bp.route('/bolsistas/<int:id>/restaurar/<int:snapshot_id>', methods=['POST'])
 @require_role(['admin'])
@@ -674,13 +881,14 @@ def editar_comentario(id):
     from models import ComentarioBolsista
     comentario = ComentarioBolsista.query.get_or_404(id)
     
-    # Apenas admin ou o autor podem editar o comentário
-    if current_user.role != 'admin' and comentario.user_id != current_user.id:
+    # Apenas admin/gestor/master ou o autor podem editar o comentário
+    if current_user.role not in ['admin', 'master', 'gestor'] and comentario.user_id != current_user.id:
         return jsonify({'success': False, 'message': 'Sem permissão para editar este comentário.'}), 403
 
     novo_texto = request.form.get('texto', '').strip()
     if novo_texto:
         comentario.texto = novo_texto
+        comentario.atualizado_em = utc_now()
         db.session.commit()
         return jsonify({'success': True, 'texto': comentario.texto})
     return jsonify({'success': False, 'message': 'Texto não pode ser vazio.'}), 400
@@ -714,14 +922,134 @@ def ativar(id):
     if not data_liberacao:
         flash("A Data de Liberação da Fundação é obrigatória para ativação.", "error")
         return redirect(url_for('bolsistas.editar', id=id))
+
+    enviar_confirmacao = request.form.get('enviar_confirmacao') in ('1', 'on', 'true', 'yes')
     
     success, msg = BolsistaService.activate_bolsista(id, data_liberacao)
     if success:
         flash(msg, "success")
+        if enviar_confirmacao:
+            from services.confirmacao_inicio_bolsa_service import ConfirmacaoInicioBolsaService
+            bolsista = Bolsista.query.get(id)
+            ok_mail, msg_mail = ConfirmacaoInicioBolsaService.enviar_individual(
+                bolsista, user_id=current_user.id
+            )
+            flash(msg_mail or ('Confirmação de início enviada.' if ok_mail else 'Não foi possível enviar a confirmação.'),
+                  'success' if ok_mail else 'warning')
     else:
         flash(msg, "error")
     
     return redirect(url_for('bolsistas.editar', id=id))
+
+
+@bolsistas_bp.route('/bolsistas/<int:id>/preview-confirmacao-inicio', methods=['POST'])
+@require_role(['admin', 'gestor', 'diretor_campus'])
+@check_ownership(Bolsista)
+def preview_confirmacao_inicio(id):
+    """Prévia HTML do e-mail de confirmação de início (antes de ativar ou reenviar)."""
+    from services.confirmacao_inicio_bolsa_service import ConfirmacaoInicioBolsaService
+
+    bolsista = Bolsista.query.get_or_404(id)
+    payload = request.get_json(silent=True) or {}
+    raw = (request.form.get('data_liberacao') or payload.get('data_liberacao') or '').strip()
+    data_inicio = parse_flexible_date(raw) if raw else (bolsista.data_inicio_bolsa or date.today())
+    if not data_inicio:
+        return jsonify({'ok': False, 'error': 'Informe a data de liberação/início.'}), 400
+    html, meta, subject = ConfirmacaoInicioBolsaService.render_preview_html(
+        bolsista=bolsista, data_inicio=data_inicio
+    )
+    inicio, fim, parcelas = meta['inicio'], meta['fim'], meta['parcelas']
+    aviso = None
+    if not bolsista.meses_duracao:
+        aviso = 'Informe os meses de duração no cadastro para calcular o fim e as parcelas.'
+    return jsonify({
+        'ok': True,
+        'html': html,
+        'subject': subject,
+        'recipients': meta.get('recipients') or [],
+        'cc': meta.get('cc') or [],
+        'inicio': format_date_br(inicio) if inicio else None,
+        'fim': format_date_br(fim) if fim else None,
+        'parcelas': parcelas,
+        'aviso': aviso,
+    })
+
+
+@bolsistas_bp.route('/bolsistas/<int:id>/reenviar-confirmacao-inicio', methods=['POST'])
+@require_role(['admin', 'gestor', 'diretor_campus'])
+@check_ownership(Bolsista)
+def reenviar_confirmacao_inicio(id):
+    """Envia/reenvia a confirmação de início (bolsista + orientador), após prévia."""
+    from services.confirmacao_inicio_bolsa_service import ConfirmacaoInicioBolsaService
+
+    bolsista = Bolsista.query.get_or_404(id)
+    if not bolsista.ativo or getattr(bolsista, 'implantacao_pendente', False):
+        flash('A confirmação de início só se aplica a bolsistas já ativados.', 'warning')
+        return redirect(url_for('bolsistas.editar', id=id))
+
+    ok, msg = ConfirmacaoInicioBolsaService.enviar_individual(
+        bolsista, forcar=True, user_id=current_user.id
+    )
+    flash(msg or ('Confirmação reenviada.' if ok else 'Não foi possível enviar.'), 'success' if ok else 'warning')
+    return redirect(url_for('bolsistas.editar', id=id))
+
+
+@bolsistas_bp.route('/bolsistas/<int:id>/reenviar-funtef', methods=['POST'])
+@require_role(['admin', 'gestor', 'diretor_campus'])
+@check_ownership(Bolsista)
+def reenviar_funtef(id):
+    """Reenvia e-mail só aos destinatários FUNTEF externos (ex.: config errada anterior)."""
+    bolsista = Bolsista.query.get_or_404(id)
+    if not bolsista.conveniar_cadastrado or not (bolsista.link_pasta_nuvem or '').strip():
+        flash('Conveniar e link da Nuvem são necessários para reenviar à FUNTEF.', 'warning')
+        return redirect(url_for('bolsistas.editar', id=id))
+    if not bolsista.funtef_email_enviado_em:
+        flash('Use Atualizar Cadastro para o primeiro envio FUNTEF.', 'warning')
+        return redirect(url_for('bolsistas.editar', id=id))
+
+    ok, msg = FuntefOnboardingService.reenviar_funtef_externa(bolsista, user_id=current_user.id)
+    flash(msg or ('Reenviado à FUNTEF.' if ok else 'Não foi possível reenviar.'), 'success' if ok else 'warning')
+    return redirect(url_for('bolsistas.editar', id=id))
+
+
+@bolsistas_bp.route('/bolsistas/<int:id>/reenviar-aviso-ultimo-mes', methods=['POST'])
+@require_role(['admin', 'gestor', 'diretor_campus'])
+@check_ownership(Bolsista)
+def reenviar_aviso_ultimo_mes(id):
+    """Envia/reenvia o aviso de último mês (apenas no mês de fim da vigência)."""
+    from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+
+    bolsista = Bolsista.query.get_or_404(id)
+    if not bolsista.em_ultimo_mes_bolsa:
+        flash('O aviso de último mês só se aplica a bolsistas ativos no mês de término da vigência.', 'warning')
+        return redirect(url_for('bolsistas.editar', id=id))
+
+    ok, msg = UltimoMesBolsaService.enviar_aviso_individual(
+        bolsista, forcar=True, user_id=current_user.id
+    )
+    flash(msg or ('Aviso reenviado.' if ok else 'Não foi possível reenviar o aviso.'), 'success' if ok else 'warning')
+    return redirect(url_for('bolsistas.editar', id=id))
+
+
+@bolsistas_bp.route('/bolsistas/<int:id>/reenviar-cobranca-relatorio', methods=['POST'])
+@require_role(['admin', 'gestor', 'diretor_campus'])
+@check_ownership(Bolsista)
+def reenviar_cobranca_relatorio(id):
+    """Envia/reenvia cobrança de relatório final (desligados sem checkout)."""
+    from services.relatorio_final_service import RelatorioFinalService
+
+    bolsista = Bolsista.query.get_or_404(id)
+    if not bolsista.cobranca_relatorio_pendente:
+        flash('Cobrança de relatório só se aplica a bolsistas desligados sem relatório entregue.', 'warning')
+        return redirect(url_for('bolsistas.editar', id=id))
+
+    motivo = 'mensal' if bolsista.relatorio_ultima_cobranca_em else 'desligamento'
+    ok, msg = RelatorioFinalService.enviar_cobranca_individual(
+        bolsista, motivo=motivo, user_id=current_user.id
+    )
+    flash(msg or ('Cobrança enviada.' if ok else 'Não foi possível enviar a cobrança.'), 'success' if ok else 'warning')
+    return redirect(url_for('bolsistas.editar', id=id))
+
 
 @bolsistas_bp.after_request
 def add_header(response):
@@ -974,7 +1302,10 @@ def afastamento_novo(id):
         )
         db.session.add(novo_afastamento)
         if bolsista.data_fim_bolsa:
+            fim_anterior = bolsista.data_fim_bolsa
             bolsista.apply_extension(duracao)
+            from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+            UltimoMesBolsaService.sincronizar_apos_mudanca_fim(bolsista, fim_anterior)
         
         db.session.commit()
         if bolsista.ativo:
@@ -990,7 +1321,10 @@ def afastamento_excluir(id):
     afastamento = Afastamento.query.get_or_404(id)
     bolsista_id = afastamento.bolsista_id
     bolsista = Bolsista.query.get(bolsista_id)
+    fim_anterior = bolsista.data_fim_bolsa
     bolsista.revert_extension(afastamento.duracao_meses)
+    from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+    UltimoMesBolsaService.sincronizar_apos_mudanca_fim(bolsista, fim_anterior)
     
     db.session.delete(afastamento)
     db.session.commit()

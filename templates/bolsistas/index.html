@@ -155,22 +155,25 @@
                     </th>
                     <th style="padding: 1rem;">Vigência</th>
                     <th style="padding: 1rem;">
+                        {% set next_order_status = 'desc' if current_sort == 'status' and current_order == 'asc' else 'asc' %}
                         <a href="{{ url_for('bolsistas.index', edital_id=selected_edital, q=search_q, sort='status', order=next_order_status) }}"
-                            class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                            style="color: var(--text-color); text-decoration: none; display: flex; align-items: center; gap: 5px;">
                             Status
-                            {% if current_sort == 'status' and current_order in ['ativo', 'inativo', 'finalizando', 'suspenso', 'pendente'] %}
+                            {% if current_sort == 'status' and current_order in ['asc', 'desc'] %}
+                            <span style="font-size: 0.8rem;">{{ '↓' if current_order == 'asc' else '↑' }}</span>
+                            {% elif current_sort == 'status' and current_order in ['ativo', 'inativo', 'finalizando', 'suspenso', 'pendente'] %}
                             {% if current_order == 'ativo' %} <span
                                 style="color: var(--success-color); font-weight: bold;">✓ Ativos</span>{% endif %}
-                            {% if current_order == 'inativo' %} <span style="color: white; font-weight: bold;">✓
+                            {% if current_order == 'inativo' %} <span style="color: var(--danger-color); font-weight: bold;">✓
                                 Inativos</span>{% endif %}
                             {% if current_order == 'finalizando' %} <span style="color: #fbbf24; font-weight: bold;">✓
                                 Finalizando</span>{% endif %}
                             {% if current_order == 'suspenso' %} <span style="color: #0ea5e9; font-weight: bold;">✓
                                 Suspenso</span>{% endif %}
                             {% if current_order == 'pendente' %} <span style="color: #f59e0b; font-weight: bold;">✓
-                                PENDENTE</span>{% endif %}
+                                Pendente</span>{% endif %}
                             {% else %}
-                            <span style="opacity: 0.5;">⇅</span>
+                            <span style="font-size: 0.8rem; opacity: 0.3;">⇅</span>
                             {% endif %}
                         </a>
                     </th>

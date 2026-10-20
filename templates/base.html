@@ -38,8 +38,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arandú Napi-Robótica - Gestão de Editais</title>
 
-    <!-- Favicon - Logo NAPI Robótica -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/napi_robotica_logo.png') }}">
+    <!-- Favicon — ícone quadrado da marca (não a logo larga) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
@@ -402,6 +404,22 @@
                 </li>
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <small style="display: block; padding: 0 1rem; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Equipe</small>
+                </li>
+                <li>
+                    <a href="{{ url_for('anotacoes.index') }}" class="nav-link" style="position: relative;">
+                        {{ icon('check-square', size=20, class='mr-2') }} <span data-ui-key="nav_tarefas">{{ ui.get('nav_tarefas', 'Tarefas') }}</span>
+                        {% if total_tarefas_pendentes and total_tarefas_pendentes > 0 %}
+                        <span
+                            style="position: absolute; right: 10px; background-color: #e85d04; color: white; border-radius: 9999px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold;">
+                            {{ total_tarefas_pendentes }}
+                        </span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
                     <a href="{{ url_for('admin.manual') }}" class="nav-link">
                         {{ icon('help-circle', size=20, class='mr-2') }} <span data-ui-key="nav_manual">{{ ui.get('nav_manual', 'Manual / Ajuda') }}</span>
@@ -417,7 +435,47 @@
                 </li>
                 {% endif %}
 
-                <!-- Seção Admin (Injetado) -->
+                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
+                <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <small style="display: block; padding: 0 1rem; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">E-mails</small>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.automacoes_hub') }}"
+                        class="nav-link {% if request.endpoint == 'admin.automacoes_hub' or request.endpoint == 'admin.monitor_automacao' %}active{% endif %}">
+                        {{ icon('activity', size=20, class='mr-2') }} <span>Central de automações</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.config_pagamento_bolsas') }}"
+                        class="nav-link {% if request.endpoint and 'pagamento_bolsas' in request.endpoint %}active{% endif %}">
+                        {{ icon('wallet', size=20, class='mr-2') }} <span>Pagamento de bolsas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.config_confirmacao_inicio') }}"
+                        class="nav-link {% if request.endpoint and 'confirmacao_inicio' in request.endpoint %}active{% endif %}">
+                        {{ icon('mail', size=20, class='mr-2') }} <span>Confirmação de início</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.config_funtef') }}"
+                        class="nav-link {% if request.endpoint and 'funtef' in request.endpoint %}active{% endif %}">
+                        {{ icon('mail', size=20, class='mr-2') }} <span>FUNTEF</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.config_relatorio_final') }}"
+                        class="nav-link {% if request.endpoint and 'relatorio_final' in request.endpoint %}active{% endif %}">
+                        {{ icon('file-text', size=20, class='mr-2') }} <span>Cobrança relatório final</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.config_ultimo_mes_bolsa') }}"
+                        class="nav-link {% if request.endpoint and 'ultimo_mes' in request.endpoint %}active{% endif %}">
+                        {{ icon('calendar', size=20, class='mr-2') }} <span>Aviso último mês</span>
+                    </a>
+                </li>
+                {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
                     <small data-ui-key="admin_section_label"

@@ -11,7 +11,10 @@ import matplotlib
 matplotlib.use('Agg') # Fix for Waitress/Threaded Context
 
 from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask import (
+    Flask, render_template, request, redirect, url_for, jsonify, flash,
+    has_request_context,
+)
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -20,6 +23,7 @@ from extensions import db, mail, login_manager, csrf, migrate
 from flask_wtf.csrf import CSRFError
 from models import Edital, Modalidade, Campus, ProgramaAcademico, Bolsista, User, Residente, UIState
 from utils import format_date_br, format_date_iso
+from core.datetime_utils import format_datetime_br
 
 # Carregar variÃ¡veis de ambiente
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
@@ -113,6 +117,7 @@ from blueprints.bolsistas import bolsistas_bp
 from blueprints.admin_users import admin_users_bp
 from blueprints.ui_editor import ui_editor_bp
 from blueprints.database_explorer import database_explorer_bp
+from blueprints.anotacoes import anotacoes_bp
 
 app.register_blueprint(reports_bp)
 app.register_blueprint(dashboard_bp)
@@ -127,6 +132,7 @@ app.register_blueprint(bolsistas_bp)
 app.register_blueprint(admin_users_bp)
 app.register_blueprint(ui_editor_bp)
 app.register_blueprint(database_explorer_bp)
+app.register_blueprint(anotacoes_bp)
 
 # Filtros Jinja2
 @app.template_filter('format_currency')
@@ -141,6 +147,9 @@ def date_br_filter(date_obj): return format_date_br(date_obj)
 
 @app.template_filter('date_iso')
 def date_iso_filter(date_obj): return format_date_iso(date_obj)
+
+@app.template_filter('datetime_br')
+def datetime_br_filter(dt): return format_datetime_br(dt)
 
 # Globais Jinja2
 app.jinja_env.globals.update(getattr=getattr)
@@ -211,6 +220,15 @@ def inject_ui_texts():
         return dict(ui={})
 
 @app.context_processor
+def inject_tarefas_pendentes():
+    try:
+        from models import AnotacaoSistema
+        n = AnotacaoSistema.query.filter_by(concluida=False).count()
+        return dict(total_tarefas_pendentes=n)
+    except Exception:
+        return dict(total_tarefas_pendentes=0)
+
+@app.context_processor
 def inject_alerts():
     from datetime import date, timedelta
     import calendar
@@ -224,21 +242,45 @@ def inject_alerts():
         count_pending = Edital.query.filter(Edital.data_fim < hoje, Edital.prestacao_contas == False).count()
         count_bolsistas = Bolsista.query.filter(Bolsista.data_fim_bolsa >= hoje, Bolsista.data_fim_bolsa <= fim_mes, Bolsista.ativo == True).count()
         count_titulacao = Bolsista.query.filter(Bolsista.ativo == True, Bolsista.previsao_defesa != None, Bolsista.previsao_defesa < hoje, Bolsista.data_fim_bolsa >= hoje).count()
-        total_alerts = count_expiring + count_pending + count_bolsistas + count_titulacao
-        return dict(total_alerts=total_alerts, count_titulacao_antecipada=count_titulacao)
+        try:
+            from services.ultimo_mes_bolsa_service import UltimoMesBolsaService
+            count_ultimo_mes = UltimoMesBolsaService.contar_pendentes_aviso(hoje)
+        except Exception:
+            count_ultimo_mes = 0
+        total_alerts = count_expiring + count_pending + count_bolsistas + count_titulacao + count_ultimo_mes
+        return dict(
+            total_alerts=total_alerts,
+            count_titulacao_antecipada=count_titulacao,
+            count_ultimo_mes_aviso=count_ultimo_mes,
+        )
     except: return dict(total_alerts=0)
 
 @app.context_processor
 def inject_director_programs():
-    if current_user.is_authenticated and current_user.role == 'diretor_campus' and current_user.campus_id:
+    if (
+        has_request_context()
+        and current_user.is_authenticated
+        and current_user.role == 'diretor_campus'
+        and current_user.campus_id
+    ):
         from sqlalchemy import not_
         programs = ProgramaAcademico.query.filter(ProgramaAcademico.campus_id == current_user.campus_id, not_(ProgramaAcademico.nome_programa.ilike('%*%'))).order_by(ProgramaAcademico.nome_programa).all()
         return dict(director_programs=programs)
     return dict(director_programs=[])
 
 # CLI Tasks
-from tasks.cobranca_cancelamento import init_app_tasks
-init_app_tasks(app)
+from tasks.cobranca_cancelamento import init_app_tasks as init_cobranca_tasks
+from tasks.cobranca_relatorio_final import init_app_tasks as init_relatorio_cobranca_tasks
+from tasks.aviso_ultimo_mes_bolsa import init_app_tasks as init_ultimo_mes_tasks
+from tasks.confirmacao_inicio_bolsa import init_app_tasks as init_inicio_bolsa_tasks
+from tasks.enviar_pagamento_bolsas import init_app_tasks as init_pagamento_tasks
+from tasks.resumo_diario import init_app_tasks as init_resumo_tasks
+init_cobranca_tasks(app)
+init_relatorio_cobranca_tasks(app)
+init_ultimo_mes_tasks(app)
+init_inicio_bolsa_tasks(app)
+init_pagamento_tasks(app)
+init_resumo_tasks(app)
 
 if __name__ == '__main__':
     with app.app_context():

@@ -7,7 +7,7 @@ from flask import request
 from flask_login import current_user
 from models import db, AuditLog
 import json
-from datetime import datetime
+from core.datetime_utils import utc_now
 
 def log_action(acao, tabela=None, registro_id=None, detalhes=None, user_override=None):
     """
@@ -52,7 +52,7 @@ def log_action(acao, tabela=None, registro_id=None, detalhes=None, user_override
             registro_id=str(registro_id) if registro_id else None,
             detalhes=detalhes_str,
             ip_address=ip,
-            data_hora=datetime.now()
+            data_hora=utc_now()
         )
         
         db.session.add(log)

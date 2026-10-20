@@ -33,6 +33,31 @@
         align-items: start;
     }
 
+    .cand-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: .3rem; }
+    .cand-actions form { margin: 0; padding: 0; display: inline-flex; }
+    .cand-action {
+        width: 2rem; height: 2rem; padding: 0; display: inline-flex; align-items: center;
+        justify-content: center; border-radius: .5rem; border: 1px solid transparent;
+        background: transparent; line-height: 1; cursor: pointer; transition: .15s ease;
+    }
+    .cand-action:hover { transform: translateY(-1px); }
+    .cand-action--edit { color: var(--primary-color); border-color: color-mix(in srgb, var(--primary-color) 28%, transparent); background: color-mix(in srgb, var(--primary-color) 6%, transparent); }
+    .cand-action--ok { color: var(--success-color); border-color: color-mix(in srgb, var(--success-color) 28%, transparent); background: color-mix(in srgb, var(--success-color) 6%, transparent); }
+    .cand-action--wait { color: #b45309; border-color: rgba(180,83,9,.28); background: rgba(180,83,9,.06); }
+    .cand-action--no { color: var(--danger-color, #dc2626); border-color: color-mix(in srgb, var(--danger-color, #dc2626) 28%, transparent); background: color-mix(in srgb, var(--danger-color, #dc2626) 6%, transparent); }
+    .cand-action--go { color: #fff; border-color: var(--success-color); background: var(--success-color); }
+    .cand-action--back { color: var(--text-muted); border-color: var(--border-color); background: var(--soft-bg); }
+    body.dark-mode .cand-action--edit { color: var(--primary-hover); }
+    body.dark-mode .cand-action--wait { color: #fcd34d; }
+    body.dark-mode .cand-action--no { color: #fca5a5; }
+
+    .rodada-item-draggable { display: flex; align-items: stretch; gap: 8px; }
+    .rodada-grip, .candidato-grip { cursor: grab; color: var(--text-muted); user-select: none; letter-spacing: -2px; }
+    .rodada-grip { padding-top: 2px; }
+    .rodada-body { flex: 1; min-width: 0; }
+    .rodada-item-draggable.dragging, .candidato-row-draggable.dragging { opacity: .45; }
+    .rodada-item-draggable.drag-over, .candidato-row-draggable.drag-over { outline: 2px dashed var(--primary-color); outline-offset: -2px; }
+
     .premium-card {
         border-radius: 12px;
         transition: transform 0.2s, box-shadow 0.2s;
@@ -273,12 +298,47 @@
         background: var(--input-bg) !important;
         border: 1px solid var(--border-color) !important;
         color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color);
+        caret-color: var(--text-color);
     }
 
     .input-premium:focus, .form-control:focus, .form-select:focus {
         border-color: var(--primary-color) !important;
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
         background: var(--card-bg) !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Dark mode: mantém fonte clara também em :focus / :active / autofill (modal Cadastrar Candidato etc.) */
+    body.dark-mode .input-premium:focus,
+    body.dark-mode .form-control:focus,
+    body.dark-mode .form-select:focus,
+    body.dark-mode .input-premium:active,
+    body.dark-mode .form-control:active,
+    body.dark-mode .form-select:active {
+        background: var(--input-bg) !important;
+        color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+        caret-color: var(--text-color);
+    }
+
+    body.dark-mode .input-premium::placeholder,
+    body.dark-mode .form-control::placeholder {
+        color: var(--text-muted) !important;
+        opacity: 1;
+        -webkit-text-fill-color: var(--text-muted);
+    }
+
+    body.dark-mode .input-premium:-webkit-autofill,
+    body.dark-mode .input-premium:-webkit-autofill:hover,
+    body.dark-mode .input-premium:-webkit-autofill:focus,
+    body.dark-mode .form-control:-webkit-autofill,
+    body.dark-mode .form-control:-webkit-autofill:hover,
+    body.dark-mode .form-control:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--text-color) !important;
+        caret-color: var(--text-color);
+        transition: background-color 99999s ease-in-out 0s;
+        box-shadow: 0 0 0 1000px var(--input-bg) inset !important;
     }
 
     .input-group-text-premium, .input-group-text {
@@ -391,12 +451,14 @@
                     <span class="badge rounded-pill bg-dark border border-secondary">{{ edital.rodadas|length }}</span>
                 </div>
 
-                <div style="padding: 16px;">
+                <div style="padding: 16px;" id="rodadasSortable">
                     {% if edital.rodadas %}
                     {% for rodada in edital.rodadas %}
-                    <div class="round-item {% if rodada_focada and rodada.id == rodada_focada.id %}active{% endif %}"
+                    <div class="round-item rodada-item-draggable {% if rodada_focada and rodada.id == rodada_focada.id %}active{% endif %}"
+                        draggable="true" data-rodada-id="{{ rodada.id }}"
                         data-action="nav-rodada" data-href="{{ url_for('editais.painel_selecao', id=edital.id, rodada_id=rodada.id) }}">
-
+                        <span class="rodada-grip" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>
+                        <div class="rodada-body">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <span style="font-weight: 600; color: var(--text-color);">{{ rodada.nome }}</span>
@@ -413,7 +475,7 @@
                                 até
                                 {% if rodada.data_fim %}{{ rodada.data_fim.strftime('%d/%m') }}{% else %}?{% endif %}
                             </span>
-                        </div>
+                        </div></div>
                     </div>
                     {% endfor %}
                     {% else %}
@@ -474,6 +536,45 @@
                     </li>
                     {% endif %}
                 </ul>
+            </div>
+
+            <div class="premium-card" id="historico-anotacoes-edital">
+                <div class="premium-header">
+                    <h3 class="premium-title">{{ icon('message-square', size=18) }} Anotações</h3>
+                    <span class="badge rounded-pill bg-dark border border-secondary">{{ edital.comentarios_historico|length }}</span>
+                </div>
+                <div style="padding: 12px 16px;">
+                    {% if edital.comentarios_historico %}
+                    <div class="d-flex flex-column gap-2 mb-3" style="max-height: 280px; overflow-y: auto;">
+                        {% for comentario in edital.comentarios_historico|reverse %}
+                        <div style="background: var(--soft-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: .65rem .75rem; font-size: .85rem;">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1 small text-muted">
+                                <span><strong style="color: var(--text-color);">{{ comentario.autor.nome if comentario.autor else 'Sistema' }}</strong> · {{ comentario.criado_em.strftime('%d/%m/%Y %H:%M') if comentario.criado_em else '' }}</span>
+                                {% if current_user.role in ['admin', 'master', 'gestor'] or current_user.id == comentario.user_id %}
+                                <button type="button" class="btn btn-link p-0 text-primary" onclick="editComentarioEdital({{ comentario.id }})" title="Editar anotação">{{ icon('edit-2', size=12) }}</button>
+                                {% endif %}
+                            </div>
+                            <div id="comentario-edital-texto-{{ comentario.id }}" style="white-space: pre-wrap;">{{ comentario.texto }}</div>
+                            <div id="comentario-edital-edit-{{ comentario.id }}" style="display: none; margin-top: .5rem;">
+                                <textarea id="comentario-edital-input-{{ comentario.id }}" rows="2" class="form-control input-premium mb-2">{{ comentario.texto }}</textarea>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditComentarioEdital({{ comentario.id }})">Cancelar</button>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="saveComentarioEdital({{ comentario.id }})">Salvar</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="small text-muted mb-3">Nenhuma anotação neste edital ainda.</p>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('editais.comentario_novo_edital', id=edital.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if rodada_focada %}<input type="hidden" name="rodada_id" value="{{ rodada_focada.id }}">{% endif %}
+                        <textarea name="novo_comentario" rows="2" class="form-control input-premium mb-2" placeholder="Observação interna sobre este edital…" required></textarea>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">Registrar</button>
+                    </form>
+                </div>
             </div>
 
         </div> <!-- FIM SIDEBAR COLUMN -->
@@ -656,6 +757,7 @@
                             style="border-collapse: separate; border-spacing: 0;">
                             <thead>
                                 <tr>
+                                    <th class="border-0 px-2 py-3" style="width: 36px;" title="Ordenar"></th>
                                     <th class="border-0 px-4 py-3 small text-muted text-uppercase fw-bold">Candidato
                                     </th>
                                     <th class="border-0 px-4 py-3 small text-muted text-uppercase fw-bold">
@@ -664,10 +766,14 @@
                                     <th class="border-0 px-4 py-3 text-end"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="candidatosSortable">
                                 {% if rodada_focada.candidaturas %}
                                 {% for cand in rodada_focada.candidaturas %}
-                                <tr data-id="{{ cand.id }}">
+                                {% set cpf_key = cand.cpf|replace('.', '')|replace('-', '')|replace(' ', '') %}
+                                {% set bol_existente = bolsistas_por_cpf.get(cpf_key) if bolsistas_por_cpf is defined and cpf_key else none %}
+                                {% set outro_vinculo = cpf_key and cpf_key in cpfs_efetivados %}
+                                <tr class="candidato-row-draggable" draggable="true" data-id="{{ cand.id }}" data-candidato-id="{{ cand.id }}">
+                                    <td class="px-2 py-3 text-center candidato-grip" title="Arrastar para reordenar">⋮⋮</td>
                                     <td class="px-4 py-3">
                                         <div class="d-flex align-items-center gap-3">
                                             <div
@@ -702,11 +808,17 @@
                                         {% else %}
                                         <span class="badge bg-secondary">{{ cand.status }}</span>
                                         {% endif %}
+                                        {% if bol_existente and cand.status != 'EFETIVADO' %}
+                                        <div class="small text-info mt-1" title="CPF já tem bolsista neste edital (#{{ bol_existente.id }})">
+                                            Já cadastrado neste edital (#{{ bol_existente.id }})
+                                        </div>
+                                        {% elif outro_vinculo and cand.status != 'EFETIVADO' %}
+                                        <div class="small text-warning mt-1" title="CPF já possui outro vínculo no sistema; isto não impede efetivar">Outro vínculo no sistema</div>
+                                        {% endif %}
                                     </td>
                                     <td class="px-4 py-3 text-end">
-                                        <div class="d-flex gap-1 justify-content-end align-items-center">
-                                            <!-- Botão de edição universal: visível para todos os candidatos -->
-                                            <button class="btn btn-sm btn-outline-secondary" data-action="edit-candidato"
+                                        <div class="cand-actions" role="group" aria-label="Ações do candidato">
+                                            <button type="button" class="cand-action cand-action--edit" data-action="edit-candidato"
                                                 data-id="{{ cand.id }}"
                                                 data-nome="{{ cand.nome }}"
                                                 data-cpf="{{ cand.cpf }}"
@@ -719,45 +831,58 @@
                                                 data-programa_id="{{ cand.programa_id or '' }}"
                                                 data-instituicao="{{ cand.instituicao or '' }}"
                                                 data-cidade="{{ cand.cidade or '' }}"
-                                                title="Editar Candidato">
-                                                {{ icon('edit-2', size=16) }}
+                                                data-numero_sei="{{ cand.numero_sei or '' }}"
+                                                data-bs-toggle="tooltip" title="Editar">
+                                                {{ icon('edit-2', size=15) }}
                                             </button>
 
                                             {% if cand.status == 'INSCRITO' %}
                                             <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="status" value="SELECIONADO">
-                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Aprovar">
-                                                    {{ icon('check', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--ok" data-bs-toggle="tooltip" title="Aprovar">
+                                                    {{ icon('check', size=15) }}
                                                 </button>
                                             </form>
                                             <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="status" value="EXCEDENTE">
-                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Lista de Espera">
-                                                    {{ icon('clock', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--wait" data-bs-toggle="tooltip" title="Lista de espera">
+                                                    {{ icon('clock', size=15) }}
                                                 </button>
                                             </form>
                                             <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="status" value="REJEITADO">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Rejeitar">
-                                                    {{ icon('x', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--no" data-bs-toggle="tooltip" title="Rejeitar">
+                                                    {{ icon('x', size=15) }}
                                                 </button>
                                             </form>
 
                                             {% elif cand.status == 'SELECIONADO' %}
-                                            <form action="{{ url_for('editais.candidatura_promover', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                            {% if bol_existente %}
+                                            <form action="{{ url_for('editais.candidatura_vincular', id=cand.id) }}" method="POST" class="m-0 p-0"
+                                                onsubmit="return confirm('Vincular esta candidatura ao bolsista #{{ bol_existente.id }} ({{ bol_existente.nome }})? Nenhum cadastro novo será criado.');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-white shadow-sm" title="Efetivar Matrícula no Sistema">
-                                                    {{ icon('graduation-cap', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--go" data-bs-toggle="tooltip"
+                                                    title="Já cadastrado — vincular ao bolsista #{{ bol_existente.id }}">
+                                                    {{ icon('link', size=15) }}
                                                 </button>
                                             </form>
+                                            {% else %}
+                                            <form action="{{ url_for('editais.candidatura_promover', id=cand.id) }}" method="POST" class="m-0 p-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="cand-action cand-action--go" data-bs-toggle="tooltip"
+                                                    title="{% if outro_vinculo %}Efetivar (há outro vínculo no sistema){% else %}Efetivar / criar bolsista{% endif %}">
+                                                    {{ icon('graduation-cap', size=15) }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
                                             <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="status" value="INSCRITO">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Reverter para Inscrito">
-                                                    {{ icon('rotate-ccw', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--back" data-bs-toggle="tooltip" title="Reverter para Inscrito">
+                                                    {{ icon('rotate-ccw', size=15) }}
                                                 </button>
                                             </form>
 
@@ -765,8 +890,8 @@
                                             <form action="{{ url_for('editais.candidatura_status', id=cand.id) }}" method="POST" class="m-0 p-0">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="status" value="INSCRITO">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Reverter para Inscrito">
-                                                    {{ icon('rotate-ccw', size=16) }}
+                                                <button type="submit" class="cand-action cand-action--back" data-bs-toggle="tooltip" title="Reverter para Inscrito">
+                                                    {{ icon('rotate-ccw', size=15) }}
                                                 </button>
                                             </form>
                                             {% endif %}
@@ -776,7 +901,7 @@
                                 {% endfor %}
                                 {% else %}
                                 <tr>
-                                    <td colspan="4" class="text-center py-5">
+                                    <td colspan="5" class="text-center py-5">
                                         <div class="text-muted opacity-50 mb-2">{{ icon('user-x', size=32) }}</div>
                                         <p class="text-muted small">Nenhum candidato registrado nesta chamada.</p>
                                     </td>
@@ -1623,6 +1748,9 @@
             document.getElementById('editCandEmail').value = data.email || '';
             document.getElementById('editCandNsei').value = data.numero_sei || '';
             document.getElementById('editCandInstituicao').value = data.instituicao || '';
+            document.getElementById('editCandCidade').value = data.cidade || '';
+            document.getElementById('editCandCampus').value = data.campus_id || '';
+            document.getElementById('editCandPrograma').value = data.programa_id || '';
             document.getElementById('editCandProjeto').value = data.projeto || '';
             document.getElementById('editCandOrientador').value = data.orientador || '';
             document.getElementById('editCandEmailOrientador').value = data.email_orientador || '';
@@ -1635,6 +1763,8 @@
         async salvarCandidato() {
             const id = document.getElementById('editCandId').value;
             const btn = document.getElementById('btnSalvarCandidato');
+            const campusId = document.getElementById('editCandCampus').value;
+            const programaId = document.getElementById('editCandPrograma').value;
 
             const data = {
                 nome: document.getElementById('editCandNome').value,
@@ -1646,9 +1776,9 @@
                 projeto_pesquisa: document.getElementById('editCandProjeto').value,
                 status: document.getElementById('editCandStatus').value,
                 instituicao: document.getElementById('editCandInstituicao').value,
-                campus_id: null,
-                programa_id: null,
-                cidade: ''
+                campus_id: campusId ? parseInt(campusId, 10) : null,
+                programa_id: programaId ? parseInt(programaId, 10) : null,
+                cidade: document.getElementById('editCandCidade').value
             };
 
             btn.disabled = true;
@@ -1693,6 +1823,87 @@
         }
     };
 
+    (function initRodadasSortable() {
+        const list = document.getElementById('rodadasSortable');
+        if (!list) return;
+        let draggedItem = null;
+        let justDragged = false;
+        list.querySelectorAll('.rodada-item-draggable').forEach(item => {
+            item.addEventListener('dragstart', function (event) {
+                draggedItem = this; justDragged = true; this.classList.add('dragging');
+                event.dataTransfer.effectAllowed = 'move';
+            });
+            item.addEventListener('dragend', function () {
+                this.classList.remove('dragging');
+                list.querySelectorAll('.rodada-item-draggable').forEach(row => row.classList.remove('drag-over'));
+                setTimeout(() => { justDragged = false; }, 50);
+            });
+            item.addEventListener('dragover', function (event) { event.preventDefault(); if (draggedItem !== this) this.classList.add('drag-over'); });
+            item.addEventListener('dragleave', function () { this.classList.remove('drag-over'); });
+            item.addEventListener('drop', function (event) {
+                event.preventDefault();
+                if (!draggedItem || draggedItem === this) return;
+                const items = Array.from(list.querySelectorAll('.rodada-item-draggable'));
+                list.insertBefore(draggedItem, items.indexOf(draggedItem) < items.indexOf(this) ? this.nextSibling : this);
+                this.classList.remove('drag-over');
+                fetch('/api/rodadas/reordenar', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+                    body: JSON.stringify({edital_id: {{ edital.id }}, rodadas: Array.from(list.querySelectorAll('.rodada-item-draggable')).map((el, ordem) => ({id: el.dataset.rodadaId, ordem}))})
+                }).catch(error => console.error('Erro ao salvar ordem dos ciclos:', error));
+            });
+            item.addEventListener('click', function (event) {
+                if (justDragged) { event.preventDefault(); event.stopPropagation(); }
+            }, true);
+        });
+    })();
+
+    (function initCandidatosSortable() {
+        const tbody = document.getElementById('candidatosSortable');
+        if (!tbody) return;
+        let draggedRow = null;
+        tbody.querySelectorAll('.candidato-row-draggable').forEach(row => {
+            row.addEventListener('dragstart', function (event) { draggedRow = this; this.classList.add('dragging'); event.dataTransfer.effectAllowed = 'move'; });
+            row.addEventListener('dragend', function () { this.classList.remove('dragging'); tbody.querySelectorAll('.candidato-row-draggable').forEach(item => item.classList.remove('drag-over')); });
+            row.addEventListener('dragover', function (event) { event.preventDefault(); if (draggedRow !== this) this.classList.add('drag-over'); });
+            row.addEventListener('dragleave', function () { this.classList.remove('drag-over'); });
+            row.addEventListener('drop', function (event) {
+                event.preventDefault();
+                if (!draggedRow || draggedRow === this) return;
+                const rows = Array.from(tbody.querySelectorAll('.candidato-row-draggable'));
+                tbody.insertBefore(draggedRow, rows.indexOf(draggedRow) < rows.indexOf(this) ? this.nextSibling : this);
+                this.classList.remove('drag-over');
+                fetch('/api/candidaturas/reordenar', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+                    body: JSON.stringify({rodada_id: {{ rodada_focada.id if rodada_focada else 'null' }}, candidaturas: Array.from(tbody.querySelectorAll('.candidato-row-draggable')).map((el, ordem) => ({id: el.dataset.candidatoId, ordem}))})
+                }).catch(error => console.error('Erro ao salvar ordem dos candidatos:', error));
+            });
+        });
+    })();
+
+    document.querySelectorAll('.cand-actions [data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el, {container: 'body', trigger: 'hover focus'}));
+
+    window.editComentarioEdital = function (id) {
+        document.getElementById('comentario-edital-texto-' + id).style.display = 'none';
+        document.getElementById('comentario-edital-edit-' + id).style.display = 'block';
+    };
+    window.cancelEditComentarioEdital = function (id) {
+        document.getElementById('comentario-edital-texto-' + id).style.display = 'block';
+        document.getElementById('comentario-edital-edit-' + id).style.display = 'none';
+    };
+    window.saveComentarioEdital = function (id) {
+        const formData = new FormData();
+        formData.append('texto', document.getElementById('comentario-edital-input-' + id).value);
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        fetch('/editais/comentario/' + id + '/editar', {method: 'POST', body: formData})
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) return alert(data.message || 'Erro ao salvar anotação.');
+                document.getElementById('comentario-edital-texto-' + id).innerText = data.texto;
+                cancelEditComentarioEdital(id);
+            })
+            .catch(() => alert('Erro de conexão ao salvar anotação.'));
+    };
+
     // Inicializar o OmniEditor
     OmniEditor.init();
 </script>
@@ -1713,6 +1924,8 @@
             <div class="modal-body-clean">
                 <form id="formEditarCandidato">
                     <input type="hidden" id="editCandId">
+                    <input type="hidden" id="editCandCampus">
+                    <input type="hidden" id="editCandPrograma">
                     <div class="row g-4">
                         <!-- Coluna 1: Pessoal -->
                         <div class="col-md-6 border-end">
@@ -1740,7 +1953,6 @@
                                     <option value="SELECIONADO">Selecionado</option>
                                     <option value="EXCEDENTE">Excedente</option>
                                     <option value="REJEITADO">Rejeitado</option>
-                                    <option value="EFETIVADO">Efetivado</option>
                                 </select>
                             </div>
                         </div>
@@ -1762,6 +1974,10 @@
                                     <option value="UENP">UENP &#8211; Universidade Estadual do Norte do Paran&#225;</option>
                                     <option value="IPB">IPB &#8211; Instituto Polit&#233;cnico de Bragan&#231;a (Portugal &#8211; Parceiro Internacional)</option>
                                 </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-group-label">Cidade</label>
+                                <input type="text" id="editCandCidade" class="form-control input-premium">
                             </div>
 
                             <div class="mb-3">

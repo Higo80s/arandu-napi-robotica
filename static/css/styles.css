@@ -86,11 +86,15 @@ body.utfpr-theme .nav-links a.active {
     font-weight: 700;
 }
 
-/* UTFPR: White text on PRIMARY buttons only (fix for back/secondary buttons) */
+/* UTFPR: White text on PRIMARY/DANGER; sucesso (verde) usa texto escuro p/ contraste */
 body.utfpr-theme .btn-primary,
-body.utfpr-theme .btn-success,
 body.utfpr-theme .btn-danger {
     color: #ffffff !important;
+}
+body.utfpr-theme .btn-success,
+body.utfpr-theme .btn-premium-success,
+body.utfpr-theme .btn-arandu-success {
+    color: #111827 !important;
 }
 
 /* UTFPR: Ensure theme switcher text is BLACK */
@@ -307,18 +311,20 @@ body.utfpr-theme .nav-links a:not(:hover):not(.active) {
 
 .btn-success {
     background-color: var(--success-color);
-    color: white;
+    /* Texto escuro: contraste no verde (#10b981 / #059669) */
+    color: #111827 !important;
 }
 
 .btn-success:hover {
     background-color: #059669;
     /* Emerald-600 */
+    color: #111827 !important;
 }
 
 /* Premium Button Model (Global Fallback) */
 .btn-premium-success {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white !important;
+    color: #111827 !important;
     border: none;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
     display: inline-flex;
@@ -429,6 +435,69 @@ body.dark-mode .btn-arandu-secondary:hover {
     background-color: #4b5563 !important;
 }
 
+/* ── Botão sucesso Arandu (verde Fundação / ações positivas) ───── */
+/* Mesmo padrão do "Ativar Bolsista (Fundação)": fundo #059669 + texto escuro */
+.btn-arandu-success,
+a.btn-arandu-success,
+.content .btn-arandu-success,
+.content a.btn-arandu-success {
+    background-color: #059669 !important;
+    background: #059669 !important;
+    color: #111827 !important;
+    border: none !important;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: filter 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-arandu-success:hover,
+a.btn-arandu-success:hover,
+.content .btn-arandu-success:hover,
+.content a.btn-arandu-success:hover {
+    background-color: #047857 !important;
+    background: #047857 !important;
+    color: #111827 !important;
+    filter: none;
+}
+
+/* Garante texto escuro em botões verdes em todos os temas */
+html.dark-mode .btn-success,
+body.dark-mode .btn-success,
+html.dark-mode .btn-premium-success,
+body.dark-mode .btn-premium-success,
+html.dark-mode .btn-arandu-success,
+body.dark-mode .btn-arandu-success,
+.content .btn-success,
+.content .btn-premium-success,
+.content .btn-success.text-white,
+.content .btn-sm.btn-success {
+    color: #111827 !important;
+}
+
+/* Comentários: fonte clara no tema escuro (textarea / bloco) */
+html.dark-mode #section-comentarios textarea,
+body.dark-mode #section-comentarios textarea {
+    color: #f3f4f6 !important;
+    background-color: #111827 !important;
+}
+html.dark-mode #section-comentarios textarea::placeholder,
+body.dark-mode #section-comentarios textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+/* Memento: cabeçalho claro exige fonte escura no tema escuro */
+html.dark-mode .table-memento thead th,
+body.dark-mode .table-memento thead th,
+html.dark-mode .table-memento thead tr,
+body.dark-mode .table-memento thead tr {
+    color: #1f2937 !important;
+}
+
 
 /* ── Override Bootstrap: .bg-primary respeita o tema ativo ──────── */
 /* Sem isso, cards com card-header.bg-primary ficam azul Bootstrap
@@ -509,3 +578,200 @@ body.dark-mode .btn-arandu-secondary:hover {
 .scanline-effect::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.4), transparent); opacity: 0; pointer-events: none; z-index: 10; }
 .robotica-theme .scanline-effect:hover::after { opacity: 1; animation: scanline-move 2s linear infinite; }
 .msdos-theme .scanline-effect:hover::after { opacity: 1; background: linear-gradient(to bottom, transparent, rgba(0, 255, 0, 0.4), transparent); animation: scanline-move 3s linear infinite; }
+
+/* ── Stepper FUNTEF / Conveniar (ficha bolsista) ───────────────── */
+.funtef-stepper {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.25rem;
+    background: color-mix(in srgb, var(--primary-color) 6%, var(--card-bg));
+}
+.funtef-stepper__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+.funtef-stepper__title {
+    margin: 0;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.05rem;
+}
+.funtef-stepper__progress-label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.funtef-stepper__rail {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+.funtef-stepper__rail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+.funtef-stepper__rail-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1.5px solid var(--border-color);
+    color: var(--text-muted);
+    background: var(--background-color);
+    flex-shrink: 0;
+}
+.funtef-stepper__rail-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.funtef-stepper__rail-sep {
+    flex: 1 1 0.75rem;
+    min-width: 0.75rem;
+    height: 2px;
+    background: var(--border-color);
+    margin: 0 0.15rem;
+}
+.funtef-stepper__rail-item.is-done .funtef-stepper__rail-num {
+    border-color: var(--success-color);
+    background: color-mix(in srgb, var(--success-color) 18%, var(--card-bg));
+    color: #047857;
+}
+.funtef-stepper__rail-item.is-done .funtef-stepper__rail-label { color: #047857; }
+.funtef-stepper__rail-item.is-current .funtef-stepper__rail-num {
+    border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 18%, var(--card-bg));
+    color: var(--primary-color);
+}
+.funtef-stepper__rail-item.is-current .funtef-stepper__rail-label {
+    color: var(--text-color);
+}
+.funtef-stepper__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.funtef-step {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+.funtef-step__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 2px solid var(--border-color);
+    color: var(--text-muted);
+    background: var(--background-color);
+}
+.funtef-step__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+.funtef-step__hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.funtef-step__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+}
+.funtef-step__check input {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+}
+.funtef-step__check small {
+    display: block;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    font-weight: 400;
+}
+.funtef-step__check.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.funtef-step__field-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+}
+.funtef-step__input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+.funtef-step__status {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.funtef-step__status--ok { color: #059669; font-weight: 500; }
+.funtef-step.is-done {
+    border-color: color-mix(in srgb, var(--success-color) 45%, var(--border-color));
+    background: color-mix(in srgb, var(--success-color) 6%, var(--card-bg));
+}
+.funtef-step.is-done .funtef-step__badge {
+    border-color: var(--success-color);
+    background: color-mix(in srgb, var(--success-color) 20%, var(--card-bg));
+    color: #047857;
+}
+.funtef-step.is-current {
+    border-color: color-mix(in srgb, var(--primary-color) 55%, var(--border-color));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-color) 25%, transparent);
+}
+.funtef-step.is-current .funtef-step__badge {
+    border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 16%, var(--card-bg));
+    color: var(--primary-color);
+}
+.funtef-step.is-locked {
+    opacity: 0.62;
+}
+.funtef-step.is-locked .funtef-step__badge {
+    background: var(--background-color);
+}
+

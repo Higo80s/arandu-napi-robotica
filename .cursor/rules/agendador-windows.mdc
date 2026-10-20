@@ -1,0 +1,15 @@
+---
+description: Tarefas agendadas canônicas do Arandu Robótica
+globs: scripts/recriar_agendamentos_silenciosos.ps1,tasks/**,services/automacoes_hub_service.py
+alwaysApply: false
+---
+
+# Agendador Windows (Robótica)
+
+Canônico: prefixo `AranduRobotica_*`, só via `scripts/recriar_agendamentos_silenciosos.ps1`.
+
+**Proibido:** criar/manter `Arandu_PagamentoBolsas_Nuvem`, `Arandu_AvisoUltimoMesBolsa`, `Arandu_CobrancaRelatorioFinal`, `Arandu_ResumoDiario` — duplicam o mesmo job e no dia 20 geram falso erro na Nuvem.
+
+Não tocar em `AranduProppg_*` nem `Arandu_Pagamentos_Nuvem` (outro projeto).
+
+Horários: Resumo 08:00, Cobrança 08:05, Último mês 08:10, Confirmação início 08:12, Pagamento Nuvem 08:15 (envia só no dia 20).
