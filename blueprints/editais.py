@@ -7,7 +7,7 @@ from decimal import Decimal
 
 # [REFATORACAO] Imports centralizados
 from extensions import db
-from models import Edital, Bolsista, Modalidade, ProapDistribuicao, Campus, ProgramaAcademico, EditalRegra, RodadaSelecao, EtapaCronograma, Candidatura, ComentarioEdital
+from models import Edital, Bolsista, Modalidade, Campus, ProgramaAcademico, EditalRegra, RodadaSelecao, EtapaCronograma, Candidatura, ComentarioEdital
 from utils import parse_flexible_date, sanitizar_cpf
 from forms.edital_form import EditalForm
 from services.edital_service import EditalService
@@ -79,12 +79,8 @@ def index():
 @editais_bp.route('/editais/novo', methods=['GET', 'POST'])
 @admin_required
 def novo():
-    distribuicoes = ProapDistribuicao.query.filter(ProapDistribuicao.valor_distribuido > 0).all()
     form = EditalForm()
-    
-    # Preencher dropdown do PROAP
-    form.proap_distribuicao_id.choices = [(0, '--- Nenhum ---')] + [(d.id, d.descricao) for d in distribuicoes]
-    
+
     if form.validate_on_submit():
         success, result = EditalService.create_edital(form.data)
         if success:
@@ -93,17 +89,13 @@ def novo():
         else:
             flash(f'Erro ao salvar edital: {result}', 'danger')
             
-    return render_template('editais/form.html', form=form, edital=None, distribuicoes=distribuicoes)
+    return render_template('editais/form.html', form=form, edital=None)
 
 @editais_bp.route('/editais/<int:id>/editar', methods=['GET', 'POST'])
 @admin_required
 def editar(id):
     edital = Edital.query.get_or_404(id)
-    distribuicoes = ProapDistribuicao.query.filter(ProapDistribuicao.valor_distribuido > 0).all()
-    
-    # Preencher form com dados existentes para o GET
     form = EditalForm(obj=edital)
-    form.proap_distribuicao_id.choices = [(0, '--- Nenhum ---')] + [(d.id, d.descricao) for d in distribuicoes]
     
     if form.validate_on_submit():
         success, result = EditalService.update_edital(id, form.data)
@@ -113,7 +105,7 @@ def editar(id):
         else:
             flash(f'Erro ao atualizar edital: {result}', 'danger')
             
-    return render_template('editais/form.html', form=form, edital=edital, distribuicoes=distribuicoes)
+    return render_template('editais/form.html', form=form, edital=edital)
 
 @editais_bp.route('/editais/<int:id>/excluir', methods=['POST'])
 @admin_required
@@ -670,14 +662,6 @@ def candidatura_promover(id):
         flash(result or 'Não foi possível vincular a candidatura.', 'warning')
         return redirect(url_for('editais.painel_selecao', id=edital_id, rodada_id=rodada_id))
 
-    is_posdoc = False
-    if cand.programa:
-        niveis = (cand.programa.niveis or "").upper()
-        if any(x in niveis for x in ['PÓS', 'POS', 'RESID']):
-            is_posdoc = True
-
-    if is_posdoc:
-        return redirect(url_for('posdoc.novo', candidatura_id=cand.id))
     return redirect(url_for('bolsistas.novo', candidatura_id=cand.id))
 
 

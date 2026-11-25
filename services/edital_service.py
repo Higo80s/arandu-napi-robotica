@@ -16,13 +16,8 @@ class EditalService:
                 'numero_convenio', 'coordenador_geral_proppg', 'descricao',
                 'agencia', 'codigo_projeto', 'descricao_projeto', 'processo_sei',
                 'data_inicio', 'data_fim', 'orcamento_total', 'prestacao_contas',
-                'comentarios', 'proap_distribuicao_id'
+                'comentarios',
             ]
-            
-            # Garante que proap_distribuicao_id seja None se for 0 ou inválido
-            proap_id = data.get('proap_distribuicao_id')
-            if proap_id is not None and (int(proap_id) <= 0):
-                data['proap_distribuicao_id'] = None
 
             edital_data = {k: v for k, v in data.items() if k in allowed_fields}
             
@@ -53,17 +48,12 @@ class EditalService:
                 'numero_convenio', 'coordenador_geral_proppg', 'descricao',
                 'agencia', 'codigo_projeto', 'descricao_projeto', 'processo_sei',
                 'data_inicio', 'data_fim', 'orcamento_total', 'prestacao_contas',
-                'comentarios', 'proap_distribuicao_id'
+                'comentarios',
             ]
 
-            # Atualiza apenas os campos permitidos
             for field in allowed_fields:
                 if field in data:
-                    val = data[field]
-                    # Caso especial para select vazio
-                    if field == 'proap_distribuicao_id' and (val is None or val == 0 or val == ''):
-                        val = None
-                    setattr(edital, field, val)
+                    setattr(edital, field, data[field])
 
             db.session.commit()
             log_action('UPDATE_EDITAL', tabela='editais', registro_id=edital.id, 

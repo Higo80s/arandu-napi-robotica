@@ -1,6 +1,6 @@
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, DateField, TextAreaField, BooleanField, DecimalField, SelectField
+from wtforms import StringField, IntegerField, DateField, TextAreaField, BooleanField, DecimalField
 from wtforms.validators import DataRequired, Optional, Length
 
 class EditalForm(FlaskForm):
@@ -23,4 +23,3 @@ class EditalForm(FlaskForm):
     orcamento_total = DecimalField('Orçamento Total (R$)', places=2, validators=[Optional()])
     prestacao_contas = BooleanField('Prestação de Contas Concluída?')
     comentarios = TextAreaField('Observações Internas', validators=[Optional()])
-    proap_distribuicao_id = SelectField('Vincular a Recurso PROAP', coerce=int, validators=[Optional()])

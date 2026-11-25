@@ -55,14 +55,6 @@
             <p style="font-size: 0.85rem; color: var(--text-muted);">No Campus</p>
         </div>
 
-        <!-- Director: Residents Breakdown -->
-        <div class="card">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                {{ icon('microscope', size=24, color='var(--text-muted)') }}
-                <h3 style="margin: 0; font-size: 1rem; color: var(--text-muted);">Residentes</h3>
-            </div>
-            <div class="value" style="font-size: 2.5rem; font-weight: 700;">{{ stats.residents|default(0) }}</div>
-        </div>
         {% endif %}
     </div>
 
@@ -75,10 +67,7 @@
                 {{ icon('zap', size=20) }} Ações Rápidas
             </h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <a href="{{ url_for('posdoc.novo') }}" class="btn btn-primary" style="text-align: center;">
-                    Novo Residente
-                </a>
-                <a href="{{ url_for('bolsistas.novo') }}" class="btn btn-secondary" style="text-align: center;">
+                <a href="{{ url_for('bolsistas.novo') }}" class="btn btn-primary" style="text-align: center;">
                     Novo Discente
                 </a>
                 <a href="{{ url_for('reports.index') }}" class="btn btn-outline" style="text-align: center;">

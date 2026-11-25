@@ -342,10 +342,6 @@
                 <div>
                     <strong>Bolsas Ociosas Detectadas:</strong> Foram identificadas <strong>{{ stats.total_ociosas
                         }}</strong> cotas de bolsa não utilizadas.
-                    {% if stats.programas_ociosos_capes %}
-                    A maior concentração de ociosidade em editais CAPES está nos programas: <em>{{
-                        stats.programas_ociosos_capes | join(', ') }}</em>.
-                    {% endif %}
                 </div>
             </div>
 
@@ -353,9 +349,8 @@
                 <i class="fas fa-chart-pie" style="color: #2563eb; margin-top: 3px;"></i>
                 <div>
                     <strong>Distribuição por Nível:</strong>
-                    Atualmente suportamos {{ stats.por_nivel.mestrado }} alunos de Mestrado,
-                    {{ stats.por_nivel.doutorado }} de Doutorado e
-                    {{ stats.por_nivel.posdoc }} Residentes Pós-Doc.
+                    Atualmente suportamos {{ stats.por_nivel.mestrado }} alunos de Mestrado e
+                    {{ stats.por_nivel.doutorado }} de Doutorado.
                 </div>
             </div>
 

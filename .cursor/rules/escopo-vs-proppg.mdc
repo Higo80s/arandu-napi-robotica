@@ -15,12 +15,7 @@ Automações próprias (`AranduRobotica_*`): FUNTEF/Conveniar, confirmação de 
 
 ## Não manter por herança
 
-- **PROAP/PROAPINHO:** a NAPI não usa. Sair da navegação, do formulário de edital (`proap_distribuicao_id`) e do blueprint. Não recriar.
-- **Pós-doc:** não há blueprint `posdoc` registrado; promoção de candidatura que chama `posdoc.novo` está quebrada. Não portar o módulo do PROPPG.
-- **`blueprints/profissionais.py`:** arquivo solto, não registrado em `app.py`.
-- **Editor de UI** (`ui_editor`, `UIState`) e **explorador de banco** (`database_explorer`): não são operação.
-
-Confirmar com o operador antes de apagar: painel CAPES, menu Internacionalização (acordos). Mobilidade na ficha do bolsista só sai se ninguém registrar viagem.
+Fora do produto (não recriar tela nem rota): PROAP, painel CAPES, internacionalização/acordos, mobilidade na ficha, pós-doc, programas profissionais, editor de UI, explorador SQL. Tabelas legadas (`proap_*`, `mobilidade_internacional`, `residentes`) ficam no banco até migration com backup. Importação de bolsista é só planilha FA.
 
 ## Não copiar do modelo
 

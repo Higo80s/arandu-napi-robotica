@@ -7,7 +7,7 @@
             <h2>{{ title or 'Importar Bolsistas' }}</h2>
             <p style="color: var(--text-muted);">Importe dados em massa.</p>
         </div>
-        <a href="{{ url_for('posdoc.index' if 'Pos-Doc' in (title or '') else 'bolsistas.index') }}" class="btn"
+        <a href="{{ url_for('bolsistas.index') }}" class="btn"
             style="background-color: var(--border-color); color: var(--text-color);">
             Voltar
         </a>
@@ -44,13 +44,8 @@
 
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tipo de Importação</label>
-            <select name="tipo_importacao" id="tipo_importacao" onchange="toggleHint()"
-                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);">
-                <option value="padrao">Padrão (CAPES DS)</option>
-                <option value="fa">Importar Bolsistas (FA)</option>
-                <option value="posdoc" {% if 'Pos-Doc' in (title or '' ) or 'Pós-Doc' in (title or '' ) %}selected{%
-                    endif %}>PosDoc</option>
-            </select>
+            <input type="hidden" name="tipo_importacao" value="fa">
+            <p style="margin: 0; color: var(--text-color);">Planilha FA (fundação).</p>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
@@ -60,27 +55,10 @@
                 <input type="file" name="arquivo" accept=".csv, .xlsx, .xls" required
                     style="display: block; width: 100%; margin-bottom: 1rem;">
                 <p id="format-hint" style="font-size: 0.875rem; color: var(--text-muted);">
-                    Formato esperado: Planilha padrão CAPES DS.<br>
-                    Colunas obrigatórias: <strong>Tipo Vínculo, Modalidade, Beneficiário, Vigência</strong>
+                    Colunas obrigatórias: <strong>nome_bolsista, cpf, Nível, Data de Ingresso, numero_sei, campus, nome_projeto</strong>
                 </p>
             </div>
         </div>
-
-        <script>
-            function toggleHint() {
-                const type = document.getElementById('tipo_importacao').value;
-                const hint = document.getElementById('format-hint');
-                if (type === 'padrao') {
-                    hint.innerHTML = 'Formato esperado: Planilha padrão CAPES DS.<br>Colunas obrigatórias: <strong>Tipo Vínculo, Modalidade, Beneficiário, Vigência</strong>';
-                } else if (type === 'fa') {
-                    hint.innerHTML = 'Formato esperado: Planilha FA.<br>Colunas obrigatórias: <strong>nome_bolsista, cpf, Nível, Data de Ingresso, numero_sei, campus, nome_projeto</strong>';
-                } else if (type === 'posdoc') {
-                    hint.innerHTML = 'Formato esperado: Planilha PosDoc.<br>Colunas FLEXÍVEIS: <strong>Residente (Obrigatório), SEI, Programa, Campus, Projeto, Bolsa (sim/não), CPF</strong>';
-                }
-            }
-            // Execute on load to set correct hint based on default selection
-            window.addEventListener('load', toggleHint);
-        </script>
 
         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">
             📤 Iniciar Importação

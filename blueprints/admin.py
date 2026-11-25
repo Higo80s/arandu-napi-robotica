@@ -268,7 +268,10 @@ def bolsistas_importar():
             flash('Selecione um edital e um arquivo válido', 'danger')
             return redirect(request.url)
 
-        tipo_importacao = request.form.get('tipo_importacao', 'padrao')
+        tipo_importacao = request.form.get('tipo_importacao', 'fa')
+        if tipo_importacao != 'fa':
+            flash('A NAPI importa somente a planilha FA.', 'warning')
+            return redirect(request.url)
         is_excel = file.filename.lower().endswith(('.xlsx', '.xls'))
         csv_input = []
         
@@ -329,42 +332,12 @@ def bolsistas_importar():
         for row in csv_input:
             row_num = row.get('_line_num', 0)
             try:
-                if tipo_importacao == 'fa':
-                     novo = processar_importacao_fa(row, edital, modalidades_map, log, row_num)
-                     if novo:
-                         db.session.add(novo)
-                         sucesso += 1
-                     else: erros += 1
-                elif tipo_importacao == 'posdoc':
-                    # Simplified logic from app.py
-                    nome = (row.get('Residente') or '').strip()
-                    if not nome: raise ValueError("Campo 'Residente' obrigatório.")
-                    programa = ProgramaAcademico.query.filter(ProgramaAcademico.nome_programa.ilike(f"%{row.get('Programa','')}%")).first()
-                    mod_posdoc = next((m for t, m in modalidades_map.items() if 'POS' in t or 'DOC' in t), edital.modalidades[0] if edital.modalidades else None)
-                    novo = Bolsista(edital_id=edital.id, modalidade_id=mod_posdoc.id, programa_id=programa.id if programa else None, nome=nome, data_inicio_bolsa=date.today(), data_fim_bolsa=date.today(), meses_duracao=12, ativo=True)
+                novo = processar_importacao_fa(row, edital, modalidades_map, log, row_num)
+                if novo:
                     db.session.add(novo)
                     sucesso += 1
                 else:
-                    # Padrao CAPES
-                    vinculo = row.get('Tipo Vínculo') or row.get('Tipo Vinculo')
-                    match = re.search(r'\b(\d+[A-Z]?\d+)\b', vinculo or '')
-                    prog_code = match.group(1) if match else None
-                    programa = ProgramaAcademico.query.filter_by(codigo_programa=prog_code).first() if prog_code else None
-                    mod_text = (row.get('Modalidade') or '').strip().upper()
-                    modalidade = modalidades_map.get(mod_text) or (modalidades_map.get('DOUTORADO') if 'DOUTOR' in mod_text else modalidades_map.get('MESTRADO'))
-                    benef = row.get('Beneficiário') or row.get('Beneficiario') or ''
-                    cpf, nome = benef.split(' - ', 1) if ' - ' in benef else (benef, 'Nome Desconhecido')
-                    vigencia = row.get('Vigência') or row.get('Vigencia') or ''
-                    if ' - ' in vigencia:
-                        i_s, f_s = vigencia.split(' - ')
-                        dt_i = datetime.strptime(i_s.strip(), '%d/%m/%Y').date()
-                        dt_f = datetime.strptime(f_s.strip(), '%d/%m/%Y').date()
-                        diff = relativedelta(dt_f, dt_i)
-                        meses = diff.years * 12 + diff.months + (1 if diff.days > 15 else 0)
-                    else: raise ValueError("Vigência inválida.")
-                    novo = Bolsista(edital_id=edital.id, modalidade_id=modalidade.id, programa_id=programa.id if programa else None, nome=nome.strip(), cpf=cpf.strip(), data_inicio_bolsa=dt_i, data_fim_bolsa=dt_f, meses_duracao=meses, ativo=True)
-                    db.session.add(novo)
-                    sucesso += 1
+                    erros += 1
             except Exception as e:
                 erros += 1
                 log.append(f"Linha {row_num}: {str(e)}")

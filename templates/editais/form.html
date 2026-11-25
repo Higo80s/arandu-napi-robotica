@@ -107,25 +107,6 @@
             {% endif %}
         </div>
 
-        <!-- [NEW FASE 9] Fonte PROAP -->
-        <div style="margin-bottom: 1rem; border-left: 3px solid #7c3aed; padding-left: 10px; background: #f5f3ff;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Fonte de Recursos
-                (PROAP/PROAPINHO)</label>
-            <select name="proap_distribuicao_id"
-                style="width: 100%; padding: 0.5rem; border: 1px solid #7c3aed; border-radius: 0.375rem;">
-                <option value="">-- Nenhuma / Outra Fonte --</option>
-                {% if distribuicoes %}
-                {% for d in distribuicoes %}
-                <option value="{{ d.id }}" {% if edital and edital.proap_distribuicao_id==d.id %}selected{% endif %}>
-                    {{ d.repasse.ano }} - {{ d.repasse.tipo }} - {{ d.programa.nome_programa }} ({{
-                    d.programa.campus.sigla_campus }}) - R$ {{ "{:,.2f}".format(d.valor_distribuido) }}
-                </option>
-                {% endfor %}
-                {% endif %}
-            </select>
-            <small style="color: #666;">Selecione o programa/repasse que financiará este edital.</small>
-        </div>
-
         <div style="margin-bottom: 1rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Código do Projeto (opcional)</label>
             <input type="text" name="codigo_projeto" value="{{ form.codigo_projeto.data if form.codigo_projeto.data else (edital.codigo_projeto if edital else '') }}"

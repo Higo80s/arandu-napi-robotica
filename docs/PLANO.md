@@ -2,8 +2,10 @@
 
 Fonte de escopo: `.cursor/rules/escopo-vs-proppg.mdc`. Modelo Flask: `../arandu_proppg`.
 
+## Feito
+
+Menu e rotas sem PROAP, CAPES, internacionalização, mobilidade, pós-doc, explorador de banco e editor de UI. E-mails agrupados no menu, no mesmo padrão do PROPPG (`nav_is_active`).
+
 ## Próximo incremento
 
-Tirar PROAP da navegação, do formulário/serviço de edital e desregistrar `blueprints/proap.py`. Teste: edital salva sem `proap_distribuicao_id`; menu não aponta para Recursos. Tabelas `proap_*` ficam no banco até migration com backup — não dropar no mesmo passo.
-
-Depois, na mesma leva de limpeza: cortar redirect `posdoc.novo` / `posdoc_index` e o blueprint `profissionais` não registrado.
+Logs do sistema e reset de senha, copiando a estrutura do PROPPG (sem módulos de pró-reitoria). Tabelas legadas só saem com backup.

@@ -54,6 +54,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-robotica.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-msdos.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/inline-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav-sidebar.css') }}">
     
     <!-- Fontes e Ícones Globais -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -328,7 +329,7 @@
                 <small style="color: var(--text-muted); font-size: 0.7rem; letter-spacing: 1px;">NAPI-ROBÓTICA v19.2</small>
             </div>
             <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}" class="active" data-ui-key="nav_dashboard">{{ ui.get('nav_dashboard', 'Dashboard') }}</a></li>
+                <li><a href="{{ url_for('index') }}" class="nav-link{% if nav_is_active('dashboard') %} active{% endif %}" data-ui-key="nav_dashboard">{{ ui.get('nav_dashboard', 'Dashboard') }}</a></li>
 
                 <!-- [NEW] Selector for Directors -->
                 {% if current_user.role == 'diretor_campus' and director_programs %}
@@ -348,7 +349,7 @@
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('editais.index') }}" class="nav-link">
+                    <a href="{{ url_for('editais.index') }}" class="nav-link{% if nav_is_active('editais') %} active{% endif %}">
                         {{ icon('file-text', size=20, class='mr-2') }} <span data-ui-key="nav_editais">{{ ui.get('nav_editais', 'Editais') }}</span>
                     </a>
                 </li>
@@ -356,7 +357,7 @@
                 <!-- [NEW V11.4] Ações Pendentes -->
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('dashboard.alertas') }}" class="nav-link" style="position: relative;">
+                    <a href="{{ url_for('dashboard.alertas') }}" class="nav-link{% if nav_is_active('alertas') %} active{% endif %}" style="position: relative;">
                         {{ icon('alert-circle', size=20, class='mr-2') }} <span data-ui-key="nav_alertas">{{ ui.get('nav_alertas', 'Ações Pendentes') }}</span>
                         {% if total_alerts and total_alerts > 0 %}
                         <span
@@ -369,37 +370,20 @@
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('bolsistas.index') }}" class="nav-link">
+                    <a href="{{ url_for('bolsistas.index') }}" class="nav-link{% if nav_is_active('bolsistas') %} active{% endif %}">
                         {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_bolsistas">{{ ui.get('nav_bolsistas', 'Bolsistas') }}</span>
                     </a>
                 </li>
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
-                {# <li>
-                    <a href="{{ url_for('dashboard.capes') }}" class="nav-link">
-                        {{ icon('trending-down', size=20, class='mr-2') }} <span data-ui-key="nav_capes">{{ ui.get('nav_capes', 'Painel CAPES') }}</span>
-                    </a>
-                </li> #}
                 <li>
-                    <a href="{{ url_for('proap.repasses_index') }}" class="nav-link">
-                        {{ icon('coins', size=20, class='mr-2') }} <span data-ui-key="nav_proap">{{ ui.get('nav_proap', 'Recursos') }}</span>
-                    </a>
-                </li>
-                {% endif %}
-                {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
-                <li>
-                    <a href="{{ url_for('reports.index') }}" class="nav-link">
+                    <a href="{{ url_for('reports.index') }}" class="nav-link{% if nav_is_active('reports') %} active{% endif %}">
                         {{ icon('bar-chart', size=20, class='mr-2') }} <span data-ui-key="nav_reports">{{ ui.get('nav_reports', 'Relatórios') }}</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('bolsistas.diversidade') }}" class="nav-link">
+                    <a href="{{ url_for('bolsistas.diversidade') }}" class="nav-link{% if nav_is_active('diversidade') %} active{% endif %}">
                         {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_diversity">{{ ui.get('nav_diversity', 'Diversidade') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('inter.index') }}" class="nav-link">
-                        {{ icon('globe', size=20, class='mr-2') }} <span data-ui-key="nav_inter">{{ ui.get('nav_inter', 'Internacionalização') }}</span>
                     </a>
                 </li>
                 {% endif %}
@@ -408,7 +392,7 @@
                     <small style="display: block; padding: 0 1rem; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Equipe</small>
                 </li>
                 <li>
-                    <a href="{{ url_for('anotacoes.index') }}" class="nav-link" style="position: relative;">
+                    <a href="{{ url_for('anotacoes.index') }}" class="nav-link{% if nav_is_active('anotacoes') %} active{% endif %}" style="position: relative;">
                         {{ icon('check-square', size=20, class='mr-2') }} <span data-ui-key="nav_tarefas">{{ ui.get('nav_tarefas', 'Tarefas') }}</span>
                         {% if total_tarefas_pendentes and total_tarefas_pendentes > 0 %}
                         <span
@@ -421,7 +405,7 @@
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('admin.manual') }}" class="nav-link">
+                    <a href="{{ url_for('admin.manual') }}" class="nav-link{% if nav_is_active('manual') %} active{% endif %}">
                         {{ icon('help-circle', size=20, class='mr-2') }} <span data-ui-key="nav_manual">{{ ui.get('nav_manual', 'Manual / Ajuda') }}</span>
                     </a>
                 </li>
@@ -429,51 +413,32 @@
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li class="nav-item">
                     <a href="{{ url_for('admin.documentacao') }}"
-                        class="nav-link {% if request.endpoint == 'documentacao_index' %}active{% endif %}">
+                        class="nav-link{% if nav_is_active('manual') %} active{% endif %}">
                         {{ icon('book-open', size=20, class='mr-2') }} <span data-ui-key="nav_documentation">{{ ui.get('nav_documentation', 'Documentação') }}</span>
                     </a>
                 </li>
                 {% endif %}
 
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
-                <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <small style="display: block; padding: 0 1rem; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">E-mails</small>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.automacoes_hub') }}"
-                        class="nav-link {% if request.endpoint == 'admin.automacoes_hub' or request.endpoint == 'admin.monitor_automacao' %}active{% endif %}">
-                        {{ icon('activity', size=20, class='mr-2') }} <span>Central de automações</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.config_pagamento_bolsas') }}"
-                        class="nav-link {% if request.endpoint and 'pagamento_bolsas' in request.endpoint %}active{% endif %}">
-                        {{ icon('wallet', size=20, class='mr-2') }} <span>Pagamento de bolsas</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.config_confirmacao_inicio') }}"
-                        class="nav-link {% if request.endpoint and 'confirmacao_inicio' in request.endpoint %}active{% endif %}">
-                        {{ icon('mail', size=20, class='mr-2') }} <span>Confirmação de início</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.config_funtef') }}"
-                        class="nav-link {% if request.endpoint and 'funtef' in request.endpoint %}active{% endif %}">
-                        {{ icon('mail', size=20, class='mr-2') }} <span>FUNTEF</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.config_relatorio_final') }}"
-                        class="nav-link {% if request.endpoint and 'relatorio_final' in request.endpoint %}active{% endif %}">
-                        {{ icon('file-text', size=20, class='mr-2') }} <span>Cobrança relatório final</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.config_ultimo_mes_bolsa') }}"
-                        class="nav-link {% if request.endpoint and 'ultimo_mes' in request.endpoint %}active{% endif %}">
-                        {{ icon('calendar', size=20, class='mr-2') }} <span>Aviso último mês</span>
-                    </a>
+                {% set emails_nav_keys = ['automacoes_hub', 'emails_pagamento', 'emails_inicio', 'emails_funtef', 'emails_relatorio', 'emails_ultimo_mes'] %}
+                {% set emails_nav_open = nav_active_key in emails_nav_keys %}
+                <li class="nav-group{% if emails_nav_open %} is-open{% endif %}" data-nav-group="emails">
+                    <button type="button" class="nav-group-toggle{% if emails_nav_open %} has-active-child{% endif %}"
+                        aria-expanded="{{ 'true' if emails_nav_open else 'false' }}"
+                        aria-controls="nav-emails-children">
+                        <span class="nav-group-toggle-label">
+                            {{ icon('mail', size=20, class='mr-2') }} E-mails
+                        </span>
+                        <span class="nav-group-chevron" aria-hidden="true">{{ icon('chevron-down', size=16) }}</span>
+                    </button>
+                    <ul id="nav-emails-children" class="nav-group-children"{% if not emails_nav_open %} hidden{% endif %}>
+                        <li><a href="{{ url_for('admin.automacoes_hub') }}" class="nav-link nav-link--child{% if nav_is_active('automacoes_hub') %} active{% endif %}">Central de automações</a></li>
+                        <li><a href="{{ url_for('admin.config_pagamento_bolsas') }}" class="nav-link nav-link--child{% if nav_is_active('emails_pagamento') %} active{% endif %}">Pagamento de bolsas</a></li>
+                        <li><a href="{{ url_for('admin.config_confirmacao_inicio') }}" class="nav-link nav-link--child{% if nav_is_active('emails_inicio') %} active{% endif %}">Confirmação de início</a></li>
+                        <li><a href="{{ url_for('admin.config_funtef') }}" class="nav-link nav-link--child{% if nav_is_active('emails_funtef') %} active{% endif %}">FUNTEF</a></li>
+                        <li><a href="{{ url_for('admin.config_relatorio_final') }}" class="nav-link nav-link--child{% if nav_is_active('emails_relatorio') %} active{% endif %}">Cobrança relatório final</a></li>
+                        <li><a href="{{ url_for('admin.config_ultimo_mes_bolsa') }}" class="nav-link nav-link--child{% if nav_is_active('emails_ultimo_mes') %} active{% endif %}">Aviso último mês</a></li>
+                    </ul>
                 </li>
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
@@ -484,36 +449,26 @@
                 {% endif %}
                 {% if current_user.role in ['admin', 'master'] %}
                 <li>
-                    <a href="{{ url_for('admin_users.index') }}" class="nav-link">
+                    <a href="{{ url_for('admin_users.index') }}" class="nav-link{% if nav_is_active('admin_users') %} active{% endif %}">
                         {{ icon('users', size=20, class='mr-2') }} <span data-ui-key="nav_admin_users">{{ ui.get('nav_admin_users', 'Gestão de Usuários') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('database_explorer.index') }}" class="nav-link">
-                        {{ icon('database', size=20, class='mr-2') }} <span data-ui-key="nav_db_explorer">{{ ui.get('nav_db_explorer', 'Explorador de Dados') }}</span>
                     </a>
                 </li>
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('admin.admin_consolidado') }}" class="nav-link">
+                    <a href="{{ url_for('admin.admin_consolidado') }}" class="nav-link{% if nav_is_active('consolidado') %} active{% endif %}">
                         {{ icon('pie-chart', size=20, class='mr-2') }} <span data-ui-key="nav_admin_consolidated">{{ ui.get('nav_admin_consolidated', 'Painel Consolidado') }}</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('dashboard.advanced') }}" class="nav-link">
+                    <a href="{{ url_for('dashboard.advanced') }}" class="nav-link{% if nav_is_active('analytics') %} active{% endif %}">
                         {{ icon('activity', size=20, class='mr-2') }} <span data-ui-key="nav_analytics">{{ ui.get('nav_analytics', 'Analytics (Novo)') }}</span>
                     </a>
                 </li>
                 {% endif %}
                 {% if current_user.role not in ['coordenador_programa', 'diretor_campus'] %}
                 <li>
-                    <a href="{{ url_for('ui_editor.history') }}" class="nav-link">
-                        {{ icon('history', size=20, class='mr-2') }} <span data-ui-key="nav_ui_history">{{ ui.get('nav_ui_history', 'Histórico de UI') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin.admin_programas_lista') }}" class="nav-link">
+                    <a href="{{ url_for('admin.admin_programas_lista') }}" class="nav-link{% if nav_is_active('programas') %} active{% endif %}">
                         {{ icon('settings', size=20, class='mr-2') }} <span data-ui-key="nav_admin_programs">{{ ui.get('nav_admin_programs', 'Gestão de Programas') }}</span>
                     </a>
                 </li>
@@ -663,10 +618,22 @@
 
     <script src="{{ url_for('static', filename='css/counter-animation.js') }}"></script>
 
-    <!-- [UI MEMENTO] Visual Editor Script -->
-    {% if current_user.role in ['admin', 'master'] %}
-    <script src="{{ url_for('static', filename='js/ui-editor.js') }}"></script>
-    {% endif %}
+    <script>
+        document.querySelectorAll('.nav-group-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var group = btn.closest('.nav-group');
+                if (!group) return;
+                var children = group.querySelector('.nav-group-children');
+                var open = group.classList.toggle('is-open');
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (children) {
+                    if (open) children.removeAttribute('hidden');
+                    else children.setAttribute('hidden', '');
+                }
+                if (window.lucide && lucide.createIcons) lucide.createIcons();
+            });
+        });
+    </script>
 
     <!-- GLOBAL SESSION RECOVERY MODAL (Custom Style matching SocialData) -->
     <div id="globalLoginModal" class="modal-overlay"

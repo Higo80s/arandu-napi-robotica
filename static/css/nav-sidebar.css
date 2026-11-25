@@ -1,0 +1,93 @@
+.nav-section-label {
+    display: block;
+    padding: 0.85rem 0.85rem 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+body.dark-mode .nav-section-label,
+body.jegua-theme .nav-section-label {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.nav-group {
+    margin-bottom: 0.5rem;
+}
+
+.nav-group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--text-color);
+    font: inherit;
+    font-weight: 500;
+    font-size: 0.92rem;
+    cursor: pointer;
+    text-align: left;
+}
+
+.nav-group-toggle-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.nav-group-chevron {
+    display: inline-flex;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+}
+
+.nav-group.is-open .nav-group-chevron {
+    transform: rotate(180deg);
+}
+
+.nav-group-toggle:hover,
+.nav-group-toggle.has-active-child {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-group-children {
+    list-style: none;
+    margin: 0.15rem 0 0.35rem 1.1rem;
+    padding: 0 0 0 0.65rem;
+    border-left: 2px solid rgba(128, 128, 128, 0.25);
+}
+
+.nav-group-children[hidden] {
+    display: none;
+}
+
+.nav-links .nav-link--child {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.nav-links a.active {
+    font-weight: 700;
+}
+
+html.jegua-theme .sidebar a.active,
+body.jegua-theme .sidebar a.active,
+html.jegua-theme .sidebar button.nav-link.active,
+body.jegua-theme .sidebar button.nav-link.active {
+    background: rgba(72, 209, 204, 0.22);
+    border-left: 3px solid var(--accent-color, #48d1cc);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+html.jegua-theme .nav-group-toggle.has-active-child,
+body.jegua-theme .nav-group-toggle.has-active-child {
+    background: rgba(72, 209, 204, 0.12);
+    color: #ffffff;
+}

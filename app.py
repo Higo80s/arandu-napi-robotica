@@ -107,31 +107,23 @@ def handle_csrf_error(e):
 from reports_bp import reports_bp
 from dashboard_bp import dashboard_bp
 from blueprints.auth import auth_bp
-from blueprints.proap import proap_bp
-from blueprints.internacionalizacao import inter_bp
 from blueprints.api_utils import api_utils_bp
 from blueprints.api_v1 import api_v1_bp
 from blueprints.admin import admin_bp
 from blueprints.editais import editais_bp
 from blueprints.bolsistas import bolsistas_bp
 from blueprints.admin_users import admin_users_bp
-from blueprints.ui_editor import ui_editor_bp
-from blueprints.database_explorer import database_explorer_bp
 from blueprints.anotacoes import anotacoes_bp
 
 app.register_blueprint(reports_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(auth_bp)
-app.register_blueprint(proap_bp)
-app.register_blueprint(inter_bp)
 app.register_blueprint(api_utils_bp)
 app.register_blueprint(api_v1_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(editais_bp)
 app.register_blueprint(bolsistas_bp)
 app.register_blueprint(admin_users_bp)
-app.register_blueprint(ui_editor_bp)
-app.register_blueprint(database_explorer_bp)
 app.register_blueprint(anotacoes_bp)
 
 # Filtros Jinja2
@@ -201,6 +193,20 @@ def splash():
     return render_template('dashboard.html', **stats)
 
 # Context Processors Globais
+@app.context_processor
+def inject_nav_active():
+    from utils.nav_sidebar import resolve_active_nav
+
+    if not has_request_context():
+        return dict(nav_is_active=lambda _key: False, nav_active_key=None)
+
+    active_key = resolve_active_nav(request.endpoint, request.path)
+
+    def nav_is_active(key):
+        return active_key == key
+
+    return dict(nav_is_active=nav_is_active, nav_active_key=active_key)
+
 @app.context_processor
 def inject_ui_texts():
     """

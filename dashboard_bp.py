@@ -36,7 +36,7 @@ def coordenacao():
 @login_required
 def direcao():
     from flask_login import current_user
-    from models import Bolsista, ProgramaAcademico, Campus, DadosSociais, MobilidadeInternacional
+    from models import Bolsista, ProgramaAcademico, Campus, DadosSociais
     from flask import request
     from sqlalchemy import text # correct import here
     from datetime import date, timedelta
@@ -123,27 +123,7 @@ def direcao():
         else:
             stats['vagas_ociosas'] = "N/A"
 
-        # 4. PROAP (Aggregated)
-        proap_total = Decimal('0')
-        try:
-             if prog_ids:
-                 safe_ids = ",".join(map(str, prog_ids))
-                 sql_proap = f"""
-                    SELECT SUM(d.valor_distribuido)
-                    FROM proap_distribuicoes d
-                    JOIN proap_repasses r ON d.repasse_id = r.id
-                    WHERE d.programa_id IN ({safe_ids}) AND r.ano = :year
-                 """
-                 res_proap = db.session.execute(text(sql_proap), {'year': current_year}).scalar()
-                 if res_proap: proap_total = Decimal(str(res_proap))
-        except: pass
-        
-        stats['proap_total'] = proap_total
-        stats['ano_atual'] = current_year
-
-        # 5. Diversity & Inter (Aggregated)
         stats['diversidade_count'] = db.session.query(DadosSociais).join(Bolsista).filter(Bolsista.programa_id.in_(prog_ids), Bolsista.ativo == True).count()
-        stats['inter_count'] = db.session.query(MobilidadeInternacional).join(Bolsista).filter(Bolsista.programa_id.in_(prog_ids), Bolsista.ativo == True).count()
 
         # 6. Alerts
         limit_date = date.today() + timedelta(days=90)
@@ -197,7 +177,7 @@ def get_program_metrics(programa_id):
     Helper para calcular métricas de um programa específico.
     Reutilizado por Coordenadores e Diretores (quando filtram).
     """
-    from models import Bolsista, DadosSociais, MobilidadeInternacional
+    from models import Bolsista, DadosSociais
     from datetime import date, timedelta
     from sqlalchemy import text
 
@@ -231,25 +211,7 @@ def get_program_metrics(programa_id):
     else:
         stats['vagas_ociosas'] = "N/A"
 
-    # 4. PROAP
-    proap_total = Decimal('0')
-    try:
-         sql_proap = """
-            SELECT SUM(d.valor_distribuido)
-            FROM proap_distribuicoes d
-            JOIN proap_repasses r ON d.repasse_id = r.id
-            WHERE d.programa_id = :pid AND r.ano = :year
-         """
-         res_proap = db.session.execute(text(sql_proap), {'pid': programa_id, 'year': current_year}).scalar()
-         if res_proap: proap_total = Decimal(str(res_proap))
-    except: pass
-    
-    stats['proap_total'] = proap_total
-    stats['ano_atual'] = current_year
-
-    # 5. Diversity & Inter
     stats['diversidade_count'] = db.session.query(DadosSociais).join(Bolsista).filter(Bolsista.programa_id == programa_id, Bolsista.ativo == True).count()
-    stats['inter_count'] = db.session.query(MobilidadeInternacional).join(Bolsista).filter(Bolsista.programa_id == programa_id, Bolsista.ativo == True).count()
 
     # 6. Alerts
     limit_date = date.today() + timedelta(days=90)
@@ -486,100 +448,6 @@ def sync_metrics():
             "status": "error",
             "message": f"Erro ao sincronizar: {str(e)}"
         }), 500
-
-@dashboard_bp.route('/capes')
-@login_required
-def capes():
-    where_clause = ""
-    params = {}
-    if current_user.role == 'coordenador_programa' and current_user.programa_id:
-        where_clause = "AND p.id = :programa_id"
-        params['programa_id'] = current_user.programa_id
-    elif current_user.role == 'diretor_campus' and current_user.campus_id:
-        where_clause = "AND p.campus_id = :campus_id"
-        params['campus_id'] = current_user.campus_id
-    
-    sql = f"""
-    SELECT p.id, p.nome_programa, p.codigo_programa, cp.sigla_campus, m.nivel, c.qtd_concedida,
-           (SELECT COUNT(b.id) FROM bolsistas b 
-            WHERE b.programa_id = p.id AND b.modalidade_id = m.id AND b.ativo = True AND b.edital_id = 14) as ocupadas
-    FROM distribuicao_cotas c
-    JOIN programa_academico p ON c.programa_id = p.id
-    LEFT JOIN campus cp ON p.campus_id = cp.id
-    JOIN modalidades m ON c.modalidade_id = m.id
-    WHERE c.edital_id = 14 {where_clause}
-    ORDER BY cp.sigla_campus, p.nome_programa
-    """
-    result = db.session.execute(text(sql), params)
-    
-    data_map = {}
-    totais = {
-        'mestrado_total': 0, 'mestrado_ocupado': 0, 'programas_mestrado': 0,
-        'doutorado_total': 0, 'doutorado_ocupado': 0, 'programas_doutorado': 0,
-        'ies_mestrado': 0, 'ies_doutorado': 0, 'ies_total_cotas': 0, 'ies_ocupadas': 0, 'ies_livres': 0, 'ies_programas_count': 0
-    }
-
-    for r in result:
-        pid = r.id
-        if pid not in data_map:
-            data_map[pid] = {
-                'pid': pid, 'nome': r.nome_programa, 'codigo': r.codigo_programa, 'campus': r.sigla_campus or '(IES)*',
-                'mestrado': {'cota': 0, 'ocupado': 0}, 'doutorado': {'cota': 0, 'ocupado': 0}
-            }
-        
-        is_mestrado = 'mestrado' in r.nivel.lower()
-        key = 'mestrado' if is_mestrado else 'doutorado'
-        
-        data_map[pid][key]['cota'] += r.qtd_concedida
-        data_map[pid][key]['ocupado'] += r.ocupadas
-        
-        # Agregação para o Dashboard Superior
-        if is_mestrado:
-            totais['mestrado_total'] += r.qtd_concedida
-            totais['mestrado_ocupado'] += r.ocupadas
-            if r.qtd_concedida > 0: totais['programas_mestrado'] += 1
-        else:
-            totais['doutorado_total'] += r.qtd_concedida
-            totais['doutorado_ocupado'] += r.ocupadas
-            if r.qtd_concedida > 0: totais['programas_doutorado'] += 1
-
-    # Busca bolsas IES (Edital 13) se existirem para complementar o painel
-    bolsistas_ies = Bolsista.query.filter_by(edital_id=13, ativo=True).all()
-    
-    return render_template('capes/dashboard.html', 
-                           dados=sorted(data_map.values(), key=lambda x: x['nome']), 
-                           totais=totais,
-                           bolsistas_ies=bolsistas_ies)
-
-@dashboard_bp.route('/api/capes/bolsistas/<int:programa_id>')
-@login_required
-def get_capes_bolsistas(programa_id):
-    """
-    API que retorna os bolsistas ativos de um programa para o modal CAPES.
-    Filtra editais 13 (IES) e 14 (DS).
-    """
-    bolsistas = Bolsista.query.filter(
-        Bolsista.programa_id == programa_id,
-        Bolsista.ativo == True,
-        Bolsista.edital_id.in_([13, 14])
-    ).order_by(Bolsista.nome).all()
-    
-    data = []
-    for b in bolsistas:
-        # Mascarar CPF para segurança se necessário, aqui mantendo conforme JS espera
-        data.append({
-            'id': b.id,
-            'nome': b.nome,
-            'cpf': f"{b.cpf[:3]}.***.***-{b.cpf[-2:]}" if b.cpf and len(b.cpf) >= 11 else b.cpf,
-            'sei': b.processo_sei or '-',
-            'formulario': b.numero_formulario or '-',
-            'status': 'Ativo' if b.ativo else 'Inativo'
-        })
-    
-    return jsonify({
-        'total': len(data),
-        'bolsistas': data
-    })
 
 @dashboard_bp.route('/alertas')
 @login_required

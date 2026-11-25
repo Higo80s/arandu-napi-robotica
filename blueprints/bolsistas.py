@@ -11,7 +11,7 @@ from decimal import Decimal
 from extensions import db
 from models import (
     Bolsista, Edital, Modalidade, Campus, ProgramaAcademico, 
-    Afastamento, DadosSociais, MobilidadeInternacional, AcordoInternacional,
+    Afastamento, DadosSociais,
     Candidatura, ComentarioBolsista
 )
 from audit import log_action
@@ -274,8 +274,7 @@ def novo():
         valid, msg = BolsistaService.validate_vacancy(modalidade_id)
         if not valid:
             flash(msg, 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, multicampi_map=multicampi_map)
 
         # Calculations
         try:
@@ -298,8 +297,7 @@ def novo():
 
         except ValueError:
             flash('Dados de data ou duração inválidos.', 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, multicampi_map=multicampi_map)
 
         # [PI 33/2026] Governança: Início da Bolsa não pode ser anterior ao Início do Curso
         if form_IB:
@@ -309,8 +307,7 @@ def novo():
             })
             if not valid_gov:
                 flash(msg_gov, 'error')
-                acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, multicampi_map=multicampi_map)
 
         # Limits Logic
         ext_maternity = 0 
@@ -348,13 +345,11 @@ def novo():
 
                 if not allow_exception:
                     flash(f'Erro de Prazo: Data Final ({end_date.strftime("%m/%Y")}) excede o limite do vínculo ({limit_date.strftime("%m/%Y")}, {academic_limit_months} meses).', 'error')
-                    acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-                    return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+                    return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, multicampi_map=multicampi_map)
 
             if form_D and form_D > (form_M + ext_maternity):
                 flash(f'Erro de Duração: {form_D} meses excede o limite da modalidade ({form_M} + {ext_maternity} bônus).', 'error')
-                acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, acordos=acordos, multicampi_map=multicampi_map)
+                return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=None, multicampi_map=multicampi_map)
 
         # Create Object
         prog_id = int(request.form['programa_id']) if request.form.get('programa_id') else None
@@ -428,8 +423,7 @@ def novo():
         if erros and not request.form.get('ciente_acumulo'):
             for erro in erros:
                 flash(erro, 'warning')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=True, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=True, multicampi_map=multicampi_map)
 
         # Tratar novo comentário do histórico
         novo_comentario_texto = request.form.get('novo_comentario', '').strip()
@@ -441,8 +435,7 @@ def novo():
         if funtef_errors:
             for err in funtef_errors:
                 flash(err, 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, multicampi_map=multicampi_map)
 
         _apply_funtef_fields(novo_bolsista)
 
@@ -484,8 +477,7 @@ def novo():
             db.session.rollback()
             caretaker.undo(novo_bolsista)
             flash(f"Erro crítico no banco (Rollback acionado): {str(e)}", "error")
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map)
+            return render_template('bolsistas/form.html', editais=editais, campuses=campuses, programas=programas, bolsista=novo_bolsista, has_acumulo=has_acumulo_flag, multicampi_map=multicampi_map)
 
     bolsista_pre = None
     if request.method == 'GET':
@@ -708,11 +700,10 @@ def editar(id):
                          '"Ativar Bolsista (Fundação)" (após Conveniar e contrato).',
                          'error',
                      )
-                     acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
                      return render_template(
                          'bolsistas/form.html',
                          bolsista=bolsista, editais=editais, campuses=campuses,
-                         programas=programas, acordos=acordos, multicampi_map=multicampi_map,
+                         programas=programas, multicampi_map=multicampi_map,
                          pagamentos_log=_pagamentos_log(bolsista),
                      )
                  bolsista.ativo = True
@@ -740,8 +731,7 @@ def editar(id):
         if funtef_errors:
             for err in funtef_errors:
                 flash(err, 'error')
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
+            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
 
         _apply_funtef_fields(bolsista)
 
@@ -787,17 +777,14 @@ def editar(id):
             db.session.rollback()
             caretaker.undo(bolsista)
             flash(f"Erro crítico no banco (Rollback acionado): {str(e)}", "error")
-            acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
-            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, acordos=acordos, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
+            return render_template('bolsistas/form.html', bolsista=bolsista, editais=editais, campuses=campuses, programas=programas, has_acumulo=has_acumulo_flag, multicampi_map=multicampi_map, pagamentos_log=_pagamentos_log(bolsista))
 
-    acordos = AcordoInternacional.query.filter_by(ativo=True).order_by(AcordoInternacional.pais).all()
     return render_template(
         'bolsistas/form.html',
         bolsista=bolsista,
         editais=editais,
         campuses=campuses,
         programas=programas,
-        acordos=acordos,
         multicampi_map=multicampi_map,
         pagamentos_log=_pagamentos_log(bolsista),
     )
@@ -851,15 +838,10 @@ def restaurar_versao(id, snapshot_id):
 @check_ownership(Bolsista)
 def excluir(id):
     bolsista = Bolsista.query.get_or_404(id)
-    is_posdoc = False
-    if bolsista.modalidade and any(x in bolsista.modalidade.nivel.upper() for x in ['PÓS', 'POS', 'RESID']):
-        is_posdoc = True
     db.session.delete(bolsista)
     db.session.commit()
     log_action('DELETE_BOLSISTA', tabela='bolsistas', registro_id=id, detalhes=f"Bolsista {bolsista.nome} deleted")
     flash('Registro excluído com sucesso!', 'success')
-    if is_posdoc:
-        return redirect(url_for('posdoc_index'))
     return redirect(url_for('bolsistas.index'))
 
 @bolsistas_bp.route('/bolsistas/limpar_edital/<int:edital_id>', methods=['POST'])
@@ -1329,39 +1311,6 @@ def afastamento_excluir(id):
     db.session.delete(afastamento)
     db.session.commit()
     flash('Afastamento removido. Data de término ajustada.', 'success')
-    return redirect(url_for('bolsistas.editar', id=bolsista_id))
-
-# --- MOBILIDADE ---
-@bolsistas_bp.route('/bolsistas/<int:id>/mobilidade/novo', methods=['POST'])
-def mobilidade_novo(id):
-    bolsista = Bolsista.query.get_or_404(id)
-    try:
-        nova_mob = MobilidadeInternacional(
-            bolsista_id=bolsista.id,
-            pais_destino=request.form['pais_destino'],
-            instituicao_destino=request.form['instituicao_destino'],
-            data_inicio=parse_flexible_date(request.form['data_inicio']),
-            data_fim=parse_flexible_date(request.form['data_fim']),
-            tipo_mobilidade=request.form.get('tipo_mobilidade'),
-            agencia_fomento=request.form.get('agencia_fomento'),
-            tipo_fluxo=request.form.get('tipo_fluxo', 'saida'),
-            # [NEW] Captura do vínculo com o acordo
-            acordo_id = request.form.get('acordo_id') if request.form.get('acordo_id') else None
-        )
-        db.session.add(nova_mob)
-        db.session.commit()
-        flash('Registro de mobilidade adicionado com sucesso!', 'success')
-    except Exception as e:
-        flash(f'Erro ao adicionar mobilidade: {str(e)}', 'error')
-    return redirect(url_for('bolsistas.editar', id=id))
-
-@bolsistas_bp.route('/mobilidade/<int:id>/excluir', methods=['POST'])
-def mobilidade_excluir(id):
-    mob = MobilidadeInternacional.query.get_or_404(id)
-    bolsista_id = mob.bolsista_id
-    db.session.delete(mob)
-    db.session.commit()
-    flash('Registro de mobilidade removido.', 'success')
     return redirect(url_for('bolsistas.editar', id=bolsista_id))
 
 # --- DIVERSIDADE ---

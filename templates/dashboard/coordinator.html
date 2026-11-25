@@ -49,24 +49,6 @@
         </div>
 
 
-        <!-- CARD 3: PROAP/PROAPINHO -->
-        <div class="card" style="padding: 1.5rem; border-left: 5px solid #f6c23e;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h5 class="text-muted" style="font-size: 0.9rem; text-transform: uppercase;">PROAP/PROAPinho ({{
-                        stats.ano_atual }})</h5>
-                    <div class="metric-value" style="font-size: 1.8rem; font-weight: bold; color: #f6c23e;">
-                        R$ {{ stats.proap_total | default(0) | format_currency }}
-                    </div>
-                </div>
-                <div style="background: #fefce8; padding: 10px; border-radius: 50%; color: #f6c23e;">
-                    {{ icon('coins', size=24) }}
-                </div>
-            </div>
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <small class="text-muted">Total de recursos recebidos no ano corrente.</small>
-            </div>
-        </div>
     </div>
 
     <!-- ROW 2: DIVERSITY & INTERNATIONALIZATION -->
@@ -92,23 +74,6 @@
             </a>
         </div>
 
-        <!-- CARD: INTERNACIONALIZAÇÃO -->
-        <div class="card" style="padding: 1.5rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                <h5 class="text-muted" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                    {{ icon('globe', size=20) }} Internacionalização
-                </h5>
-                <span style="background: #e5e7eb; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
-                    {{ stats.inter_count }} Movimentações
-                </span>
-            </div>
-            <p class="text-muted" style="font-size: 0.9rem;">
-                Mobilidade acadêmica (Sanduíche, Estágio, Dupla Diplomação).
-            </p>
-            <a href="{{ url_for('inter.index') }}" class="btn btn-outline-secondary btn-sm" style="width: 100%;">
-                Acessar Internacionalização
-            </a>
-        </div>
     </div>
 
     <!-- ALERTS SECTION -->
