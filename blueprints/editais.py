@@ -20,6 +20,233 @@ editais_bp = Blueprint('editais', __name__)
 
 # --- HELPERS ---
 
+_STATUS_FILTRO_ORDEM = (
+    'SEL_INSCRITO',
+    'SEL_SELECIONADO',
+    'SEL_EXCEDENTE',
+    'SEL_REJEITADO',
+    'AGUARDANDO_IMPLANTACAO',
+    'ATIVO',
+    'FINALIZANDO',
+    'ULTIMA_PARCELA',
+    'EM_LICENCA',
+    'INATIVO',
+    'CANCELAMENTO_REQUERIDO',
+    'VENCIDO',
+)
+
+_SEL_STATUS_LABEL = {
+    'SEL_INSCRITO': 'Seleção · Inscrito',
+    'SEL_SELECIONADO': 'Seleção · Selecionado',
+    'SEL_EXCEDENTE': 'Seleção · Excedente',
+    'SEL_REJEITADO': 'Seleção · Rejeitado',
+}
+
+_SEL_STATUS_CLASS = {
+    'SEL_INSCRITO': 'badge-secondary',
+    'SEL_SELECIONADO': 'badge-success',
+    'SEL_EXCEDENTE': 'badge-warning',
+    'SEL_REJEITADO': 'badge-danger',
+}
+
+# Chaves canônicas para filtro por tipo de bolsa (Modalidade.nivel é texto livre).
+_TIPO_MODALIDADE_ORDEM = (
+    'MESTRADO',
+    'DOUTORADO',
+    'IC_GRAD',
+    'IC_JUNIOR',
+    'OUTRO',
+    'SEM_MODALIDADE',
+)
+
+_TIPO_MODALIDADE_LABEL = {
+    'MESTRADO': 'Mestrado',
+    'DOUTORADO': 'Doutorado',
+    'IC_GRAD': 'Iniciação Científica (graduação)',
+    'IC_JUNIOR': 'Iniciação Científica Júnior',
+    'OUTRO': 'Outras modalidades',
+    'SEM_MODALIDADE': 'Sem modalidade',
+}
+
+
+def _classificar_tipo_modalidade(nivel_raw):
+    """Normaliza Modalidade.nivel / texto livre em chave de filtro."""
+    if not nivel_raw or not str(nivel_raw).strip() or str(nivel_raw).strip() == '—':
+        return 'SEM_MODALIDADE'
+    n = str(nivel_raw).upper()
+    n = (
+        n.replace('Á', 'A').replace('À', 'A').replace('Ã', 'A')
+        .replace('É', 'E').replace('Ê', 'E')
+        .replace('Í', 'I')
+        .replace('Ó', 'O').replace('Õ', 'O')
+        .replace('Ú', 'U').replace('Ü', 'U')
+        .replace('Ç', 'C')
+    )
+    if 'JUNIOR' in n or 'JR' in n.split():
+        return 'IC_JUNIOR'
+    if 'INICIAC' in n or n.startswith('IC ') or n == 'IC':
+        return 'IC_GRAD'
+    if 'DOUTOR' in n and 'POS' not in n:
+        return 'DOUTORADO'
+    if 'MESTR' in n:
+        return 'MESTRADO'
+    return 'OUTRO'
+
+
+def _parcela_bolsista_label(bolsista, hoje=None):
+    """Retorna (rótulo '7/10', chave numérica para ordenação) ou ('—', -1)."""
+    from utils.date_utils import calcular_parcelas
+
+    hoje = hoje or date.today()
+    total = bolsista.meses_duracao or 0
+    if not bolsista.data_inicio_bolsa or not total:
+        return '—', -1
+    ref = hoje
+    if bolsista.data_desligamento and bolsista.data_desligamento < ref:
+        ref = bolsista.data_desligamento
+    if bolsista.data_fim_bolsa and bolsista.data_fim_bolsa < ref:
+        ref = bolsista.data_fim_bolsa
+    atual = calcular_parcelas(
+        bolsista.data_inicio_bolsa, ref, bolsista.data_desligamento
+    )
+    if not atual or atual < 1:
+        return '—', -1
+    if atual > total:
+        atual = total
+    return f'{atual}/{total}', atual
+
+
+def _bolsistas_edital_lista(edital):
+    """Linhas unificadas: candidaturas em seleção + bolsistas do edital."""
+    from core.status_engine import StatusEngine
+
+    bolsistas = Bolsista.query.filter_by(edital_id=edital.id).all()
+    cpfs_bolsistas = {sanitizar_cpf(b.cpf) for b in bolsistas if sanitizar_cpf(b.cpf)}
+    hoje = date.today()
+
+    cands = (
+        Candidatura.query.join(RodadaSelecao)
+        .filter(
+            RodadaSelecao.edital_id == edital.id,
+            Candidatura.status != 'EFETIVADO',
+        )
+        .all()
+    )
+
+    rows = []
+    n_implantacao = 0
+    n_ativos = 0
+    n_selecao = 0
+    status_seen = {}
+    tipo_seen = {}
+
+    for c in cands:
+        cpf_key = sanitizar_cpf(c.cpf)
+        if cpf_key and cpf_key in cpfs_bolsistas:
+            continue
+        st = (c.status or 'INSCRITO').upper()
+        key = f'SEL_{st}'
+        if key in _SEL_STATUS_LABEL:
+            label = _SEL_STATUS_LABEL[key]
+            css = _SEL_STATUS_CLASS[key]
+        else:
+            key = 'SEL_INSCRITO'
+            label = f'Seleção · {st.title()}'
+            css = 'badge-secondary'
+        status_seen[key] = label
+        n_selecao += 1
+        # Candidatura ainda sem modalidade de bolsa
+        nivel = '—'
+        tipo_key = 'SEM_MODALIDADE'
+        tipo_seen[tipo_key] = _TIPO_MODALIDADE_LABEL[tipo_key]
+        rows.append({
+            'kind': 'candidatura',
+            'id': c.id,
+            'nome': c.nome,
+            'modalidade': nivel,
+            'parcela': '—',
+            'parcela_num': -1,
+            'tipo_key': tipo_key,
+            'status_key': key,
+            'status_label': label,
+            'status_class': css,
+            'href': url_for('bolsistas.novo', candidatura_id=c.id),
+            'implantacao_pendente': False,
+            'em_selecao': True,
+            '_ord': (0, (c.nome or '').lower()),
+        })
+
+    for b in bolsistas:
+        key = b.check_status_validity()
+        display = StatusEngine.get_display_data(key)
+        status_seen.setdefault(key, display['label'])
+        if b.implantacao_pendente:
+            n_implantacao += 1
+            ord_pri = 1
+        elif b.ativo:
+            n_ativos += 1
+            ord_pri = 2
+        else:
+            ord_pri = 3
+        nivel = b.modalidade.nivel if b.modalidade else '—'
+        tipo_key = _classificar_tipo_modalidade(nivel)
+        tipo_seen[tipo_key] = _TIPO_MODALIDADE_LABEL.get(tipo_key, tipo_key)
+        parcela_lbl, parcela_num = _parcela_bolsista_label(b, hoje=hoje)
+        rows.append({
+            'kind': 'bolsista',
+            'id': b.id,
+            'nome': b.nome,
+            'modalidade': nivel or '—',
+            'parcela': parcela_lbl,
+            'parcela_num': parcela_num,
+            'tipo_key': tipo_key,
+            'status_key': key,
+            'status_label': display['label'],
+            'status_class': display['class'],
+            'href': url_for('bolsistas.editar', id=b.id),
+            'implantacao_pendente': bool(b.implantacao_pendente),
+            'em_selecao': False,
+            '_ord': (ord_pri, (b.nome or '').lower()),
+        })
+
+    rows.sort(key=lambda r: r['_ord'])
+    for r in rows:
+        r.pop('_ord', None)
+
+    status_filtros = [
+        {'key': k, 'label': status_seen[k]}
+        for k in _STATUS_FILTRO_ORDEM if k in status_seen
+    ]
+    status_filtros.extend(
+        {'key': k, 'label': v}
+        for k, v in status_seen.items()
+        if k not in _STATUS_FILTRO_ORDEM
+    )
+
+    # Preferir rótulos das modalidades cadastradas no edital quando baterem a chave.
+    for mod in (edital.modalidades or []):
+        tk = _classificar_tipo_modalidade(mod.nivel)
+        if tk in tipo_seen and mod.nivel:
+            tipo_seen[tk] = mod.nivel
+
+    tipo_filtros = [
+        {'key': k, 'label': tipo_seen[k]}
+        for k in _TIPO_MODALIDADE_ORDEM if k in tipo_seen
+    ]
+    tipo_filtros.extend(
+        {'key': k, 'label': v}
+        for k, v in tipo_seen.items()
+        if k not in _TIPO_MODALIDADE_ORDEM
+    )
+
+    contagens = {
+        'selecao': n_selecao,
+        'implantacao': n_implantacao,
+        'ativos': n_ativos,
+    }
+    return rows, status_filtros, tipo_filtros, contagens
+
+
 def clean_currency(val):
     """
     Limpa e converte strings monetárias para Decimal (focada em R$).
@@ -101,11 +328,22 @@ def editar(id):
         success, result = EditalService.update_edital(id, form.data)
         if success:
             flash('Edital atualizado com sucesso!', 'success')
-            return redirect(url_for('editais.index'))
+            return redirect(url_for('editais.editar', id=id))
         else:
             flash(f'Erro ao atualizar edital: {result}', 'danger')
-            
-    return render_template('editais/form.html', form=form, edital=edital)
+
+    rows, status_filtros, tipo_filtros, contagens = _bolsistas_edital_lista(edital)
+    return render_template(
+        'editais/form.html',
+        form=form,
+        edital=edital,
+        bolsistas_edital=rows,
+        bolsistas_status_filtros=status_filtros,
+        bolsistas_tipo_filtros=tipo_filtros,
+        bolsistas_n_selecao=contagens['selecao'],
+        bolsistas_n_implantacao=contagens['implantacao'],
+        bolsistas_n_ativos=contagens['ativos'],
+    )
 
 @editais_bp.route('/editais/<int:id>/excluir', methods=['POST'])
 @admin_required

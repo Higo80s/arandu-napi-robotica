@@ -6,7 +6,7 @@
     <a href="{{ url_for('editais.index') }}" class="btn" style="background-color: #e5e7eb;">Voltar</a>
 </div>
 
-<div class="card" style="max-width: 800px;">
+<div class="card" style="max-width: {% if edital %}1100px{% else %}800px{% endif %};">
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -183,6 +183,98 @@
             {% endif %}
             <small style="display: block; margin-top: .5rem; color: #6b7280;">Use o Painel de Seleção para adicionar ou editar anotações.</small>
         </section>
+
+        <section id="bolsistas-edital" style="margin-bottom: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+            <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div>
+                    <strong style="font-size: 0.95rem;">Bolsistas deste edital</strong>
+                    <span style="margin-left: 0.5rem; font-size: 0.85rem; font-weight: 600;">
+                        {% if bolsistas_n_selecao %}
+                        <span style="color: #7c3aed;">{{ bolsistas_n_selecao }} em seleção</span>
+                        {% endif %}
+                        {% if bolsistas_n_implantacao %}
+                        <span style="color: #b91c1c;{% if bolsistas_n_selecao %} margin-left: 0.5rem;{% endif %}">{{ bolsistas_n_implantacao }} em implantação</span>
+                        {% endif %}
+                        {% if bolsistas_n_ativos %}
+                        <span style="color: #166534;{% if bolsistas_n_selecao or bolsistas_n_implantacao %} margin-left: 0.5rem;{% endif %}">{{ bolsistas_n_ativos }} ativo(s)</span>
+                        {% endif %}
+                    </span>
+                    <p style="margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                        Une candidaturas da seleção e bolsistas cadastrados. Lilás = seleção; vermelho = implantação pendente.
+                        Clique em <strong>Modalidade</strong> ou <strong>Status</strong> (⇅) para filtrar; em Nome/Parcela para ordenar.
+                    </p>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                    <a href="{{ url_for('editais.painel_selecao', id=edital.id) }}" class="btn btn-secondary btn-sm" style="text-decoration: none;">Painel de seleção</a>
+                    <a href="{{ url_for('bolsistas.index', edital_id=edital.id) }}" class="btn btn-secondary btn-sm" style="text-decoration: none;">Abrir em Bolsistas</a>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <input type="search" id="busca-bolsistas-edital"
+                    placeholder="Buscar por nome, modalidade, parcela…"
+                    style="flex: 1; min-width: 180px; padding: 0.5rem 0.65rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px;">
+            </div>
+            <div style="max-height: 28rem; overflow: auto; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px;">
+                <table class="table" id="tabela-bolsistas-edital" style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; background: var(--card-bg, #fff); z-index: 1;">
+                            <th style="padding: 0.65rem 0.75rem;">
+                                <button type="button" class="edital-col-sort" data-col="nome" title="Ordenar por nome"
+                                    style="background:none;border:none;padding:0;cursor:pointer;color:var(--text-color);font:inherit;font-weight:600;display:inline-flex;align-items:center;gap:5px;">
+                                    Nome <span class="edital-col-ind" style="font-size:0.8rem;opacity:0.3;">⇅</span>
+                                </button>
+                            </th>
+                            <th style="padding: 0.65rem 0.75rem;">
+                                <button type="button" class="edital-col-filter" data-filter="tipo" title="Filtrar por modalidade (clique para ciclar)"
+                                    style="background:none;border:none;padding:0;cursor:pointer;color:var(--text-color);font:inherit;font-weight:600;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                                    Modalidade <span class="edital-col-ind" style="font-size:0.8rem;opacity:0.3;">⇅</span>
+                                </button>
+                            </th>
+                            <th style="padding: 0.65rem 0.75rem;">
+                                <button type="button" class="edital-col-sort" data-col="parcela" title="Ordenar por parcela"
+                                    style="background:none;border:none;padding:0;cursor:pointer;color:var(--text-color);font:inherit;font-weight:600;display:inline-flex;align-items:center;gap:5px;">
+                                    Parcela <span class="edital-col-ind" style="font-size:0.8rem;opacity:0.3;">⇅</span>
+                                </button>
+                            </th>
+                            <th style="padding: 0.65rem 0.75rem;">
+                                <button type="button" class="edital-col-filter" data-filter="status" title="Filtrar por status (clique para ciclar)"
+                                    style="background:none;border:none;padding:0;cursor:pointer;color:var(--text-color);font:inherit;font-weight:600;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                                    Status <span class="edital-col-ind" style="font-size:0.8rem;opacity:0.3;">⇅</span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in bolsistas_edital or [] %}
+                        <tr class="edital-bolsista-row{% if row.implantacao_pendente %} edital-bolsista-row--implantacao{% endif %}{% if row.em_selecao %} edital-bolsista-row--selecao{% endif %}"
+                            data-status-key="{{ row.status_key }}"
+                            data-tipo-key="{{ row.tipo_key }}"
+                            data-nome="{{ row.nome|e }}"
+                            data-modalidade="{{ row.modalidade|e }}"
+                            data-parcela-num="{{ row.parcela_num }}"
+                            style="border-bottom: 1px solid #e5e7eb;{% if row.implantacao_pendente %} background: rgba(220, 38, 38, 0.10);{% elif row.em_selecao %} background: rgba(124, 58, 237, 0.08);{% endif %}">
+                            <td style="padding: 0.65rem 0.75rem;">
+                                <a href="{{ row.href }}" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">{{ row.nome }}</a>
+                            </td>
+                            <td style="padding: 0.65rem 0.75rem;">{{ row.modalidade }}</td>
+                            <td style="padding: 0.65rem 0.75rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ row.parcela }}</td>
+                            <td style="padding: 0.65rem 0.75rem;">
+                                <span class="status-chip {{ row.status_class }}">{{ row.status_label }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Nenhum bolsista ou candidato neste edital.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <script type="application/json" id="edital-bolsistas-filtros-data">{{ {
+                'status': bolsistas_status_filtros or [],
+                'tipo': bolsistas_tipo_filtros or []
+            }|tojson }}</script>
+        </section>
         {% endif %}
 
         <!-- [NEW V11.2 - Prod] Vigência -->
@@ -225,4 +317,162 @@
         </div>
     </form>
 </div>
+
+{% if edital %}
+<style>
+.status-chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #374151;
+}
+.status-chip.badge-success, .status-chip.status-ativo { background: #d1fae5; color: #065f46; }
+.status-chip.badge-warning, .status-chip.status-alerta { background: #fef3c7; color: #92400e; }
+.status-chip.badge-danger, .status-chip.status-erro { background: #fee2e2; color: #991b1b; }
+.status-chip.badge-secondary, .status-chip.status-neutro { background: #e5e7eb; color: #4b5563; }
+.status-chip.badge-info { background: #dbeafe; color: #1e40af; }
+.edital-col-sort:hover, .edital-col-filter:hover { color: var(--primary-color) !important; }
+.edital-col-filter.is-active .edital-col-ind,
+.edital-col-sort.is-active .edital-col-ind { opacity: 1 !important; }
+</style>
+<script>
+(function () {
+    const busca = document.getElementById('busca-bolsistas-edital');
+    const tabela = document.getElementById('tabela-bolsistas-edital');
+    if (!tabela) return;
+    const tbody = tabela.querySelector('tbody');
+    const dataEl = document.getElementById('edital-bolsistas-filtros-data');
+    let filtrosMeta = { status: [], tipo: [] };
+    try { filtrosMeta = JSON.parse(dataEl ? dataEl.textContent : '{}'); } catch (e) {}
+
+    let sortCol = null;
+    let sortDir = 'asc';
+    let filtroStatus = '';
+    let filtroTipo = '';
+    let statusIdx = -1;
+    let tipoIdx = -1;
+
+    function rows() {
+        return Array.prototype.slice.call(tbody.querySelectorAll('tr.edital-bolsista-row'));
+    }
+
+    function applyVisibility() {
+        const termo = (busca && busca.value || '').toLowerCase().trim();
+        rows().forEach(function (row) {
+            const texto = row.textContent.toLowerCase();
+            const okTexto = !termo || texto.indexOf(termo) !== -1;
+            const okStatus = !filtroStatus || row.getAttribute('data-status-key') === filtroStatus;
+            const okTipo = !filtroTipo || row.getAttribute('data-tipo-key') === filtroTipo;
+            row.style.display = (okTexto && okStatus && okTipo) ? '' : 'none';
+        });
+    }
+
+    function sortRows(col) {
+        if (sortCol === col) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortCol = col;
+            sortDir = 'asc';
+        }
+        const list = rows();
+        list.sort(function (a, b) {
+            if (col === 'parcela') {
+                const av = parseInt(a.getAttribute('data-parcela-num') || '-1', 10);
+                const bv = parseInt(b.getAttribute('data-parcela-num') || '-1', 10);
+                if (av < bv) return sortDir === 'asc' ? -1 : 1;
+                if (av > bv) return sortDir === 'asc' ? 1 : -1;
+                return 0;
+            }
+            const attr = col === 'nome' ? 'data-nome' : 'data-modalidade';
+            const av = (a.getAttribute(attr) || '').toLowerCase();
+            const bv = (b.getAttribute(attr) || '').toLowerCase();
+            if (av < bv) return sortDir === 'asc' ? -1 : 1;
+            if (av > bv) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+        list.forEach(function (r) { tbody.appendChild(r); });
+        updateSortIndicators();
+        applyVisibility();
+    }
+
+    function updateSortIndicators() {
+        tabela.querySelectorAll('.edital-col-sort').forEach(function (btn) {
+            const ind = btn.querySelector('.edital-col-ind');
+            const col = btn.getAttribute('data-col');
+            btn.classList.toggle('is-active', sortCol === col);
+            if (!ind) return;
+            if (sortCol === col) {
+                ind.textContent = sortDir === 'asc' ? '↓' : '↑';
+                ind.style.opacity = '1';
+            } else {
+                ind.textContent = '⇅';
+                ind.style.opacity = '0.3';
+            }
+        });
+    }
+
+    function updateFilterIndicator(btn, active, label) {
+        const ind = btn.querySelector('.edital-col-ind');
+        btn.classList.toggle('is-active', !!active);
+        if (!ind) return;
+        if (active) {
+            ind.textContent = '✓ ' + label;
+            ind.style.opacity = '1';
+            ind.style.fontWeight = '700';
+            ind.style.color = 'var(--primary-color)';
+            ind.style.fontSize = '0.75rem';
+        } else {
+            ind.textContent = '⇅';
+            ind.style.opacity = '0.3';
+            ind.style.fontWeight = '';
+            ind.style.color = '';
+            ind.style.fontSize = '0.8rem';
+        }
+    }
+
+    function cycleFilter(kind) {
+        const opts = (filtrosMeta[kind] || []).slice();
+        const btn = tabela.querySelector('.edital-col-filter[data-filter="' + kind + '"]');
+        if (!opts.length || !btn) return;
+        if (kind === 'status') {
+            statusIdx += 1;
+            if (statusIdx >= opts.length) {
+                statusIdx = -1;
+                filtroStatus = '';
+                updateFilterIndicator(btn, false);
+            } else {
+                filtroStatus = opts[statusIdx].key;
+                updateFilterIndicator(btn, true, opts[statusIdx].label);
+            }
+        } else {
+            tipoIdx += 1;
+            if (tipoIdx >= opts.length) {
+                tipoIdx = -1;
+                filtroTipo = '';
+                updateFilterIndicator(btn, false);
+            } else {
+                filtroTipo = opts[tipoIdx].key;
+                updateFilterIndicator(btn, true, opts[tipoIdx].label);
+            }
+        }
+        applyVisibility();
+    }
+
+    tabela.querySelectorAll('.edital-col-sort').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            sortRows(btn.getAttribute('data-col'));
+        });
+    });
+    tabela.querySelectorAll('.edital-col-filter').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            cycleFilter(btn.getAttribute('data-filter'));
+        });
+    });
+    if (busca) busca.addEventListener('input', applyVisibility);
+})();
+</script>
+{% endif %}
 {% endblock %}
