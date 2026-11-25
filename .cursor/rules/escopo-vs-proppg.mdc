@@ -1,0 +1,36 @@
+---
+description: O que a NAPI usa, o que sai (herança PROPPG) e o que copiar do Flask modelo
+alwaysApply: true
+---
+
+# Escopo NAPI × modelo PROPPG
+
+Modelo: `../arandu_proppg` (Flask). Não é `arandu_institucional` (Java). Dois Gits. Não fundir repos nem copiar módulo de domínio da pró-reitoria.
+
+## Operação desta NAPI (manter)
+
+Editais, seleção, bolsistas, programas, usuários, anotações, alertas, relatórios da bolsa, diversidade na ficha.
+
+Automações próprias (`AranduRobotica_*`): FUNTEF/Conveniar, confirmação de início, último mês, cobrança de relatório final, resumo diário, pagamento → Nuvem (dia 20, catch-up). Diárias/passagens ficam fora do Flask (rule `diarias-passagens`).
+
+## Não manter por herança
+
+- **PROAP/PROAPINHO:** a NAPI não usa. Sair da navegação, do formulário de edital (`proap_distribuicao_id`) e do blueprint. Não recriar.
+- **Pós-doc:** não há blueprint `posdoc` registrado; promoção de candidatura que chama `posdoc.novo` está quebrada. Não portar o módulo do PROPPG.
+- **`blueprints/profissionais.py`:** arquivo solto, não registrado em `app.py`.
+- **Editor de UI** (`ui_editor`, `UIState`) e **explorador de banco** (`database_explorer`): não são operação.
+
+Confirmar com o operador antes de apagar: painel CAPES, menu Internacionalização (acordos). Mobilidade na ficha do bolsista só sai se ninguém registrar viagem.
+
+## Não copiar do modelo
+
+Araucária, Bolsa RP, PDSE, DIRPPG, CNPq, agenda CAPES/SCBA, Sucupira, certificados de pós-doc, WhatsApp DIREPG, PROAP.
+
+## Copiar (estrutura, um incremento por vez)
+
+1. Menu com item ativo e automações agrupadas (hoje a NAPI lista cada config solta).
+2. Logs do sistema e página de modelo de dados (admin), no lugar do explorador SQL.
+3. Reset de senha (o PROPPG tem `PasswordResetToken`; aqui só troca logado).
+4. Regras de engenharia que o modelo já tem e aqui faltam: erros/logs, auditoria, segurança HTTP, backup cifrado, form não aninhado, layout de viewport, assunto de e-mail.
+
+Não portar `admin.py` inteiro. Serviço da NAPI (FUNTEF, Nuvem, confirmação de início) não é sobrescrito pela versão PROPPG.
