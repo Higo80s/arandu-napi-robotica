@@ -48,14 +48,16 @@ No Agendador, clique com o botão direito na tarefa criada e selecione **Executa
 
 ---
 
-## Pagamento de Bolsas → Nuvem (dia 20)
+## Pagamento de Bolsas → Nuvem (dia 20 + catch-up)
 
-Envia automaticamente a folha Excel de **Pagamento de Bolsas** (competência do mês corrente) para a pasta `/05_pagamentos` na Nuvem UTFPR e confirma por e-mail.
+Envia automaticamente a folha Excel de **Pagamento de Bolsas** para a pasta `/05_pagamentos` na Nuvem UTFPR e confirma por e-mail.
 
 1. **Nome:** `AranduRobotica_PagamentoBolsasNuvem`
-2. **Disparador:** Diariamente às **08:15** (a tarefa só executa no **dia 20**).
+2. **Disparador:** Diariamente às **08:15** (com *StartWhenAvailable*).
 3. **Programa:** `C:\Users\higosantos\Documents\gestao_editais\arandu-napi-robotica\tasks\run_enviar_pagamento_bolsas.bat`
 4. **Iniciar em:** pasta raiz do projeto.
+
+**Regra (igual PROPPG):** a folha da competência M só sai a partir do **dia 20** de M. O job é **diário e idempotente** (`LogAutomacao` SUCESSO com `pagamento_YYYY-MM.xlsx`). Se o notebook não ligou no dia 20, a **primeira execução diária posterior** publica o atrasado — não pode ser “só dia 20” sem recuperação.
 
 **Teste manual (qualquer data):**
 ```bat

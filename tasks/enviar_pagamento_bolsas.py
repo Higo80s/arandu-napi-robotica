@@ -1,12 +1,17 @@
 """
 Envio automático da folha Pagamento de Bolsas (Excel) para a Nuvem UTFPR.
 
-Agendamento: dia 20 de cada mês (competência do mês corrente).
+Agendamento: diário (Task Scheduler). A folha só sai a partir do dia 20 do
+mês de referência; se esse dia for perdido, a primeira execução posterior
+publica o atrasado (idempotente via LogAutomacao) — mesmo padrão PROPPG.
+
 Teste/manual: flask enviar-pagamento-bolsas --mes 2026-05 --forcar
 """
 from datetime import date, datetime
+from typing import Callable, Optional
 
 import click
+from dateutil.relativedelta import relativedelta
 from flask_mail import Message
 
 from core.datetime_utils import BR_TZ, UTC
@@ -18,6 +23,7 @@ from services.pagamento_email_service import PagamentoEmailService
 from utils.task_notification import emit_task_notification
 
 LOG_NOME = 'Envio Pagamento de Bolsas (Nuvem)'
+DIA_PUBLICACAO_FOLHA = 20
 
 
 def _inicio_hoje_utc_naive():
@@ -25,34 +31,60 @@ def _inicio_hoje_utc_naive():
     return inicio_br.astimezone(UTC).replace(tzinfo=None)
 
 
-def _pagamento_ja_enviado_hoje(filename):
+def _folha_ja_publicada(mes_yyyy_mm: str) -> bool:
+    """True se já existe SUCESSO para pagamento_YYYY-MM.xlsx."""
+    filename = PagamentoEmailService.nome_arquivo(mes_yyyy_mm)
     return (
         LogAutomacao.query
         .filter(LogAutomacao.nome_tarefa == LOG_NOME)
         .filter(LogAutomacao.status == 'SUCESSO')
-        .filter(LogAutomacao.data_execucao >= _inicio_hoje_utc_naive())
         .filter(LogAutomacao.mensagem.ilike(f'%{filename}%'))
         .first()
     ) is not None
 
 
-def enviar_pagamento_bolsas(app, mes_referencia=None, forcar=False):
+def ultimo_mes_folha_devido(hoje: Optional[date] = None) -> date:
+    """Último mês de referência cuja data de publicação (dia 20) já passou."""
+    hoje = hoje or date.today()
+    mes_atual = date(hoje.year, hoje.month, 1)
+    if hoje.day >= DIA_PUBLICACAO_FOLHA:
+        return mes_atual
+    return mes_atual - relativedelta(months=1)
+
+
+def mes_folha_pendente(
+    hoje: Optional[date] = None,
+    ja_enviado: Optional[Callable[[date], bool]] = None,
+) -> Optional[date]:
+    """Mais antigo mês devido ainda sem publicação SUCESSO.
+
+    Janela: mês devido atual + mês anterior (catch-up se o dia 20 foi perdido).
     """
-    Gera Excel, envia para Nuvem /05_pagamentos e confirma por e-mail.
-    Sem --forcar, só executa no dia 20 (competência = mês corrente).
-    """
+    hoje = hoje or date.today()
+    devido = ultimo_mes_folha_devido(hoje)
+    candidatos = [devido - relativedelta(months=1), devido]
+
+    def _default_ja_enviado(mes: date) -> bool:
+        return _folha_ja_publicada(mes.strftime('%Y-%m'))
+
+    check = ja_enviado or _default_ja_enviado
+    for mes in candidatos:
+        dia_limite = date(mes.year, mes.month, DIA_PUBLICACAO_FOLHA)
+        if hoje < dia_limite:
+            continue
+        if not check(mes):
+            return mes
+    return None
+
+
+def _executar_envio(app, mes_referencia, forcar=False):
+    """Gera Excel, sobe para a Nuvem e confirma por e-mail. Grava LogAutomacao."""
     hoje = date.today()
-    if mes_referencia is None:
-        mes_referencia = hoje.strftime('%Y-%m')
-
-    if not forcar and hoje.day != 20:
-        print(f"[PAGAMENTO] Hoje ({hoje:%d/%m/%Y}) não é dia 20. Use --forcar para envio manual.")
-        return None
-
     svc = PagamentoEmailService
     filename = svc.nome_arquivo(mes_referencia)
-    if not forcar and _pagamento_ja_enviado_hoje(filename):
-        print(f'[PAGAMENTO] Já enviado hoje: {filename}. Ignorando duplicata.')
+
+    if not forcar and _folha_ja_publicada(mes_referencia):
+        print(f'[PAGAMENTO] Já publicado: {filename}. Ignorando duplicata.')
         return 'ja_enviado'
 
     log = LogAutomacao(nome_tarefa=LOG_NOME)
@@ -115,10 +147,54 @@ def enviar_pagamento_bolsas(app, mes_referencia=None, forcar=False):
         db.session.commit()
 
 
+def enviar_pagamento_bolsas(app, mes_referencia=None, forcar=False):
+    """
+    Publica folha na Nuvem /05_pagamentos e confirma por e-mail.
+
+    Sem --forcar: resolve competência pendente (dia 20+ ou catch-up).
+    Com --forcar: usa --mes ou mês corrente e republica.
+    """
+    hoje = date.today()
+
+    if forcar:
+        if mes_referencia is None:
+            mes_referencia = hoje.strftime('%Y-%m')
+        print(f'[PAGAMENTO][FORCAR] Republicando competência {mes_referencia}')
+        return _executar_envio(app, mes_referencia, forcar=True)
+
+    if mes_referencia:
+        # Chamada explícita com mês, sem forçar: só envia se devido e ainda não publicado
+        ano, mes = map(int, mes_referencia.split('-'))
+        dia_limite = date(ano, mes, DIA_PUBLICACAO_FOLHA)
+        if hoje < dia_limite:
+            print(
+                f'[PAGAMENTO] Competência {mes_referencia} só a partir de '
+                f'{dia_limite:%d/%m/%Y}.'
+            )
+            return None
+        return _executar_envio(app, mes_referencia, forcar=False)
+
+    pendente = mes_folha_pendente(hoje)
+    if pendente is None:
+        print(
+            '[PAGAMENTO] Nenhuma folha pendente '
+            '(antes do dia 20 ou competência já publicada).'
+        )
+        return None
+
+    mes_referencia = pendente.strftime('%Y-%m')
+    if pendente.month != hoje.month or pendente.year != hoje.year:
+        print(
+            f'[PAGAMENTO][CATCH-UP] Folha atrasada: {mes_referencia} '
+            f'(publicação devida desde o dia {DIA_PUBLICACAO_FOLHA}).'
+        )
+    return _executar_envio(app, mes_referencia, forcar=False)
+
+
 def init_app_tasks(app):
     @app.cli.command('enviar-pagamento-bolsas')
     @click.option('--mes', default=None, help='Competência YYYY-MM (ex: 2026-05)')
-    @click.option('--forcar', is_flag=True, help='Executa mesmo fora do dia 20')
+    @click.option('--forcar', is_flag=True, help='Republica ignorando LogAutomacao')
     def enviar_pagamento_bolsas_command(mes, forcar):
         """Envia folha Pagamento de Bolsas para a Nuvem e confirma por e-mail."""
         with app.app_context():

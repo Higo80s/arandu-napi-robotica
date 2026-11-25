@@ -1,4 +1,4 @@
-"""Pagamento → Nuvem: duplicata no dia 20 e erro WebDAV sem HTML."""
+"""Pagamento → Nuvem: catch-up pós dia 20, duplicata e erro WebDAV sem HTML."""
 from datetime import date
 from types import SimpleNamespace
 
@@ -16,17 +16,46 @@ class _FixedDate(date):
         return cls._today
 
 
-def test_nao_envia_fora_do_dia_20(monkeypatch):
+def test_nao_envia_antes_do_dia_20_sem_atraso(monkeypatch):
+    """19/10: outubro ainda não venceu; setembro já publicado → nada a fazer."""
     class D(_FixedDate):
         _today = date(2026, 10, 19)
 
     monkeypatch.setattr(pagamento, 'date', D)
+    monkeypatch.setattr(
+        pagamento,
+        '_folha_ja_publicada',
+        lambda mes_yyyy_mm: mes_yyyy_mm in ('2026-08', '2026-09'),
+    )
     assert pagamento.enviar_pagamento_bolsas(None) is None
 
 
-def test_ignora_folha_ja_enviada_hoje(monkeypatch):
+def test_catch_up_folha_atrasada_apos_dia_20(monkeypatch):
+    """25/11: novembro devido desde dia 20 e ainda sem SUCESSO → publica."""
+    class D(_FixedDate):
+        _today = date(2026, 11, 25)
+
+    calls = {'mes': None}
+
+    def fake_enviar_core(app, mes_referencia, forcar=False):
+        calls['mes'] = mes_referencia
+        return True
+
+    monkeypatch.setattr(pagamento, 'date', D)
+    # Outubro já publicado; novembro devido e pendente → catch-up de 2026-11
+    monkeypatch.setattr(
+        pagamento,
+        '_folha_ja_publicada',
+        lambda mes: mes == '2026-10',
+    )
+    monkeypatch.setattr(pagamento, '_executar_envio', fake_enviar_core)
+    assert pagamento.enviar_pagamento_bolsas(None) is True
+    assert calls['mes'] == '2026-11'
+
+
+def test_ignora_folha_ja_publicada_na_competencia(monkeypatch):
     monkeypatch.setattr(pagamento, 'date', _FixedDate)
-    monkeypatch.setattr(pagamento, '_pagamento_ja_enviado_hoje', lambda filename: True)
+    monkeypatch.setattr(pagamento, '_folha_ja_publicada', lambda filename_or_mes: True)
     assert pagamento.enviar_pagamento_bolsas(None, mes_referencia='2026-10') == 'ja_enviado'
 
 
@@ -79,3 +108,13 @@ def test_webdav_retenta_500_e_grava(monkeypatch):
     url = nuvem_service.upload_bytes('05_pagamentos/pagamento_2026-10.xlsx', b'xlsx')
     assert calls['n'] == 2
     assert url.endswith('05_pagamentos/pagamento_2026-10.xlsx')
+
+
+def test_mes_folha_pendente_helpers():
+    assert pagamento.ultimo_mes_folha_devido(date(2026, 11, 25)) == date(2026, 11, 1)
+    assert pagamento.ultimo_mes_folha_devido(date(2026, 11, 19)) == date(2026, 10, 1)
+    pendente = pagamento.mes_folha_pendente(
+        date(2026, 11, 25),
+        lambda mes: mes.strftime('%Y-%m') == '2026-10',
+    )
+    assert pendente == date(2026, 11, 1)

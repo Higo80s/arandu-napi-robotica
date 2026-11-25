@@ -12,4 +12,4 @@ Canônico: prefixo `AranduRobotica_*`, só via `scripts/recriar_agendamentos_sil
 
 Não tocar em `AranduProppg_*` nem `Arandu_Pagamentos_Nuvem` (outro projeto).
 
-Horários: Resumo 08:00, Cobrança 08:05, Último mês 08:10, Confirmação início 08:12, Pagamento Nuvem 08:15 (envia só no dia 20).
+Horários: Resumo 08:00, Cobrança 08:05, Último mês 08:10, Confirmação início 08:12, Pagamento Nuvem 08:15 (diário; publica a partir do dia 20 com catch-up se o PC estava off — espelho PROPPG).
