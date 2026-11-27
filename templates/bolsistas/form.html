@@ -218,9 +218,7 @@
         <button type="button" class="tab-btn active" id="btn-tab-identificacao" onclick="showTab('tab-identificacao')">👤 Identificação</button>
         <button type="button" class="tab-btn" id="btn-tab-vigencia" onclick="showTab('tab-vigencia')">💰 Vigência & Bolsa</button>
         <button type="button" class="tab-btn" id="btn-tab-historico" onclick="showTab('tab-historico')">Ocorrências</button>
-        {% if bolsista and bolsista.id %}
         <button type="button" class="tab-btn" id="btn-tab-auditoria" onclick="showTab('tab-auditoria')">🕒 Histórico e auditoria</button>
-        {% endif %}
     </div>
 
     <script>
@@ -262,7 +260,8 @@
         document.addEventListener('DOMContentLoaded', () => {
              syncFuntefContratoLock();
              const lastTab = localStorage.getItem('activeBolsistaTab');
-             if (lastTab && document.getElementById(lastTab)) {
+             const lastBtn = lastTab && document.getElementById('btn-' + lastTab);
+             if (lastBtn && document.getElementById(lastTab)) {
                  showTab(lastTab);
              } else {
                  showTab('tab-identificacao');
@@ -755,6 +754,10 @@
             + Nova Ocorrência
         </button>
     </div>
+    {% else %}
+    <p id="ocorrencias-aguardando-cadastro" style="color: var(--text-muted); margin-bottom: 1rem;">
+        Ocorrências de afastamento e licença ficam disponíveis depois de salvar o cadastro.
+    </p>
     {% endif %}
     </div> <!-- END TAB HISTORICO -->
     <div id="tab-auditoria" class="tab-content">
@@ -764,7 +767,7 @@
             {{ icon('message-square', size=18) }} Histórico de comentários
         </h3>
 
-        {% if bolsista.comentarios_historico %}
+        {% if bolsista and bolsista.comentarios_historico %}
         <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
             {% for comentario in bolsista.comentarios_historico %}
             <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: var(--text-color);">
@@ -796,7 +799,7 @@
         {% endif %}
 
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; color: var(--text-color);">Adicionar novo comentário</label>
-        <textarea name="novo_comentario" rows="2" placeholder="Digite uma anotação e clique em 'Atualizar Cadastro' para registrar..."
+        <textarea name="novo_comentario" rows="2" placeholder="Digite uma anotação e clique em '{% if bolsista and bolsista.id %}Atualizar Cadastro{% else %}Salvar{% endif %}' para registrar..."
             style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background: var(--card-bg); color: var(--text-color);"></textarea>
     </div>
 
@@ -833,6 +836,7 @@
     }
     </script>
 
+    {% if bolsista and bolsista.id %}
     <div class="form-section" id="section-memento"
         style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
         <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Histórico de vigência (Memento)</h3>
@@ -870,6 +874,7 @@
             </tbody>
         </table>
     </div>
+    {% endif %}
 
     </div> <!-- END TAB HISTORICO E AUDITORIA -->
 
